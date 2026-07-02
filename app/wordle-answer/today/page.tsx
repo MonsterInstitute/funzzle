@@ -1,0 +1,116 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import AdSlot from "@/components/AdSlot";
+import RevealBox from "@/components/RevealBox";
+import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
+import { todayISO, formatLongDate } from "@/lib/dates";
+
+export const revalidate = 3600;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const long = formatLongDate(todayISO());
+  return {
+    title: `Wordle Answer Today ${long} | Funzzle`,
+    description:
+      "Today's Wordle answer revealed. Plus play unlimited free Wordle on Funzzle.",
+  };
+}
+
+export default async function WordleAnswerPage() {
+  const today = todayISO();
+  const long = formatLongDate(today);
+  const row = await getAnswer<WordleAnswerData>(today, "wordle");
+  const data = row?.answer_data;
+
+  return (
+    <>
+      <Header />
+      <AdSlot slot="leaderboard" className="py-4" />
+      <AdSlot slot="mobile-banner" className="py-3" />
+
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+        <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
+          Today&apos;s Wordle Answer — {long}
+        </h1>
+
+        {data ? (
+          <>
+            <div className="mt-6">
+              <RevealBox answer={data.answer} />
+            </div>
+
+            {row?.summary && (
+              <p className="mt-4 text-gray-600">{row.summary}</p>
+            )}
+
+            {/* Hints */}
+            <section className="mt-8">
+              <h2 className="text-xl font-bold text-[#111827]">Hints</h2>
+              <ul className="mt-3 space-y-2">
+                <li className="rounded-lg border border-[#e5e7eb] px-4 py-3 text-[#111827]">
+                  <span className="font-semibold">First letter:</span>{" "}
+                  {data.hint_first_letter}
+                </li>
+                <li className="rounded-lg border border-[#e5e7eb] px-4 py-3 text-[#111827]">
+                  <span className="font-semibold">Number of vowels:</span>{" "}
+                  {data.hint_vowels}
+                </li>
+              </ul>
+            </section>
+          </>
+        ) : (
+          <p className="mt-6 rounded-xl border border-dashed border-[#e5e7eb] bg-gray-50 p-6 text-center text-gray-500">
+            Today&apos;s answer will be posted soon. Check back later!
+          </p>
+        )}
+
+        {/* CTA */}
+        <div className="mt-8 text-center">
+          <Link
+            href="/play/wordle"
+            className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+          >
+            Play Free Unlimited Wordle →
+          </Link>
+        </div>
+
+        <AdSlot slot="rectangle" className="my-10" />
+
+        {/* SEO content */}
+        <section className="prose prose-sm mt-4 max-w-none text-gray-700">
+          <h2 className="text-xl font-bold text-[#111827]">
+            How to Play Wordle
+          </h2>
+          <p className="mt-3">
+            Wordle is a daily word game where you have six tries to guess a
+            hidden five-letter word. After each guess, the tiles change color to
+            show how close you were.
+          </p>
+          <ul className="mt-3 list-disc space-y-1 pl-5">
+            <li>
+              <span className="font-semibold text-[#16a34a]">Green</span> — the
+              letter is correct and in the right spot.
+            </li>
+            <li>
+              <span className="font-semibold text-yellow-600">Yellow</span> — the
+              letter is in the word but in the wrong spot.
+            </li>
+            <li>
+              <span className="font-semibold text-gray-500">Gray</span> — the
+              letter is not in the word at all.
+            </li>
+          </ul>
+          <p className="mt-3">
+            A strong opening word uses common letters and multiple vowels — try
+            CRANE, SLATE, or RAISE. On Funzzle you can play a new puzzle every
+            day, completely free and with no account required.
+          </p>
+        </section>
+      </main>
+
+      <Footer />
+    </>
+  );
+}

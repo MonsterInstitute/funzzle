@@ -1,0 +1,99 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+
+function GridIcon() {
+  return (
+    <span
+      aria-hidden
+      className="grid grid-cols-2 grid-rows-2 gap-[2px] h-5 w-5"
+    >
+      <span className="bg-black rounded-[1px]" />
+      <span className="bg-white border border-black rounded-[1px]" />
+      <span className="bg-white border border-black rounded-[1px]" />
+      <span className="bg-black rounded-[1px]" />
+    </span>
+  );
+}
+
+const NAV_LINKS = [
+  { label: "Play", href: "/play/wordle" },
+  { label: "Answers", href: "/wordle-answer/today" },
+  { label: "Blog", href: "/blog" },
+];
+
+export default function Header() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-50">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <Link
+          href="/"
+          className="flex items-center gap-2"
+          onClick={() => setOpen(false)}
+        >
+          <GridIcon />
+          <span className="text-xl font-bold text-black tracking-tight">
+            funzzle
+          </span>
+        </Link>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-[#111827]">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className="hover:text-[#16a34a] transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          aria-label="Toggle menu"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="md:hidden flex flex-col justify-center gap-[5px] p-2"
+        >
+          <span
+            className={`block h-0.5 w-6 bg-black transition-transform ${
+              open ? "translate-y-[7px] rotate-45" : ""
+            }`}
+          />
+          <span
+            className={`block h-0.5 w-6 bg-black transition-opacity ${
+              open ? "opacity-0" : ""
+            }`}
+          />
+          <span
+            className={`block h-0.5 w-6 bg-black transition-transform ${
+              open ? "-translate-y-[7px] -rotate-45" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <nav className="md:hidden border-t border-[#e5e7eb] bg-white px-4 py-2">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="block py-2 text-sm font-medium text-[#111827] hover:text-[#16a34a]"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      )}
+    </header>
+  );
+}
