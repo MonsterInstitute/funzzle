@@ -24,8 +24,12 @@ export function GET() {
     { path: "/play/wordle", priority: 0.8, lastmod: today },
     { path: "/play/connections", priority: 0.8, lastmod: today },
     { path: "/wordle-answer/today", priority: 0.8, lastmod: today },
+    { path: "/play/spelling-bee", priority: 0.8, lastmod: today },
     { path: "/clue", priority: 0.6, lastmod: today },
     { path: "/blog", priority: 0.7, lastmod: today },
+    { path: "/about", priority: 0.4, lastmod: today },
+    { path: "/privacy", priority: 0.3, lastmod: today },
+    { path: "/terms", priority: 0.3, lastmod: today },
   ];
 
   // Blog posts (priority 0.7).
