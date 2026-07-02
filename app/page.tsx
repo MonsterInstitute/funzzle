@@ -147,9 +147,8 @@ export default async function HomePage() {
               title="Spelling Bee"
               description="Make words from seven letters"
               emoji="🐝"
-              href="#"
-              badgeText="SOON"
-              disabled
+              href="/play/spelling-bee"
+              badgeText="FREE FOREVER"
             />
           </div>
         </section>

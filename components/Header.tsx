@@ -21,6 +21,7 @@ const NAV_LINKS = [
   { label: "Mini", href: "/play/mini" },
   { label: "Wordle", href: "/play/wordle" },
   { label: "Connections", href: "/play/connections" },
+  { label: "Spelling Bee", href: "/play/spelling-bee" },
   { label: "Answers", href: "/wordle-answer/today" },
   { label: "Blog", href: "/blog" },
 ];
