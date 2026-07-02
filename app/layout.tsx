@@ -30,6 +30,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
+      <head>
+        <meta
+          name="google-adsense-account"
+          content="ca-pub-1219788687006562"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-white text-[#111827]">
         {children}
         {ADSENSE_CLIENT && (
