@@ -2,6 +2,9 @@ import { SITE_URL } from "@/lib/site";
 import { recentDates, todayISO } from "@/lib/dates";
 import { CLUE_CONTENT } from "@/lib/content/clues";
 import { BLOG_POSTS } from "@/lib/blog";
+import { COUNTRIES } from "@/lib/content/countries";
+import { EQUATIONS } from "@/lib/content/equations";
+import { WORDS } from "@/lib/content/words";
 
 export const revalidate = 3600;
 
@@ -25,6 +28,11 @@ export function GET() {
     { path: "/play/connections", priority: 0.8, lastmod: today },
     { path: "/wordle-answer/today", priority: 0.8, lastmod: today },
     { path: "/play/spelling-bee", priority: 0.8, lastmod: today },
+    { path: "/play/strands", priority: 0.8, lastmod: today },
+    { path: "/play/letter-boxed", priority: 0.8, lastmod: today },
+    { path: "/play/quordle", priority: 0.8, lastmod: today },
+    { path: "/play/worldle", priority: 0.8, lastmod: today },
+    { path: "/play/nerdle", priority: 0.8, lastmod: today },
     { path: "/clue", priority: 0.6, lastmod: today },
     { path: "/blog", priority: 0.7, lastmod: today },
     { path: "/about", priority: 0.4, lastmod: today },
@@ -57,6 +65,31 @@ export function GET() {
       priority: 0.6,
       lastmod: clue.appearances[0] ?? today,
     });
+  }
+
+  // Daily answer/hint pages for the newer games (recent 90 days each).
+  const answerRoutes = [
+    "/strands-answers",
+    "/letter-boxed-answers",
+    "/quordle-answers",
+    "/worldle-answer",
+    "/nerdle-answer",
+  ];
+  for (const route of answerRoutes) {
+    for (const date of recentDates(90)) {
+      entries.push({ path: `${route}/${date}`, priority: 0.5, lastmod: date });
+    }
+  }
+
+  // Country / equation / word detail pages.
+  for (const c of COUNTRIES) {
+    entries.push({ path: `/country/${c.slug}`, priority: 0.6, lastmod: today });
+  }
+  for (const e of EQUATIONS) {
+    entries.push({ path: `/equation/${e.slug}`, priority: 0.5, lastmod: today });
+  }
+  for (const w of WORDS) {
+    entries.push({ path: `/word/${w.slug}`, priority: 0.5, lastmod: today });
   }
 
   const urls = entries

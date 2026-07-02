@@ -150,6 +150,41 @@ export default async function HomePage() {
               href="/play/spelling-bee"
               badgeText="FREE FOREVER"
             />
+            <GameCard
+              title="Strands"
+              description="Themed word search + spangram"
+              emoji="🔤"
+              href="/play/strands"
+              badgeText="FREE FOREVER"
+            />
+            <GameCard
+              title="Letter Boxed"
+              description="Use all 12 letters in a word chain"
+              emoji="🔲"
+              href="/play/letter-boxed"
+              badgeText="FREE FOREVER"
+            />
+            <GameCard
+              title="Quordle"
+              description="Four Wordles at once"
+              emoji="🟩"
+              href="/play/quordle"
+              badgeText="FREE FOREVER"
+            />
+            <GameCard
+              title="Worldle"
+              description="Guess the country from its shape"
+              emoji="🌍"
+              href="/play/worldle"
+              badgeText="FREE FOREVER"
+            />
+            <GameCard
+              title="Nerdle"
+              description="Guess the math equation"
+              emoji="🔢"
+              href="/play/nerdle"
+              badgeText="FREE FOREVER"
+            />
           </div>
         </section>
 

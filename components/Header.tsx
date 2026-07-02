@@ -2,26 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
-
-function GridIcon() {
-  return (
-    <span
-      aria-hidden
-      className="grid grid-cols-2 grid-rows-2 gap-[2px] h-5 w-5"
-    >
-      <span className="bg-black rounded-[1px]" />
-      <span className="bg-white border border-black rounded-[1px]" />
-      <span className="bg-white border border-black rounded-[1px]" />
-      <span className="bg-black rounded-[1px]" />
-    </span>
-  );
-}
+import Logo from "./Logo";
 
 const NAV_LINKS = [
   { label: "Mini", href: "/play/mini" },
   { label: "Wordle", href: "/play/wordle" },
   { label: "Connections", href: "/play/connections" },
   { label: "Spelling Bee", href: "/play/spelling-bee" },
+  { label: "Strands", href: "/play/strands" },
+  { label: "Letter Boxed", href: "/play/letter-boxed" },
+  { label: "Quordle", href: "/play/quordle" },
+  { label: "Worldle", href: "/play/worldle" },
+  { label: "Nerdle", href: "/play/nerdle" },
   { label: "Answers", href: "/wordle-answer/today" },
   { label: "Blog", href: "/blog" },
 ];
@@ -32,19 +24,12 @@ export default function Header() {
   return (
     <header className="border-b border-[#e5e7eb] bg-white sticky top-0 z-50">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link
-          href="/"
-          className="flex items-center gap-2"
-          onClick={() => setOpen(false)}
-        >
-          <GridIcon />
-          <span className="text-xl font-bold text-black tracking-tight">
-            funzzle
-          </span>
+        <Link href="/" onClick={() => setOpen(false)}>
+          <Logo />
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-[#111827]">
+        <nav className="hidden md:flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm font-medium text-[#111827] max-w-[72%]">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.label}
