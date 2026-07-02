@@ -1,4 +1,6 @@
 import { createServiceSupabase } from "./supabase";
+import { DAILY_CONTENT } from "./content/dailyAnswers";
+import { getLocalWordle } from "./content/wordleAnswers";
 
 export type AnswerType = "nyt-mini" | "nyt-daily" | "wordle";
 
@@ -31,8 +33,61 @@ export interface AnswerRow<T = unknown> {
 }
 
 /**
+ * Build an answer row from bundled local content, used as a fallback when
+ * Supabase has no row (or is unreachable). This keeps every seeded answer page
+ * rendering — and building statically — regardless of DB state.
+ */
+export function localAnswer(
+  publishDate: string,
+  type: AnswerType
+): AnswerRow | null {
+  if (type === "wordle") {
+    const wordle = getLocalWordle(publishDate);
+    if (wordle) {
+      return {
+        id: -1,
+        puzzle_id: null,
+        publish_date: publishDate,
+        type,
+        answer_data: wordle.answer_data,
+        summary: wordle.summary,
+        created_at: "",
+      };
+    }
+  }
+
+  const day = DAILY_CONTENT.find((d) => d.date === publishDate);
+  if (!day) return null;
+
+  if (type === "nyt-mini") {
+    return {
+      id: -1,
+      puzzle_id: null,
+      publish_date: publishDate,
+      type,
+      answer_data: day.mini,
+      summary: day.miniSummary,
+      created_at: "",
+    };
+  }
+  if (type === "wordle") {
+    return {
+      id: -1,
+      puzzle_id: null,
+      publish_date: publishDate,
+      type,
+      answer_data: day.wordle,
+      summary: day.wordleSummary,
+      created_at: "",
+    };
+  }
+  // No local nyt-daily content.
+  return null;
+}
+
+/**
  * Fetch a single answer row by publish date (YYYY-MM-DD) and type.
- * Returns null when nothing has been published yet.
+ * Prefers Supabase; falls back to bundled local content.
  */
 export async function getAnswer<T = unknown>(
   publishDate: string,
@@ -49,14 +104,18 @@ export async function getAnswer<T = unknown>(
 
     if (error) {
       console.error(`getAnswer(${publishDate}, ${type}) failed:`, error.message);
-      return null;
+      return (localAnswer(publishDate, type) as AnswerRow<T> | null) ?? null;
     }
-    return (data as AnswerRow<T> | null) ?? null;
+    return (
+      (data as AnswerRow<T> | null) ??
+      (localAnswer(publishDate, type) as AnswerRow<T> | null) ??
+      null
+    );
   } catch (err) {
-    // Missing env / network issue — degrade to a "coming soon" state
-    // rather than crashing the page render or the static build.
+    // Missing env / network issue — degrade to local content, then to a
+    // "coming soon" state, rather than crashing the render or static build.
     console.error(`getAnswer(${publishDate}, ${type}) threw:`, err);
-    return null;
+    return (localAnswer(publishDate, type) as AnswerRow<T> | null) ?? null;
   }
 }
 

@@ -4,12 +4,15 @@ import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
+import JsonLd from "@/components/JsonLd";
 import {
   getAnswer,
   type CrosswordAnswerData,
   type CrosswordClue,
   type AnswerRow,
 } from "@/lib/getAnswers";
+import { getCluesForDate, type ClueRecord } from "@/lib/getClues";
+import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import {
   isValidISODate,
   formatLongDate,
@@ -33,10 +36,16 @@ export async function generateMetadata({
   const { date } = await params;
   if (!isValidISODate(date)) return { title: "Crossword Answers" };
   const long = formatLongDate(date);
-  return {
-    title: `NYT Crossword Answers ${long} | Funzzle`,
+  return pageMetadata({
+    title: `NYT Crossword Answers ${long}`,
     description: `Complete answers for the NYT Mini and Daily crossword on ${long}. Every clue solved and explained.`,
-  };
+    path: `/nyt-crossword-answers/${date}`,
+    keywords: [
+      `nyt crossword answers ${long}`,
+      "nyt mini answers",
+      "crossword answers today",
+    ],
+  });
 }
 
 export default async function CrosswordAnswersPage({
@@ -51,15 +60,24 @@ export default async function CrosswordAnswersPage({
   const prev = shiftISODate(date, -1);
   const next = shiftISODate(date, 1);
 
-  const [mini, daily] = await Promise.all([
+  const [mini, daily, clues] = await Promise.all([
     getAnswer<CrosswordAnswerData>(date, "nyt-mini"),
     getAnswer<CrosswordAnswerData>(date, "nyt-daily"),
+    getCluesForDate(date, 3),
   ]);
 
   return (
     <>
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Answers", path: `/nyt-crossword-answers/${date}` },
+          { name: long, path: `/nyt-crossword-answers/${date}` },
+        ])}
+      />
       <Header />
       <AdSlot slot="leaderboard" className="py-4" />
+      <AdSlot slot="mobile-banner" className="py-3" />
       <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
@@ -91,6 +109,27 @@ export default async function CrosswordAnswersPage({
           title="NYT Daily Crossword Answers"
           row={daily}
         />
+
+        {/* Explore individual clues */}
+        {clues.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-bold text-[#111827]">
+              Explore clues from this puzzle
+            </h2>
+            <ul className="mt-3 space-y-2">
+              {clues.map((c: ClueRecord) => (
+                <li key={c.slug}>
+                  <Link
+                    href={`/clue/${c.slug}`}
+                    className="text-[#16a34a] hover:underline"
+                  >
+                    {c.clue_text} → {c.answer}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Play CTA */}
         <div className="mt-10 text-center">

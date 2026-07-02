@@ -18,7 +18,9 @@ function GridIcon() {
 }
 
 const NAV_LINKS = [
-  { label: "Play", href: "/play/wordle" },
+  { label: "Mini", href: "/play/mini" },
+  { label: "Wordle", href: "/play/wordle" },
+  { label: "Connections", href: "/play/connections" },
   { label: "Answers", href: "/wordle-answer/today" },
   { label: "Blog", href: "/blog" },
 ];

@@ -1,7 +1,9 @@
+import { SITE_URL } from "@/lib/site";
+
 export function GET() {
   const body = `User-agent: *
 Allow: /
-Sitemap: https://funzzle.com/sitemap.xml
+Sitemap: ${SITE_URL}/sitemap.xml
 `;
   return new Response(body, {
     headers: {

@@ -4,18 +4,22 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
 import RevealBox from "@/components/RevealBox";
+import JsonLd from "@/components/JsonLd";
 import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
+import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { todayISO, formatLongDate } from "@/lib/dates";
 
 export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const long = formatLongDate(todayISO());
-  return {
-    title: `Wordle Answer Today ${long} | Funzzle`,
+  return pageMetadata({
+    title: `Wordle Answer Today ${long}`,
     description:
-      "Today's Wordle answer revealed. Plus play unlimited free Wordle on Funzzle.",
-  };
+      "Today's Wordle answer revealed with a hint. Plus play unlimited free Wordle on Funzzle.",
+    path: "/wordle-answer/today",
+    keywords: ["wordle answer today", "todays wordle", "wordle hint"],
+  });
 }
 
 export default async function WordleAnswerPage() {
@@ -26,6 +30,12 @@ export default async function WordleAnswerPage() {
 
   return (
     <>
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Wordle Answer Today", path: "/wordle-answer/today" },
+        ])}
+      />
       <Header />
       <AdSlot slot="leaderboard" className="py-4" />
       <AdSlot slot="mobile-banner" className="py-3" />
