@@ -57,3 +57,12 @@ INSERT INTO public.answers (publish_date, type, answer_data, summary) VALUES
   '{"answer": "CRANE", "hint_first_letter": "C", "hint_vowels": 2}',
   'Today''s Wordle answer is CRANE — a bird and a construction machine. Common starting guesses like RAISE or SLATE would get you close quickly.'
 );
+
+-- Playable mini puzzle for /play/mini (mapped by lib/miniCrossword.ts).
+-- grid: 2D array of letters ("#" = black square). clues: number -> text.
+DELETE FROM public.puzzles WHERE slug = 'mini-2026-07-01';
+INSERT INTO public.puzzles (slug, type, publish_date, title, size, grid, clues) VALUES
+('mini-2026-07-01', 'mini', '2026-07-01', 'NYT Mini Crossword', 5,
+  '[["H","E","A","R","T"],["E","M","B","E","R"],["A","B","U","S","E"],["R","E","S","I","N"],["T","R","E","N","T"]]',
+  '{"across": [{"number": 1, "clue": "Organ that pumps blood"}, {"number": 6, "clue": "Glowing coal in a dying fire"}, {"number": 7, "clue": "Mistreat or misuse"}, {"number": 8, "clue": "Sticky secretion from pine trees"}, {"number": 9, "clue": "English river through Nottingham"}], "down": [{"number": 1, "clue": "Valentine''s Day symbol"}, {"number": 2, "clue": "Faint, lingering coal"}, {"number": 3, "clue": "Take cruel advantage of"}, {"number": 4, "clue": "Base for varnish and adhesives"}, {"number": 5, "clue": "Council of ___ (Catholic conclave)"}]}'
+);

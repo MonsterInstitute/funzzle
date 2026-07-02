@@ -149,6 +149,118 @@ export function buildLayout(puzzle: MiniPuzzle): Layout {
 export { cellKey };
 
 /**
+ * Normalize a stored grid into a square matrix of single uppercase letters,
+ * using "#" for black squares. Accepts several shapes so we're tolerant of how
+ * the Supabase `puzzles.grid` column happens to be authored:
+ *   - string[][]                       (matrix of cells)
+ *   - string[]                         (one string per row)
+ *   - string                           (rows separated by "\n" or "/")
+ * Returns null if the result isn't a valid square grid of size >= 2.
+ */
+function normalizeGrid(grid: unknown): string[][] | null {
+  let rows: string[][];
+
+  if (typeof grid === "string") {
+    rows = grid
+      .trim()
+      .split(/[\n/]/)
+      .map((line) => line.trim().split(""));
+  } else if (Array.isArray(grid) && grid.length > 0) {
+    if (Array.isArray(grid[0])) {
+      rows = (grid as unknown[][]).map((row) =>
+        row.map((cell) => String(cell ?? ""))
+      );
+    } else if (typeof grid[0] === "string") {
+      rows = (grid as string[]).map((line) => line.split(""));
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
+
+  const isBlackCell = (cell: string) => {
+    const c = cell.trim();
+    return c === "" || c === "#" || c === ".";
+  };
+
+  const normalized = rows.map((row) =>
+    row.map((cell) => (isBlackCell(cell) ? BLACK : cell.trim()[0].toUpperCase()))
+  );
+
+  const size = normalized.length;
+  if (size < 2) return null;
+  if (!normalized.every((row) => row.length === size)) return null;
+
+  return normalized;
+}
+
+/** Coerce a stored clue collection into an ordered MiniClue[]. */
+function normalizeClueList(input: unknown): MiniClue[] | null {
+  if (Array.isArray(input)) {
+    const list = input
+      .map((c) => {
+        const obj = c as Record<string, unknown>;
+        const number = Number(obj?.number ?? obj?.num);
+        const clue = String(obj?.clue ?? obj?.text ?? "");
+        return Number.isFinite(number) ? { number, clue } : null;
+      })
+      .filter((c): c is MiniClue => c !== null);
+    return list.length ? list.sort((a, b) => a.number - b.number) : null;
+  }
+
+  // Object map: { "1": "clue text", ... }
+  if (input && typeof input === "object") {
+    const list = Object.entries(input as Record<string, unknown>)
+      .map(([k, v]) => ({ number: Number(k), clue: String(v) }))
+      .filter((c) => Number.isFinite(c.number));
+    return list.length ? list.sort((a, b) => a.number - b.number) : null;
+  }
+
+  return null;
+}
+
+/**
+ * Map a Supabase `puzzles` row into a playable MiniPuzzle.
+ * Returns null when the row can't be interpreted, so callers fall back to the
+ * built-in sample rather than rendering a broken grid.
+ */
+export function puzzleRowToMini(row: {
+  title?: string | null;
+  grid: unknown;
+  clues: unknown;
+}): MiniPuzzle | null {
+  try {
+    const solution = normalizeGrid(row.grid);
+    if (!solution) return null;
+
+    const rawClues = (row.clues ?? {}) as Record<string, unknown>;
+    const across = normalizeClueList(rawClues.across);
+    const down = normalizeClueList(rawClues.down);
+    if (!across || !down) return null;
+
+    const puzzle: MiniPuzzle = {
+      title: (row.title ?? "").trim() || "Daily Mini",
+      solution,
+      clues: { across, down },
+    };
+
+    // Sanity check: the grid must actually produce words that line up with the
+    // supplied clue numbers. If not, treat the row as unusable.
+    const layout = buildLayout(puzzle);
+    if (
+      layout.ordered.across.length === 0 &&
+      layout.ordered.down.length === 0
+    ) {
+      return null;
+    }
+    return puzzle;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fallback puzzle — a valid 5×5 word square (every row and column is a real
  * word). Used when no puzzle has been published for the day.
  */

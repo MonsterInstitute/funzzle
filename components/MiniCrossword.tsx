@@ -27,7 +27,13 @@ function fmtTime(s: number): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-export default function MiniCrossword({ puzzle }: { puzzle: MiniPuzzle }) {
+export default function MiniCrossword({
+  puzzle,
+  date,
+}: {
+  puzzle: MiniPuzzle;
+  date: string;
+}) {
   const layout = useMemo(() => buildLayout(puzzle), [puzzle]);
   const { cells, words, ordered, size } = layout;
 
@@ -46,6 +52,8 @@ export default function MiniCrossword({ puzzle }: { puzzle: MiniPuzzle }) {
   const [won, setWon] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(true);
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Timer.
@@ -259,6 +267,7 @@ export default function MiniCrossword({ puzzle }: { puzzle: MiniPuzzle }) {
         if (!cells[r][c].black) next[cellKey(r, c)] = cells[r][c].solution;
     setEntries(next);
     setChecking(false);
+    setRevealed(true);
     setWon(true);
     setRunning(false);
   }, [cells, size]);
@@ -267,12 +276,39 @@ export default function MiniCrossword({ puzzle }: { puzzle: MiniPuzzle }) {
     setEntries({});
     setChecking(false);
     setWon(false);
+    setRevealed(false);
+    setCopied(false);
     setSeconds(0);
     setRunning(true);
     setActive(firstCell);
     setDirection("across");
     focusHiddenInput();
   }, [firstCell, focusHiddenInput]);
+
+  const shareText = useMemo(() => {
+    const result = revealed
+      ? "Revealed the answers"
+      : `Solved in ${fmtTime(seconds)} ⏱`;
+    return `Funzzle Mini ${date}\n${result}\nfunzzle.com`;
+  }, [revealed, seconds, date]);
+
+  const share = useCallback(async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: shareText });
+        return;
+      }
+    } catch {
+      // fall through to clipboard
+    }
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard unavailable — nothing else to do
+    }
+  }, [shareText]);
 
   return (
     <div className="flex flex-col items-center">
@@ -449,16 +485,31 @@ export default function MiniCrossword({ puzzle }: { puzzle: MiniPuzzle }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-xl">
             <h2 className="text-2xl font-extrabold text-[#111827]">
-              🎉 Solved!
+              {revealed ? "Answers revealed" : "🎉 Solved!"}
             </h2>
             <p className="mt-2 text-gray-600">
-              You finished the Mini in{" "}
-              <span className="font-bold text-[#16a34a]">
-                {fmtTime(seconds)}
-              </span>
-              .
+              {revealed ? (
+                "Give it another try to beat the clock!"
+              ) : (
+                <>
+                  You finished the Mini in{" "}
+                  <span className="font-bold text-[#16a34a]">
+                    {fmtTime(seconds)}
+                  </span>
+                  .
+                </>
+              )}
             </p>
-            <div className="mt-4 flex gap-2">
+
+            <button
+              type="button"
+              onClick={share}
+              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+            >
+              {copied ? "Copied to clipboard!" : "Share"}
+            </button>
+
+            <div className="mt-2 flex gap-2">
               <button
                 type="button"
                 onClick={reset}
@@ -468,7 +519,7 @@ export default function MiniCrossword({ puzzle }: { puzzle: MiniPuzzle }) {
               </button>
               <a
                 href="/play/wordle"
-                className="flex-1 rounded-lg bg-[#16a34a] px-4 py-2 font-semibold text-white transition-colors hover:bg-[#15803d]"
+                className="flex-1 rounded-lg border border-[#e5e7eb] px-4 py-2 font-semibold text-[#111827] transition-colors hover:border-[#16a34a]"
               >
                 Play Wordle →
               </a>

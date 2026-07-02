@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
 import MiniCrossword from "@/components/MiniCrossword";
 import { SAMPLE_MINI } from "@/lib/miniCrossword";
+import { getMiniPuzzle } from "@/lib/getPuzzle";
 import { todayISO, formatLongDate } from "@/lib/dates";
 
 export const metadata: Metadata = {
@@ -12,11 +13,14 @@ export const metadata: Metadata = {
     "Play a free 5×5 mini crossword on Funzzle. Quick daily solve, no account required.",
 };
 
-export default function MiniPlayPage() {
+// Pick up a freshly published daily puzzle within the hour.
+export const revalidate = 3600;
+
+export default async function MiniPlayPage() {
   const today = todayISO();
-  // The daily puzzle can later come from Supabase; until then everyone gets the
-  // built-in sample so the page is fully playable.
-  const puzzle = SAMPLE_MINI;
+  // Use today's published puzzle from Supabase when available; otherwise fall
+  // back to the built-in sample so the page is always playable.
+  const puzzle = (await getMiniPuzzle(today)) ?? SAMPLE_MINI;
 
   return (
     <>
@@ -31,7 +35,7 @@ export default function MiniPlayPage() {
           {formatLongDate(today)} · 5×5 · Fill every square to win
         </p>
 
-        <MiniCrossword puzzle={puzzle} />
+        <MiniCrossword puzzle={puzzle} date={today} />
 
         <AdSlot slot="rectangle" className="mt-10" />
       </main>

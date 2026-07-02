@@ -1,4 +1,5 @@
 import { createServiceSupabase } from "./supabase";
+import { puzzleRowToMini, type MiniPuzzle } from "./miniCrossword";
 
 export interface PuzzleRow {
   id: number;
@@ -38,6 +39,43 @@ export async function getPuzzle(slug: string): Promise<PuzzleRow | null> {
 /**
  * Fetch a puzzle by publish date (YYYY-MM-DD) and type.
  */
+/**
+ * Fetch and map the mini crossword published for a given date into a playable
+ * MiniPuzzle. Returns null when nothing is published (or the row is unusable),
+ * so the caller can fall back to the built-in sample.
+ */
+export async function getMiniPuzzle(
+  publishDate: string
+): Promise<MiniPuzzle | null> {
+  try {
+    const supabase = createServiceSupabase();
+    const { data, error } = await supabase
+      .from("puzzles")
+      .select("*")
+      .eq("publish_date", publishDate)
+      .in("type", ["mini", "nyt-mini"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`getMiniPuzzle(${publishDate}) failed:`, error.message);
+      return null;
+    }
+    if (!data) return null;
+
+    const row = data as PuzzleRow;
+    return puzzleRowToMini({
+      title: row.title,
+      grid: row.grid,
+      clues: row.clues,
+    });
+  } catch (err) {
+    console.error(`getMiniPuzzle(${publishDate}) threw:`, err);
+    return null;
+  }
+}
+
 export async function getPuzzleByDate(
   publishDate: string,
   type: string
