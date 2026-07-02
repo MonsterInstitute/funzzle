@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
 import GameCard from "@/components/GameCard";
 import JsonLd from "@/components/JsonLd";
+import EmailCapture from "@/components/EmailCapture";
 import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
 import { todayISO, formatLongDate } from "@/lib/dates";
 import { pageMetadata, websiteJsonLd, faqJsonLd } from "@/lib/seo";
@@ -121,66 +122,66 @@ export default async function HomePage() {
         {/* Games */}
         <section id="games" className="mx-auto max-w-5xl px-4 pb-8">
           <h2 className="mb-4 text-xl font-bold text-[#111827]">Games</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <GameCard
               title="Mini Crossword"
-              description="5×5 · ~1 min"
+              description="Free daily 5×5 crossword puzzle — no subscription, no account needed."
               emoji="🧩"
               href="/play/mini"
               badgeText="FREE FOREVER"
             />
             <GameCard
-              title="Wordle Clone"
-              description="Guess the 5-letter word"
+              title="Wordle"
+              description="Free unlimited Wordle — guess the 5-letter word in six tries, play as often as you like."
               emoji="🟩"
               href="/play/wordle"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Connections"
-              description="Group 16 words into 4 sets"
+              description="Free daily Connections — sort 16 words into 4 hidden groups before you run out of tries."
               emoji="🔗"
               href="/play/connections"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Spelling Bee"
-              description="Make words from seven letters"
+              description="Free Spelling Bee — build words from seven letters and climb the ranks to Genius."
               emoji="🐝"
               href="/play/spelling-bee"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Strands"
-              description="Themed word search + spangram"
+              description="Free daily Strands — a themed word search with a hidden spangram and three hints."
               emoji="🔤"
               href="/play/strands"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Letter Boxed"
-              description="Use all 12 letters in a word chain"
+              description="Free Letter Boxed — chain words around the square using all 12 letters to win."
               emoji="🔲"
               href="/play/letter-boxed"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Quordle"
-              description="Four Wordles at once"
+              description="Free Quordle — solve four Wordle puzzles at the same time in nine guesses."
               emoji="🟩"
               href="/play/quordle"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Worldle"
-              description="Guess the country from its shape"
+              description="Free Worldle — guess the country from its silhouette using distance and direction hints."
               emoji="🌍"
               href="/play/worldle"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Nerdle"
-              description="Guess the math equation"
+              description="Free daily Nerdle — crack the hidden 8-character math equation in six tries."
               emoji="🔢"
               href="/play/nerdle"
               badgeText="FREE FOREVER"
@@ -256,6 +257,67 @@ export default async function HomePage() {
                 <p className="mt-2 pl-5 text-gray-600">{f.a}</p>
               </details>
             ))}
+          </div>
+        </section>
+
+        {/* Email capture */}
+        <section className="border-y border-[#e5e7eb] bg-gray-50">
+          <div className="mx-auto max-w-5xl px-4 py-12">
+            <EmailCapture />
+          </div>
+        </section>
+
+        {/* About Funzzle (SEO content) */}
+        <section className="mx-auto max-w-3xl px-4 py-14">
+          <h2 className="mb-4 text-2xl font-bold text-[#111827]">About Funzzle</h2>
+          <div className="prose prose-sm max-w-none text-gray-700">
+            <p>
+              Funzzle is a free home for the daily brain games people love — with
+              no paywall, no subscription, and no account required. In 2025 many
+              of the most popular word and logic puzzles moved behind a login and
+              a monthly fee. Funzzle exists to keep that five-minute daily habit
+              free for everyone, supported by unobtrusive ads instead of
+              subscriptions.
+            </p>
+            <p>
+              Our <Link href="/play/mini" className="text-[#16a34a] hover:underline">Mini Crossword</Link>{" "}
+              is a quick 5×5 grid you can finish in about a minute, while{" "}
+              <Link href="/play/wordle" className="text-[#16a34a] hover:underline">Wordle</Link>{" "}
+              gives you six guesses — and unlimited replays — to find a hidden
+              five-letter word.{" "}
+              <Link href="/play/connections" className="text-[#16a34a] hover:underline">Connections</Link>{" "}
+              asks you to sort sixteen words into four hidden groups, and{" "}
+              <Link href="/play/spelling-bee" className="text-[#16a34a] hover:underline">Spelling Bee</Link>{" "}
+              challenges you to build as many words as possible from seven
+              letters. For word-search fans there&apos;s{" "}
+              <Link href="/play/strands" className="text-[#16a34a] hover:underline">Strands</Link>{" "}
+              with its daily theme and spangram, plus{" "}
+              <Link href="/play/letter-boxed" className="text-[#16a34a] hover:underline">Letter Boxed</Link>{" "}
+              for chaining words around a square.
+            </p>
+            <p>
+              We also built the games that go beyond words:{" "}
+              <Link href="/play/quordle" className="text-[#16a34a] hover:underline">Quordle</Link>{" "}
+              (four Wordles at once),{" "}
+              <Link href="/play/worldle" className="text-[#16a34a] hover:underline">Worldle</Link>{" "}
+              (guess the country from its shape), and{" "}
+              <Link href="/play/nerdle" className="text-[#16a34a] hover:underline">Nerdle</Link>{" "}
+              (a daily math-equation puzzle). Every game is designed to be fast,
+              mobile-friendly, and genuinely free.
+            </p>
+            <p>
+              Funzzle is for anyone who wants their morning puzzle without a
+              paywall — commuters, coffee-break solvers, classrooms, and families
+              alike. If you get stuck, we publish free daily{" "}
+              <Link href="/wordle-answer/today" className="text-[#16a34a] hover:underline">answers and hints</Link>{" "}
+              and a growing library of{" "}
+              <Link href="/clue" className="text-[#16a34a] hover:underline">crossword clue explanations</Link>.
+              New to a game? Our{" "}
+              <Link href="/how-to-play" className="text-[#16a34a] hover:underline">how-to-play guide</Link>{" "}
+              covers the rules and strategy for every puzzle on the site. Funzzle
+              is not affiliated with The New York Times; it&apos;s an independent,
+              free alternative built by puzzle fans.
+            </p>
           </div>
         </section>
 

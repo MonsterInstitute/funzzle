@@ -12,6 +12,9 @@ export default function Footer() {
           <Link href="/wordle-answer/today" className="hover:text-[#16a34a]">
             Answers
           </Link>
+          <Link href="/how-to-play" className="hover:text-[#16a34a]">
+            How to Play
+          </Link>
           <Link href="/about" className="hover:text-[#16a34a]">
             About
           </Link>

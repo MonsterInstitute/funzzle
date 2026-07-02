@@ -14,6 +14,7 @@ import {
 import { breadcrumbJsonLd } from "@/lib/seo";
 import { pageMetadata } from "@/lib/seo";
 import { formatLongDate } from "@/lib/dates";
+import { buildClueSections } from "@/lib/clueContent";
 
 type Params = { slug: string };
 
@@ -55,6 +56,7 @@ export default async function CluePage({
   if (!clue) notFound();
 
   const related = await getRelatedClues(slug, clue.answer);
+  const sections = buildClueSections(clue);
 
   return (
     <>
@@ -93,14 +95,82 @@ export default async function CluePage({
           <RevealBox answer={clue.answer} />
         </div>
 
-        {/* Explanation */}
+        {/* Definition */}
         <section className="mt-8">
           <h2 className="text-xl font-bold text-[#111827]">
-            About the answer: {clue.answer}
+            Definition &amp; answer: {clue.answer}
+          </h2>
+          <p className="mt-2 leading-relaxed text-gray-700">
+            {sections.definition}
+          </p>
+        </section>
+
+        {/* Word origin & meaning */}
+        <section className="mt-6">
+          <h2 className="text-xl font-bold text-[#111827]">
+            Origin &amp; meaning
           </h2>
           <p className="mt-2 leading-relaxed text-gray-700">
             {clue.explanation}
           </p>
+        </section>
+
+        {/* Common usage */}
+        <section className="mt-6">
+          <h2 className="text-xl font-bold text-[#111827]">Common usage</h2>
+          <p className="mt-2 leading-relaxed text-gray-700">{sections.usage}</p>
+        </section>
+
+        {/* Trivia */}
+        <section className="mt-6">
+          <h2 className="text-xl font-bold text-[#111827]">
+            Crossword trivia
+          </h2>
+          <p className="mt-2 leading-relaxed text-gray-700">{sections.trivia}</p>
+        </section>
+
+        {/* Solver tip */}
+        <section className="mt-6">
+          <h2 className="text-xl font-bold text-[#111827]">
+            Stuck on this clue?
+          </h2>
+          <p className="mt-2 leading-relaxed text-gray-700">
+            {sections.solverNote}
+          </p>
+        </section>
+
+        {/* Variations of this clue */}
+        <section className="mt-6">
+          <h2 className="text-xl font-bold text-[#111827]">
+            This clue in different puzzles
+          </h2>
+          <p className="mt-2 leading-relaxed text-gray-700">
+            {sections.crosswordNote}
+          </p>
+          {sections.variations.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {sections.variations.slice(0, 6).map((v) => (
+                <li key={v.slug}>
+                  <Link
+                    href={`/clue/${v.slug}`}
+                    className="text-[#16a34a] hover:underline"
+                  >
+                    {v.clue_text} → {v.answer}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Example sentences */}
+        <section className="mt-6">
+          <h2 className="text-xl font-bold text-[#111827]">Example sentences</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5 leading-relaxed text-gray-700">
+            {sections.examples.map((ex, i) => (
+              <li key={i}>{ex}</li>
+            ))}
+          </ul>
         </section>
 
         <AdSlot slot="rectangle" className="my-10" />

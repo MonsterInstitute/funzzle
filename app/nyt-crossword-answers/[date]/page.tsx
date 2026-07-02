@@ -12,6 +12,7 @@ import {
   type AnswerRow,
 } from "@/lib/getAnswers";
 import { getCluesForDate, type ClueRecord } from "@/lib/getClues";
+import { answerIntro, answerFacts, SOLVING_TIPS } from "@/lib/answerContent";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import {
   isValidISODate,
@@ -66,6 +67,14 @@ export default async function CrosswordAnswersPage({
     getCluesForDate(date, 3),
   ]);
 
+  const miniClues: CrosswordClue[] = mini
+    ? [...(mini.answer_data?.across ?? []), ...(mini.answer_data?.down ?? [])]
+    : [];
+  const intro = miniClues.length
+    ? answerIntro(long, mini?.summary ?? null, miniClues)
+    : null;
+  const facts = answerFacts(miniClues);
+
   return (
     <>
       <JsonLd
@@ -98,10 +107,36 @@ export default async function CrosswordAnswersPage({
           <span className="text-[#111827]">{long}</span>
         </nav>
 
+        {intro && (
+          <p className="mt-4 leading-relaxed text-gray-700">{intro}</p>
+        )}
+
         <AnswerSection
           title="NYT Mini Crossword Answers"
           row={mini}
         />
+
+        {facts.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-bold text-[#111827]">
+              Every answer explained
+            </h2>
+            <div className="mt-3 space-y-4">
+              {facts.map((f) => (
+                <div
+                  key={f.answer}
+                  className="rounded-xl border border-[#e5e7eb] p-4"
+                >
+                  <p className="font-bold uppercase text-[#16a34a]">
+                    {f.answer}
+                  </p>
+                  <p className="text-sm text-gray-500">Clue: {f.clue}</p>
+                  <p className="mt-1 leading-relaxed text-gray-700">{f.fact}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <AdSlot slot="rectangle" className="my-10" />
 
@@ -130,6 +165,21 @@ export default async function CrosswordAnswersPage({
             </ul>
           </section>
         )}
+
+        {/* Tips for solving */}
+        <section className="mt-10">
+          <h2 className="text-xl font-bold text-[#111827]">Tips for solving</h2>
+          <ul className="mt-3 space-y-2">
+            {SOLVING_TIPS.map((tip, i) => (
+              <li key={i} className="flex gap-3 text-gray-700">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#16a34a] text-xs font-bold text-white">
+                  {i + 1}
+                </span>
+                <span className="leading-relaxed">{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         {/* Play CTA */}
         <div className="mt-10 text-center">
