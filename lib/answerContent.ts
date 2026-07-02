@@ -8,6 +8,15 @@ for (const c of CLUE_CONTENT) {
 
 const VOWELS = new Set(["A", "E", "I", "O", "U"]);
 
+function hash(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 /** A ~200-word intro paragraph woven from the day's actual clues. */
 export function answerIntro(
   dateLong: string,
@@ -42,10 +51,14 @@ export function answerFacts(clues: CrosswordClue[]): AnswerFact[] {
   return chosen.map((c) => {
     const len = c.answer.length;
     const vowels = c.answer.split("").filter((ch) => VOWELS.has(ch)).length;
+    const vs = `${vowels} vowel${vowels === 1 ? "" : "s"}`;
     const base = c.explanation ?? CLUE_BY_ANSWER.get(c.answer) ?? "";
-    const crossword =
-      `As a ${len}-letter word with ${vowels} vowel${vowels === 1 ? "" : "s"}, ` +
-      `${c.answer} is a crossword-friendly entry — its letters interlock easily, which is why it turns up in grids so often.`;
+    const variants = [
+      `As a ${len}-letter word with ${vs}, ${c.answer} interlocks easily with crossing entries — one reason it turns up in grids so often.`,
+      `${c.answer} is a tidy ${len}-letter fill (${vs}); constructors like it because it plays well in both directions.`,
+      `With ${vs} across ${len} letters, ${c.answer} is exactly the kind of crossword-friendly answer worth recognizing on sight.`,
+    ];
+    const crossword = variants[hash(c.answer) % variants.length];
     return {
       answer: c.answer,
       clue: c.clue,

@@ -34,7 +34,7 @@ export default function TermsPage() {
         </h1>
         <p className="mt-2 text-sm text-gray-500">Last updated: {LAST_UPDATED}</p>
 
-        <div className="prose prose-sm mt-6 max-w-none text-gray-700">
+        <div className="prose prose-sm mt-6 text-gray-700">
           <p>
             These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and
             use of {SITE_NAME} at {SITE_URL} (the &ldquo;Service&rdquo;). By using

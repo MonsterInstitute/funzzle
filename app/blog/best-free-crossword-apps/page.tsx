@@ -107,7 +107,7 @@ export default function Post() {
           {post.title}
         </h1>
 
-        <article className="prose prose-sm mt-6 max-w-none text-gray-700">
+        <article className="prose prose-sm mt-6 text-gray-700">
           <p>
             Crosswords are having a moment, but a lot of the best-known ones now
             hide behind subscriptions. The good news: plenty of genuinely free

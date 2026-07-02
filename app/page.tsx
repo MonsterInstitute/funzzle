@@ -270,7 +270,7 @@ export default async function HomePage() {
         {/* About Funzzle (SEO content) */}
         <section className="mx-auto max-w-3xl px-4 py-14">
           <h2 className="mb-4 text-2xl font-bold text-[#111827]">About Funzzle</h2>
-          <div className="prose prose-sm max-w-none text-gray-700">
+          <div className="prose prose-sm text-gray-700">
             <p>
               Funzzle is a free home for the daily brain games people love — with
               no paywall, no subscription, and no account required. In 2025 many

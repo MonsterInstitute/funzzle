@@ -31,7 +31,7 @@ export default function AboutPage() {
           About {SITE_NAME}
         </h1>
 
-        <div className="prose prose-sm mt-6 max-w-none text-gray-700">
+        <div className="prose prose-sm mt-6 text-gray-700">
           <p>
             {SITE_NAME} is a free daily puzzle site. We build clean, fast,
             no-nonsense versions of the word and logic games people love to play

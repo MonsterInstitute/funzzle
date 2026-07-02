@@ -45,7 +45,7 @@ export default function FreeAlternativePage() {
           Free NYT Games Alternative — No Paywall
         </h1>
 
-        <div className="prose prose-sm mt-4 max-w-none text-gray-700">
+        <div className="prose prose-sm mt-4 text-gray-700">
           <p>
             In 2025 the best-loved word games — Wordle, the Mini Crossword,
             Connections, and Spelling Bee — sit behind the New York Times Games
@@ -86,7 +86,7 @@ export default function FreeAlternativePage() {
 
         <AdSlot slot="rectangle" className="my-10" />
 
-        <div className="prose prose-sm max-w-none text-gray-700">
+        <div className="prose prose-sm text-gray-700">
           <h2 className="text-xl font-bold text-[#111827]">
             What you get with Funzzle
           </h2>

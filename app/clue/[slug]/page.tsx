@@ -71,7 +71,7 @@ export default async function CluePage({
       <AdSlot slot="leaderboard" className="py-4" />
       <AdSlot slot="mobile-banner" className="py-3" />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-[65ch] flex-1 px-4 py-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-[#16a34a]">

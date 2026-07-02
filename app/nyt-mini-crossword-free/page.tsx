@@ -47,7 +47,7 @@ export default async function MiniFreePage() {
           Free NYT Mini Crossword — Play Online Daily
         </h1>
 
-        <div className="prose prose-sm mt-4 max-w-none text-gray-700">
+        <div className="prose prose-sm mt-4 text-gray-700">
           <p>
             The Mini Crossword is the perfect coffee-break puzzle: a compact 5×5
             grid you can usually finish in about a minute. Funzzle gives you a
@@ -74,7 +74,7 @@ export default async function MiniFreePage() {
 
         <AdSlot slot="rectangle" className="my-10" />
 
-        <div className="prose prose-sm max-w-none text-gray-700">
+        <div className="prose prose-sm text-gray-700">
           <h2 className="text-xl font-bold text-[#111827]">
             Why play the Mini on Funzzle?
           </h2>

@@ -51,7 +51,7 @@ export default function Post() {
           {post.title}
         </h1>
 
-        <article className="prose prose-sm mt-6 max-w-none text-gray-700">
+        <article className="prose prose-sm mt-6 text-gray-700">
           <p>
             The New York Times Games app is the default home for daily puzzles —
             Wordle, the Mini and full Crossword, Connections, Spelling Bee,

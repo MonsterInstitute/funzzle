@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         </h1>
         <p className="mt-2 text-sm text-gray-500">Last updated: {LAST_UPDATED}</p>
 
-        <div className="prose prose-sm mt-6 max-w-none text-gray-700">
+        <div className="prose prose-sm mt-6 text-gray-700">
           <p>
             This Privacy Policy explains how {SITE_NAME} (&ldquo;we,&rdquo;
             &ldquo;us,&rdquo; or &ldquo;our&rdquo;), operator of {SITE_URL},

@@ -48,7 +48,7 @@ export default function Post() {
           {post.title}
         </h1>
 
-        <article className="prose prose-sm mt-6 max-w-none text-gray-700">
+        <article className="prose prose-sm mt-6 text-gray-700">
           <p>
             The Mini Crossword is small, but shaving seconds off your solve is
             genuinely satisfying — and surprisingly learnable. The grid is only

@@ -89,7 +89,7 @@ export default async function WordleAnswerPage() {
         <AdSlot slot="rectangle" className="my-10" />
 
         {/* SEO content */}
-        <section className="prose prose-sm mt-4 max-w-none text-gray-700">
+        <section className="prose prose-sm mt-4 text-gray-700">
           <h2 className="text-xl font-bold text-[#111827]">
             How to Play Wordle
           </h2>

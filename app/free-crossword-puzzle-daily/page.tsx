@@ -50,7 +50,7 @@ export default async function FreeCrosswordDailyPage() {
           Free Daily Crossword Puzzle — No Subscription
         </h1>
 
-        <div className="prose prose-sm mt-4 max-w-none text-gray-700">
+        <div className="prose prose-sm mt-4 text-gray-700">
           <p>
             A daily crossword is one of the healthiest little habits you can
             keep: a few minutes of focused wordplay that flexes your vocabulary
@@ -77,7 +77,7 @@ export default async function FreeCrosswordDailyPage() {
 
         <AdSlot slot="rectangle" className="my-10" />
 
-        <div className="prose prose-sm max-w-none text-gray-700">
+        <div className="prose prose-sm text-gray-700">
           <h2 className="text-xl font-bold text-[#111827]">
             How our free crossword works
           </h2>

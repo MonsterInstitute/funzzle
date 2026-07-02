@@ -45,7 +45,7 @@ export default function WordleFreePage() {
           Free Unlimited Wordle — Play Anytime
         </h1>
 
-        <div className="prose prose-sm mt-4 max-w-none text-gray-700">
+        <div className="prose prose-sm mt-4 text-gray-700">
           <p>
             Wordle is the five-letter guessing game that took over the world:
             six tries to find the hidden word, with color hints after every
@@ -75,7 +75,7 @@ export default function WordleFreePage() {
 
         <AdSlot slot="rectangle" className="my-10" />
 
-        <div className="prose prose-sm max-w-none text-gray-700">
+        <div className="prose prose-sm text-gray-700">
           <h2 className="text-xl font-bold text-[#111827]">
             Tips to win more often
           </h2>
