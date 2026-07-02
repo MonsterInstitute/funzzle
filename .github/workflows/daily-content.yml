@@ -2,8 +2,8 @@ name: Daily Content
 
 on:
   schedule:
-    # 06:00 UTC every day.
-    - cron: "0 6 * * *"
+    # 07:15 UTC every day = 3:15 AM ET, just after NYT publishes at 3 AM ET.
+    - cron: "15 7 * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -27,6 +27,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # NYT-S cookie from a free nytimes.com account — required to fetch the
+          # real NYT Mini. Without it the Mini is skipped (Wordle still runs).
+          NYT_S: ${{ secrets.NYT_S }}
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: node scripts/generate-daily-content.mjs
 
