@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { gameColor } from "@/lib/gameColors";
 
 const ROWS = 6;
 const COLS = 5;
@@ -66,6 +67,7 @@ export default function WordleGame({
   answer: string;
   date: string;
 }) {
+  const c = gameColor("wordle");
   const solution = answer.toUpperCase();
   const [guesses, setGuesses] = useState<string[]>([]);
   const [current, setCurrent] = useState("");
@@ -248,7 +250,10 @@ export default function WordleGame({
                 </h2>
                 <p className="mt-2 text-gray-600">
                   The word was{" "}
-                  <span className="font-bold uppercase text-[#16a34a]">
+                  <span
+                    className="font-bold uppercase"
+                    style={{ color: c.text }}
+                  >
                     {solution}
                   </span>
                   .
@@ -263,7 +268,8 @@ export default function WordleGame({
             <button
               type="button"
               onClick={share}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               {copied ? "Copied to clipboard!" : "Share"}
             </button>

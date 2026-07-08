@@ -8,6 +8,9 @@ import {
   usedLetters,
   isSolved,
 } from "@/lib/letterBoxed";
+import { gameColor } from "@/lib/gameColors";
+
+const c = gameColor("letter-boxed");
 
 export default function LetterBoxedGame({
   puzzle,
@@ -77,10 +80,13 @@ export default function LetterBoxedGame({
       type="button"
       onClick={() => type(letter)}
       className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
-        used.has(letter)
-          ? "bg-[#16a34a] text-white"
-          : "border-2 border-[#111827] bg-white text-[#111827]"
+        used.has(letter) ? "" : "border-2 border-[#111827] bg-white text-[#111827]"
       }`}
+      style={
+        used.has(letter)
+          ? { backgroundColor: c.primary, color: c.onPrimary }
+          : undefined
+      }
     >
       {letter}
     </button>
@@ -139,7 +145,8 @@ export default function LetterBoxedGame({
         <button
           type="button"
           onClick={submit}
-          className="rounded-full bg-[#16a34a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#15803d]"
+          className="rounded-full px-4 py-2 text-sm font-semibold transition-colors hover:brightness-95"
+          style={{ backgroundColor: c.primary, color: c.onPrimary }}
         >
           Enter
         </button>
@@ -168,7 +175,8 @@ export default function LetterBoxedGame({
             <button
               type="button"
               onClick={restart}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               Play again
             </button>

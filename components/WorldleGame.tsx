@@ -7,6 +7,9 @@ import {
   directionArrow,
   proximityPct,
 } from "@/lib/worldle";
+import { gameColor } from "@/lib/gameColors";
+
+const c = gameColor("worldle");
 
 interface GuessCountry {
   name: string;
@@ -115,7 +118,9 @@ export default function WorldleGame({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && guess()}
             placeholder="Guess a country"
-            className="flex-1 rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm focus:border-[#16a34a] focus:outline-none"
+            className="flex-1 rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm focus:outline-none"
+            onFocus={(e) => (e.currentTarget.style.borderColor = c.primary)}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
           />
           <datalist id="country-list">
             {countries.map((c) => (
@@ -125,7 +130,8 @@ export default function WorldleGame({
           <button
             type="button"
             onClick={guess}
-            className="rounded-lg bg-[#16a34a] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#15803d]"
+            className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:brightness-95"
+            style={{ backgroundColor: c.primary, color: c.onPrimary }}
           >
             Guess
           </button>
@@ -141,15 +147,18 @@ export default function WorldleGame({
         {guesses.map((g, i) => (
           <div
             key={i}
-            className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
-              g.correct ? "border-[#16a34a] bg-green-50" : "border-[#e5e7eb]"
-            }`}
+            className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+            style={
+              g.correct
+                ? { borderColor: c.primary, backgroundColor: c.tint }
+                : { borderColor: "#e5e7eb" }
+            }
           >
             <span className="font-semibold text-[#111827]">{g.name}</span>
             <span className="flex items-center gap-3 text-gray-600">
               {!g.correct && <span>{g.km.toLocaleString()} km</span>}
               <span>{g.arrow}</span>
-              <span className="font-medium text-[#16a34a]">{g.pct}%</span>
+              <span className="font-medium" style={{ color: c.text }}>{g.pct}%</span>
             </span>
           </div>
         ))}
@@ -162,12 +171,13 @@ export default function WorldleGame({
               {won ? "🎉 Correct!" : "Out of guesses"}
             </h2>
             <p className="mt-2 text-gray-600">
-              The country was <span className="font-bold text-[#16a34a]">{answer.name}</span>.
+              The country was <span className="font-bold" style={{ color: c.text }}>{answer.name}</span>.
             </p>
             <button
               type="button"
               onClick={share}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               {copied ? "Copied to clipboard!" : "Share"}
             </button>

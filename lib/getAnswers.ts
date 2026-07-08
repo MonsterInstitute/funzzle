@@ -2,7 +2,7 @@ import { createServiceSupabase } from "./supabase";
 import { DAILY_CONTENT } from "./content/dailyAnswers";
 import { getLocalWordle } from "./content/wordleAnswers";
 
-export type AnswerType = "nyt-mini" | "nyt-daily" | "wordle";
+export type AnswerType = "nyt-mini" | "nyt-daily" | "wordle" | "connections";
 
 export interface CrosswordClue {
   number: number;
@@ -20,6 +20,19 @@ export interface WordleAnswerData {
   answer: string;
   hint_first_letter: string;
   hint_vowels: number;
+}
+
+export interface ConnectionsGroup {
+  title: string;
+  color: "yellow" | "green" | "blue" | "purple" | null;
+  level: number;
+  words: string[];
+  note?: string;
+}
+
+export interface ConnectionsAnswerData {
+  groups: ConnectionsGroup[];
+  editor?: string | null;
 }
 
 export interface AnswerRow<T = unknown> {

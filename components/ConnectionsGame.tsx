@@ -10,6 +10,9 @@ import {
   seededShuffle,
   seedFromDate,
 } from "@/lib/connections";
+import { gameColor } from "@/lib/gameColors";
+
+const c = gameColor("connections");
 
 const MAX_MISTAKES = 4;
 
@@ -232,7 +235,8 @@ export default function ConnectionsGame({
             type="button"
             onClick={submit}
             disabled={selected.length !== 4}
-            className="rounded-full bg-[#16a34a] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#15803d] disabled:opacity-40"
+            className="rounded-full px-4 py-2 text-sm font-semibold transition-colors hover:brightness-95 disabled:opacity-40"
+            style={{ backgroundColor: c.primary, color: c.onPrimary }}
           >
             Submit
           </button>
@@ -263,13 +267,16 @@ export default function ConnectionsGame({
             <button
               type="button"
               onClick={share}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               {copied ? "Copied to clipboard!" : "Share"}
             </button>
             <a
               href="/play/wordle"
-              className="mt-2 block w-full rounded-lg border border-[#e5e7eb] px-6 py-2 font-semibold text-[#111827] transition-colors hover:border-[#16a34a]"
+              className="mt-2 block w-full rounded-lg border border-[#e5e7eb] px-6 py-2 font-semibold text-[#111827] transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = c.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
             >
               Play Wordle →
             </a>

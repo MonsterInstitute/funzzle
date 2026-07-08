@@ -9,6 +9,9 @@ import {
   lineCells,
   matchPlacement,
 } from "@/lib/strands";
+import { gameColor } from "@/lib/gameColors";
+
+const c = gameColor("strands");
 
 const MAX_HINTS = 3;
 const key = (r: number, c: number) => `${r}-${c}`;
@@ -91,7 +94,7 @@ export default function StrandsGame({
       <div className="mb-1 text-center text-xs font-semibold uppercase tracking-widest text-gray-400">
         Today&apos;s theme
       </div>
-      <h2 className="mb-4 text-center text-xl font-bold text-[#16a34a]">
+      <h2 className="mb-4 text-center text-xl font-bold" style={{ color: c.text }}>
         {puzzle.theme}
       </h2>
 
@@ -163,7 +166,8 @@ export default function StrandsGame({
             </p>
             <a
               href="/play/wordle"
-              className="mt-4 block w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 block w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               Play Wordle →
             </a>

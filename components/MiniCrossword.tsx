@@ -14,6 +14,9 @@ import {
   type MiniPuzzle,
   type WordEntry,
 } from "@/lib/miniCrossword";
+import { gameColor } from "@/lib/gameColors";
+
+const c = gameColor("mini");
 
 const KEY_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -322,17 +325,24 @@ export default function MiniCrossword({
             type="button"
             onClick={() => setChecking((v) => !v)}
             className={`rounded-md border px-3 py-1 font-medium transition-colors ${
-              checking
-                ? "border-[#16a34a] text-[#16a34a]"
-                : "border-[#e5e7eb] text-[#111827] hover:border-[#16a34a]"
+              checking ? "" : "border-[#e5e7eb] text-[#111827]"
             }`}
+            style={checking ? { borderColor: c.primary, color: c.text } : undefined}
+            onMouseEnter={(e) => {
+              if (!checking) e.currentTarget.style.borderColor = c.primary;
+            }}
+            onMouseLeave={(e) => {
+              if (!checking) e.currentTarget.style.borderColor = "#e5e7eb";
+            }}
           >
             Check
           </button>
           <button
             type="button"
             onClick={reveal}
-            className="rounded-md border border-[#e5e7eb] px-3 py-1 font-medium text-[#111827] transition-colors hover:border-[#16a34a]"
+            className="rounded-md border border-[#e5e7eb] px-3 py-1 font-medium text-[#111827] transition-colors"
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = c.primary)}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
           >
             Reveal
           </button>
@@ -347,19 +357,23 @@ export default function MiniCrossword({
       </div>
 
       {/* Active clue bar */}
-      <div className="mb-3 flex w-full max-w-[420px] items-stretch overflow-hidden rounded-lg bg-green-50">
+      <div
+        className="mb-3 flex w-full max-w-[420px] items-stretch overflow-hidden rounded-lg"
+        style={{ backgroundColor: c.tint }}
+      >
         <button
           type="button"
           onClick={() => nextWord(-1)}
           aria-label="Previous clue"
-          className="px-3 text-[#16a34a] hover:bg-green-100"
+          className="px-3 hover:bg-gray-200"
+          style={{ color: c.text }}
         >
           ‹
         </button>
         <p className="flex-1 px-2 py-2 text-center text-sm font-medium text-[#111827]">
           {activeWord ? (
             <>
-              <span className="font-bold text-[#16a34a]">
+              <span className="font-bold" style={{ color: c.text }}>
                 {activeWord.number}
                 {activeWord.direction === "across" ? "A" : "D"}
               </span>{" "}
@@ -373,7 +387,8 @@ export default function MiniCrossword({
           type="button"
           onClick={() => nextWord(1)}
           aria-label="Next clue"
-          className="px-3 text-[#16a34a] hover:bg-green-100"
+          className="px-3 hover:bg-gray-200"
+          style={{ color: c.text }}
         >
           ›
         </button>
@@ -493,7 +508,7 @@ export default function MiniCrossword({
               ) : (
                 <>
                   You finished the Mini in{" "}
-                  <span className="font-bold text-[#16a34a]">
+                  <span className="font-bold" style={{ color: c.text }}>
                     {fmtTime(seconds)}
                   </span>
                   .
@@ -504,7 +519,8 @@ export default function MiniCrossword({
             <button
               type="button"
               onClick={share}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               {copied ? "Copied to clipboard!" : "Share"}
             </button>
@@ -513,13 +529,17 @@ export default function MiniCrossword({
               <button
                 type="button"
                 onClick={reset}
-                className="flex-1 rounded-lg border border-[#e5e7eb] px-4 py-2 font-semibold text-[#111827] transition-colors hover:border-[#16a34a]"
+                className="flex-1 rounded-lg border border-[#e5e7eb] px-4 py-2 font-semibold text-[#111827] transition-colors"
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = c.primary)}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
               >
                 Play again
               </button>
               <a
                 href="/play/wordle"
-                className="flex-1 rounded-lg border border-[#e5e7eb] px-4 py-2 font-semibold text-[#111827] transition-colors hover:border-[#16a34a]"
+                className="flex-1 rounded-lg border border-[#e5e7eb] px-4 py-2 font-semibold text-[#111827] transition-colors"
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = c.primary)}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
               >
                 Play Wordle →
               </a>
@@ -557,12 +577,11 @@ function ClueList({
                 type="button"
                 onClick={() => onSelect(w)}
                 className={`flex w-full gap-2 rounded px-2 py-1 text-left transition-colors ${
-                  isActive
-                    ? "bg-green-100 text-[#111827]"
-                    : "hover:bg-gray-100 text-gray-700"
+                  isActive ? "text-[#111827]" : "hover:bg-gray-100 text-gray-700"
                 }`}
+                style={isActive ? { backgroundColor: c.tint } : undefined}
               >
-                <span className="font-bold text-[#16a34a]">{w.number}</span>
+                <span className="font-bold" style={{ color: c.text }}>{w.number}</span>
                 <span>{w.clue}</span>
               </button>
             </li>

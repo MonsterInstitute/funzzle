@@ -1,29 +1,29 @@
 /**
- * Daily content generator — REAL answers edition.
+ * Daily content generator — REAL answers from PUBLIC sources.
  *
- * For today's date it:
- *   1. Fetches the REAL Wordle answer from NYT's free public endpoint.
- *   2. Fetches the REAL NYT Mini crossword (clues + answers) from NYT's
- *      official puzzle endpoint (requires a NYT-S cookie; see
- *      scripts/fetch-nyt-mini.mjs). If unavailable, the Mini is skipped for
- *      the day rather than fabricated.
- *   3. Uses the Claude API ONLY to write human explanations / analysis of the
- *      real answers — never to invent the answers themselves. If no
- *      ANTHROPIC_API_KEY is set, real answers are still stored (without the
- *      extra prose).
- *   4. Upserts the rows into Supabase, REPLACING any previously stored
- *      (possibly fake / AI-generated) rows for the same date+type.
- *   5. Triggers a Vercel redeploy via the deploy hook so static pages rebuild.
+ * For today's date it, for each of the three highest-traffic games
+ * (Wordle, Connections, NYT Mini):
+ *   1. Fetches the REAL answer from public sources (see fetch-public-answers.mjs)
+ *      — NYT's own free JSON for Wordle/Connections, public answer pages for the
+ *      Mini. Never fabricates: an un-fetchable game is a failure, not a guess.
+ *   2. Uses the Claude API ONLY to write human explanations / analysis around the
+ *      REAL answers — never to invent them. Explanations are optional (skipped if
+ *      no ANTHROPIC_API_KEY); the real answers are always stored.
+ *   3. Upserts the row into Supabase, REPLACING any previously stored row for the
+ *      same (date, type). Successful games are always written, even if others fail.
+ *   4. Triggers a Vercel redeploy via the deploy hook so static pages rebuild.
+ *
+ * FAILS LOUDLY: if ANY of the three games fails to fetch+write, the process exits
+ * non-zero AFTER writing the ones that succeeded — so a broken source turns the CI
+ * run red instead of passing as a silent partial success.
  *
  * Required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE
- * Real Mini:    NYT_S (or NYT_COOKIE)   — free nytimes.com account cookie
- * Explanations: ANTHROPIC_API_KEY       — optional but recommended
+ * Explanations: ANTHROPIC_API_KEY  (optional but recommended)
  * Optional:     VERCEL_DEPLOY_HOOK_URL, ANTHROPIC_MODEL
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import { fetchNytMini } from "./fetch-nyt-mini.mjs";
-import { fetchWordle } from "./fetch-wordle.mjs";
+import { fetchWordle, fetchConnections, fetchMini } from "./fetch-public-answers.mjs";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
@@ -32,18 +32,14 @@ const DEPLOY_HOOK = process.env.VERCEL_DEPLOY_HOOK_URL;
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
-  console.error(
-    "Missing required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE"
-  );
+  console.error("Missing required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE");
   process.exit(1);
 }
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false },
 });
-const anthropic = ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: ANTHROPIC_API_KEY })
-  : null;
+const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 
 /** Today's calendar day in UTC (YYYY-MM-DD). */
 function todayISO() {
@@ -71,17 +67,14 @@ async function askClaudeJson(prompt) {
   return extractJson(text);
 }
 
-/**
- * Ask Claude to explain the REAL mini answers. Returns { summary, clues }
- * where clues maps "<number><A|D>" -> explanation string. Answers are given
- * to the model as fixed facts; it only writes prose about them.
- */
+// ---------------------------------------------------------------------------
+// Explanations (Claude writes prose about the REAL answers; never invents them)
+// ---------------------------------------------------------------------------
+
 async function explainMini(puzzle) {
   if (!anthropic) return { summary: null, clues: {} };
   const list = (arr, dir) =>
-    arr
-      .map((c) => `${c.number}${dir}. ${c.clue} => ${c.answer}`)
-      .join("\n");
+    arr.map((c) => `${c.number}${dir}. ${c.clue} => ${c.answer}`).join("\n");
   const prompt = `These are the REAL, already-solved answers to today's NYT Mini crossword. Do NOT change any answer. Write short explanations of why each answer fits its clue.
 
 ACROSS
@@ -92,10 +85,7 @@ ${list(puzzle.down, "D")}
 Return ONLY JSON (no markdown, no fences):
 {
   "summary": "<one or two sentences summarizing today's mini and any theme>",
-  "clues": {
-    "1A": "<one concise sentence explaining why the answer fits the clue>",
-    "2D": "..."
-  }
+  "clues": { "1A": "<one concise sentence>", "2D": "..." }
 }
 Include one entry in "clues" for every clue above, keyed by number + A (across) or D (down). Keep each explanation factual and under 20 words.`;
   try {
@@ -107,7 +97,6 @@ Include one entry in "clues" for every clue above, keyed by number + A (across) 
   }
 }
 
-/** Ask Claude for a one-sentence summary of the REAL Wordle answer. */
 async function explainWordle(answer) {
   if (!anthropic) return null;
   const prompt = `Today's real Wordle answer is "${answer}". Do NOT change it. Return ONLY JSON (no markdown):
@@ -121,8 +110,88 @@ async function explainWordle(answer) {
   }
 }
 
+async function explainConnections(groups) {
+  if (!anthropic) return { summary: null, notes: {} };
+  const list = groups
+    .map((g) => `${g.color} — ${g.title}: ${g.words.join(", ")}`)
+    .join("\n");
+  const prompt = `These are today's REAL NYT Connections groups (already solved). Do NOT change any word or group. Write a short factual note for each group explaining the connection, plus a one-sentence overall summary.
+
+${list}
+
+Return ONLY JSON (no markdown):
+{"summary":"<one sentence>","notes":{"${groups[0].title}":"<one concise sentence, under 22 words>"}}
+Include one entry in "notes" for every group title above.`;
+  try {
+    const out = await askClaudeJson(prompt);
+    return { summary: out?.summary ?? null, notes: out?.notes ?? {} };
+  } catch (err) {
+    console.warn(`⚠️  Connections explanations skipped: ${err.message}`);
+    return { summary: null, notes: {} };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Row builders (fetch REAL data -> attach explanations -> DB row shape)
+// ---------------------------------------------------------------------------
+
+export async function buildWordleRow(date) {
+  const { answer_data, source } = await fetchWordle(date);
+  const summary = await explainWordle(answer_data.answer);
+  return { row: { publish_date: date, type: "wordle", answer_data, summary }, source };
+}
+
+export async function buildMiniRow(date) {
+  const { answer_data, source } = await fetchMini(date);
+  const { summary, clues } = await explainMini(answer_data);
+  const withExplanations = (arr, dir) =>
+    arr.map((c) => ({
+      number: c.number,
+      clue: c.clue,
+      answer: c.answer,
+      explanation: clues[`${c.number}${dir}`] ?? undefined,
+    }));
+  return {
+    row: {
+      publish_date: date,
+      type: "nyt-mini",
+      answer_data: {
+        across: withExplanations(answer_data.across, "A"),
+        down: withExplanations(answer_data.down, "D"),
+      },
+      summary,
+    },
+    source,
+  };
+}
+
+export async function buildConnectionsRow(date) {
+  const { answer_data, source } = await fetchConnections(date);
+  const { summary, notes } = await explainConnections(answer_data.groups);
+  const groups = answer_data.groups.map((g) => ({
+    ...g,
+    note: notes[g.title] ?? undefined,
+  }));
+  return {
+    row: {
+      publish_date: date,
+      type: "connections",
+      answer_data: { groups, editor: answer_data.editor ?? null },
+      summary,
+    },
+    source,
+  };
+}
+
+/** The three games this pipeline covers, in write order. */
+export const GAMES = [
+  { key: "wordle", label: "Wordle", build: buildWordleRow },
+  { key: "connections", label: "Connections", build: buildConnectionsRow },
+  { key: "nyt-mini", label: "NYT Mini", build: buildMiniRow },
+];
+
 /** Delete any existing row for (date,type) then insert the fresh one. */
-async function upsertAnswer(row) {
+export async function upsertAnswer(row) {
   const { error: delErr } = await supabase
     .from("answers")
     .delete()
@@ -133,92 +202,60 @@ async function upsertAnswer(row) {
   if (insErr) throw new Error(`insert ${row.type} failed: ${insErr.message}`);
 }
 
-async function buildWordleRow(date) {
-  const wordle = await fetchWordle(date);
-  const summary = await explainWordle(wordle.answer_data.answer);
-  return {
-    publish_date: date,
-    type: "wordle",
-    answer_data: wordle.answer_data,
-    summary,
-  };
-}
-
-async function buildMiniRow(date) {
-  const puzzle = await fetchNytMini(date);
-  const { summary, clues } = await explainMini(puzzle);
-  const withExplanations = (arr, dir) =>
-    arr.map((c) => ({
-      number: c.number,
-      clue: c.clue,
-      answer: c.answer,
-      explanation: clues[`${c.number}${dir}`] ?? undefined,
-    }));
-  return {
-    publish_date: date,
-    type: "nyt-mini",
-    answer_data: {
-      across: withExplanations(puzzle.across, "A"),
-      down: withExplanations(puzzle.down, "D"),
-    },
-    summary,
-  };
+/** One-line human-readable preview of a written row, for logs. */
+function previewRow(key, row) {
+  if (key === "wordle") return row.answer_data.answer;
+  if (key === "nyt-mini")
+    return row.answer_data.across.map((c) => c.answer).join(", ");
+  if (key === "connections")
+    return row.answer_data.groups.map((g) => g.title).join(" | ");
+  return "";
 }
 
 async function main() {
   const date = todayISO();
   console.log(`Generating REAL content for ${date} (explanations via ${MODEL})`);
   if (!anthropic) {
-    console.warn(
-      "⚠️  ANTHROPIC_API_KEY not set — storing real answers without explanations."
-    );
+    console.warn("⚠️  ANTHROPIC_API_KEY not set — storing real answers without explanations.");
   }
 
   let wrote = 0;
   const failures = [];
 
-  // Wordle — free, always available.
-  try {
-    const row = await buildWordleRow(date);
-    await upsertAnswer(row);
-    console.log(`✅ Wordle: ${row.answer_data.answer}`);
-    wrote++;
-  } catch (err) {
-    console.error(`❌ Wordle failed: ${err.message}`);
-    failures.push("wordle");
+  for (const game of GAMES) {
+    try {
+      const { row, source } = await game.build(date);
+      await upsertAnswer(row);
+      console.log(`✅ ${game.label} [${source}]: ${previewRow(game.key, row)}`);
+      wrote++;
+    } catch (err) {
+      console.error(`❌ ${game.label} failed: ${err.message}`);
+      failures.push(game.key);
+    }
   }
 
-  // NYT Mini — needs the NYT-S cookie.
-  try {
-    const row = await buildMiniRow(date);
-    const a = row.answer_data.across.map((c) => c.answer).join(", ");
-    console.log(`✅ NYT Mini across: ${a}`);
-    await upsertAnswer(row);
-    wrote++;
-  } catch (err) {
-    console.error(`❌ NYT Mini failed: ${err.message}`);
-    failures.push("nyt-mini");
-  }
+  console.log(`Wrote ${wrote}/${GAMES.length} answer row(s) for ${date}.`);
 
-  if (wrote === 0) {
-    throw new Error(`nothing written (failed: ${failures.join(", ")})`);
-  }
-  console.log(`Wrote ${wrote} answer row(s) for ${date}.`);
-
-  if (DEPLOY_HOOK) {
+  if (DEPLOY_HOOK && wrote > 0) {
     const res = await fetch(DEPLOY_HOOK, { method: "POST" });
     console.log(`Deploy hook triggered: ${res.status}`);
-  } else {
+  } else if (!DEPLOY_HOOK) {
     console.log("No VERCEL_DEPLOY_HOOK_URL set — skipping redeploy.");
   }
 
-  // Surface partial failure to CI without discarding the rows we did write.
+  // Fail loudly so a broken source turns the CI run RED (no silent green).
   if (failures.length) {
-    console.warn(`⚠️  Completed with partial failures: ${failures.join(", ")}`);
+    throw new Error(
+      `${failures.length} of ${GAMES.length} games failed: ${failures.join(", ")}`
+    );
   }
 }
 
-main().catch((err) => {
-  console.error("❌ generate-daily-content failed:", err.message);
-  process.exit(1);
-});
+// Only run the daily job when invoked directly as a CLI, so other scripts
+// (e.g. the backfill) can import the builders without triggering a full run.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error("❌ generate-daily-content failed:", err.message);
+    process.exit(1);
+  });
+}

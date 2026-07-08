@@ -7,6 +7,7 @@ import {
   scoreEquation,
   type CharState,
 } from "@/lib/nerdle";
+import { gameColor } from "@/lib/gameColors";
 
 const ROWS = 6;
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "+", "-", "*", "/", "="];
@@ -31,6 +32,7 @@ export default function NerdleGame({
   answer: string;
   date: string;
 }) {
+  const c = gameColor("nerdle");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [current, setCurrent] = useState("");
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
@@ -165,7 +167,8 @@ export default function NerdleGame({
         <button
           type="button"
           onClick={() => press("Enter")}
-          className="col-span-4 flex h-11 items-center justify-center rounded bg-[#16a34a] text-sm font-bold text-white"
+          className="col-span-4 flex h-11 items-center justify-center rounded text-sm font-bold transition-colors hover:brightness-95"
+          style={{ backgroundColor: c.primary, color: c.onPrimary }}
         >
           Enter
         </button>
@@ -186,12 +189,13 @@ export default function NerdleGame({
             </h2>
             <p className="mt-2 text-gray-600">
               The equation was{" "}
-              <span className="font-mono font-bold text-[#16a34a]">{answer}</span>.
+              <span className="font-mono font-bold" style={{ color: c.text }}>{answer}</span>.
             </p>
             <button
               type="button"
               onClick={share}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               {copied ? "Copied to clipboard!" : "Share"}
             </button>

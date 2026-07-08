@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QUORDLE_POOL, scoreGuess, type LetterState } from "@/lib/quordle";
+import { gameColor } from "@/lib/gameColors";
+
+const c = gameColor("quordle");
 
 const ATTEMPTS = 9;
 const KEY_ROWS = [
@@ -222,14 +225,15 @@ export default function QuordleGame({
                 : "The words were:"}
             </p>
             {!allSolved && (
-              <p className="mt-1 font-bold uppercase text-[#16a34a]">
+              <p className="mt-1 font-bold uppercase" style={{ color: c.text }}>
                 {answers.join(" · ")}
               </p>
             )}
             <button
               type="button"
               onClick={startPractice}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               New practice game
             </button>
@@ -237,7 +241,9 @@ export default function QuordleGame({
               <button
                 type="button"
                 onClick={backToDaily}
-                className="mt-2 block w-full rounded-lg border border-[#e5e7eb] px-6 py-2 font-semibold text-[#111827] hover:border-[#16a34a]"
+                className="mt-2 block w-full rounded-lg border border-[#e5e7eb] px-6 py-2 font-semibold text-[#111827]"
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = c.primary)}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
               >
                 Back to daily
               </button>
@@ -250,7 +256,8 @@ export default function QuordleGame({
         <button
           type="button"
           onClick={practice ? backToDaily : startPractice}
-          className="mt-4 text-sm font-medium text-[#16a34a] hover:underline"
+          className="mt-4 text-sm font-medium hover:underline"
+          style={{ color: c.text }}
         >
           {practice ? "Back to daily puzzle" : "Practice mode →"}
         </button>

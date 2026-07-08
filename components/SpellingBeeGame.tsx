@@ -10,6 +10,9 @@ import {
   maxScoreFor,
   rankForScore,
 } from "@/lib/spellingBee";
+import { gameColor } from "@/lib/gameColors";
+
+const c = gameColor("spelling-bee");
 
 export default function SpellingBeeGame({
   puzzle,
@@ -102,9 +105,12 @@ export default function SpellingBeeGame({
       onClick={() => type(letter)}
       aria-label={letter}
       className={`flex h-16 w-16 items-center justify-center text-2xl font-bold uppercase transition-transform active:scale-95 sm:h-[72px] sm:w-[72px] ${
-        center ? "bg-[#16a34a] text-white" : "bg-gray-200 text-[#111827] hover:bg-gray-300"
+        center ? "" : "bg-gray-200 text-[#111827] hover:bg-gray-300"
       }`}
-      style={{ clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)" }}
+      style={{
+        clipPath: "polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)",
+        ...(center ? { backgroundColor: c.primary, color: c.onPrimary } : {}),
+      }}
     >
       {letter}
     </button>
@@ -121,15 +127,18 @@ export default function SpellingBeeGame({
       {/* Rank + score */}
       <div className="mb-4 w-full max-w-md">
         <div className="flex items-center justify-between text-sm">
-          <span className="font-bold text-[#16a34a]">{rank.name}</span>
+          <span className="font-bold" style={{ color: c.text }}>{rank.name}</span>
           <span className="text-gray-500">
             {score} pts{isGenius ? "" : ` · Genius at ${geniusScore}`}
           </span>
         </div>
         <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
           <div
-            className="h-full bg-[#16a34a] transition-all"
-            style={{ width: `${Math.min(100, Math.round((score / Math.max(1, maxScore)) * 100))}%` }}
+            className="h-full transition-all"
+            style={{
+              backgroundColor: c.primary,
+              width: `${Math.min(100, Math.round((score / Math.max(1, maxScore)) * 100))}%`,
+            }}
           />
         </div>
       </div>
@@ -137,7 +146,11 @@ export default function SpellingBeeGame({
       {/* Current word */}
       <div className="mb-4 h-8 text-2xl font-bold tracking-wider">
         {typed.split("").map((ch, i) => (
-          <span key={i} className={ch === puzzle.center ? "text-[#16a34a]" : "text-[#111827]"}>
+          <span
+            key={i}
+            className={ch === puzzle.center ? "" : "text-[#111827]"}
+            style={ch === puzzle.center ? { color: c.text } : undefined}
+          >
             {ch}
           </span>
         ))}
@@ -181,7 +194,8 @@ export default function SpellingBeeGame({
         <button
           type="button"
           onClick={submit}
-          className="rounded-full bg-[#16a34a] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#15803d]"
+          className="rounded-full px-5 py-2 text-sm font-semibold transition-colors hover:brightness-95"
+          style={{ backgroundColor: c.primary, color: c.onPrimary }}
         >
           Enter
         </button>
@@ -197,7 +211,8 @@ export default function SpellingBeeGame({
           {found.map((w) => (
             <span
               key={w}
-              className={isPangram(w, puzzle) ? "font-bold text-[#16a34a]" : ""}
+              className={isPangram(w, puzzle) ? "font-bold" : ""}
+              style={isPangram(w, puzzle) ? { color: c.text } : undefined}
             >
               {w.charAt(0) + w.slice(1).toLowerCase()}
             </span>
@@ -217,13 +232,16 @@ export default function SpellingBeeGame({
             <button
               type="button"
               onClick={() => setWonShown(false)}
-              className="mt-4 w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
+              className="mt-4 w-full rounded-lg px-6 py-3 font-semibold transition-colors hover:brightness-95"
+              style={{ backgroundColor: c.primary, color: c.onPrimary }}
             >
               Keep playing
             </button>
             <a
               href="/play/connections"
-              className="mt-2 block w-full rounded-lg border border-[#e5e7eb] px-6 py-2 font-semibold text-[#111827] transition-colors hover:border-[#16a34a]"
+              className="mt-2 block w-full rounded-lg border border-[#e5e7eb] px-6 py-2 font-semibold text-[#111827] transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = c.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
             >
               Play Connections →
             </a>

@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local NYT auth capture (Copy-as-cURL) — never commit
+.nyt_curl.txt
+
 # vercel
 .vercel
 

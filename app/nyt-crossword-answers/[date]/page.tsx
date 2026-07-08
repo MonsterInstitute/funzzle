@@ -39,7 +39,7 @@ export async function generateMetadata({
   const long = formatLongDate(date);
   return pageMetadata({
     title: `NYT Crossword Answers ${long}`,
-    description: `Complete answers for the NYT Mini and Daily crossword on ${long}. Every clue solved and explained.`,
+    description: `Complete answers for the NYT Mini crossword on ${long}. Every clue solved and explained.`,
     path: `/nyt-crossword-answers/${date}`,
     keywords: [
       `nyt crossword answers ${long}`,
@@ -61,9 +61,8 @@ export default async function CrosswordAnswersPage({
   const prev = shiftISODate(date, -1);
   const next = shiftISODate(date, 1);
 
-  const [mini, daily, clues] = await Promise.all([
+  const [mini, clues] = await Promise.all([
     getAnswer<CrosswordAnswerData>(date, "nyt-mini"),
-    getAnswer<CrosswordAnswerData>(date, "nyt-daily"),
     getCluesForDate(date, 3),
   ]);
 
@@ -139,11 +138,6 @@ export default async function CrosswordAnswersPage({
         )}
 
         <AdSlot slot="rectangle" className="my-10" />
-
-        <AnswerSection
-          title="NYT Daily Crossword Answers"
-          row={daily}
-        />
 
         {/* Explore individual clues */}
         {clues.length > 0 && (

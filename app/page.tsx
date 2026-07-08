@@ -9,6 +9,7 @@ import EmailCapture from "@/components/EmailCapture";
 import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
 import { todayISO, formatLongDate } from "@/lib/dates";
 import { pageMetadata, websiteJsonLd, faqJsonLd } from "@/lib/seo";
+import { gameColor, type GameKey } from "@/lib/gameColors";
 
 export const metadata: Metadata = pageMetadata({
   title: "Funzzle — Free NYT Games, No Paywall",
@@ -52,9 +53,10 @@ const FAQS = [
 
 export default async function HomePage() {
   const today = todayISO();
-  const [mini, wordle] = await Promise.all([
+  const [mini, wordle, connections] = await Promise.all([
     getAnswer(today, "nyt-mini"),
     getAnswer<WordleAnswerData>(today, "wordle"),
+    getAnswer(today, "connections"),
   ]);
 
   return (
@@ -95,10 +97,11 @@ export default async function HomePage() {
           <h2 className="mb-4 text-xl font-bold text-[#111827]">
             Today&apos;s Answers
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <AnswerStripCard
               title="NYT Mini Answers"
               href={`/nyt-crossword-answers/${today}`}
+              gameKey="mini"
               available={!!mini}
               detail={
                 mini
@@ -109,10 +112,22 @@ export default async function HomePage() {
             <AnswerStripCard
               title="Wordle Answer"
               href="/wordle-answer/today"
+              gameKey="wordle"
               available={!!wordle}
               detail={
                 wordle
                   ? `Revealed · ${formatLongDate(today)}`
+                  : "Coming soon — check back today"
+              }
+            />
+            <AnswerStripCard
+              title="Connections Answer"
+              href={`/connections-answers/${today}`}
+              gameKey="connections"
+              available={!!connections}
+              detail={
+                connections
+                  ? `Solved · ${formatLongDate(today)}`
                   : "Coming soon — check back today"
               }
             />
@@ -128,6 +143,7 @@ export default async function HomePage() {
               description="Free daily 5×5 crossword puzzle — no subscription, no account needed."
               emoji="🧩"
               href="/play/mini"
+              gameKey="mini"
               badgeText="FREE FOREVER"
             />
             <GameCard
@@ -135,6 +151,7 @@ export default async function HomePage() {
               description="Free unlimited Wordle — guess the 5-letter word in six tries, play as often as you like."
               emoji="🟩"
               href="/play/wordle"
+              gameKey="wordle"
               badgeText="FREE FOREVER"
             />
             <GameCard
@@ -142,6 +159,7 @@ export default async function HomePage() {
               description="Free daily Connections — sort 16 words into 4 hidden groups before you run out of tries."
               emoji="🔗"
               href="/play/connections"
+              gameKey="connections"
               badgeText="FREE FOREVER"
             />
             <GameCard
@@ -149,6 +167,7 @@ export default async function HomePage() {
               description="Free Spelling Bee — build words from seven letters and climb the ranks to Genius."
               emoji="🐝"
               href="/play/spelling-bee"
+              gameKey="spelling-bee"
               badgeText="FREE FOREVER"
             />
             <GameCard
@@ -156,6 +175,7 @@ export default async function HomePage() {
               description="Free daily Strands — a themed word search with a hidden spangram and three hints."
               emoji="🔤"
               href="/play/strands"
+              gameKey="strands"
               badgeText="FREE FOREVER"
             />
             <GameCard
@@ -163,13 +183,15 @@ export default async function HomePage() {
               description="Free Letter Boxed — chain words around the square using all 12 letters to win."
               emoji="🔲"
               href="/play/letter-boxed"
+              gameKey="letter-boxed"
               badgeText="FREE FOREVER"
             />
             <GameCard
               title="Quordle"
               description="Free Quordle — solve four Wordle puzzles at the same time in nine guesses."
-              emoji="🟩"
+              emoji="🟦"
               href="/play/quordle"
+              gameKey="quordle"
               badgeText="FREE FOREVER"
             />
             <GameCard
@@ -177,6 +199,7 @@ export default async function HomePage() {
               description="Free Worldle — guess the country from its silhouette using distance and direction hints."
               emoji="🌍"
               href="/play/worldle"
+              gameKey="worldle"
               badgeText="FREE FOREVER"
             />
             <GameCard
@@ -184,6 +207,7 @@ export default async function HomePage() {
               description="Free daily Nerdle — crack the hidden 8-character math equation in six tries."
               emoji="🔢"
               href="/play/nerdle"
+              gameKey="nerdle"
               badgeText="FREE FOREVER"
             />
           </div>
@@ -334,28 +358,34 @@ function AnswerStripCard({
   href,
   detail,
   available,
+  gameKey,
 }: {
   title: string;
   href: string;
   detail: string;
   available: boolean;
+  gameKey: GameKey;
 }) {
+  const c = gameColor(gameKey);
   return (
     <Link
       href={href}
-      className="group flex items-center justify-between rounded-xl border border-[#e5e7eb] bg-white p-5 transition-shadow hover:shadow-lg"
+      className="group flex items-center justify-between rounded-xl border bg-white p-5 transition-shadow hover:shadow-lg"
+      style={{ borderColor: c.tint, borderLeftWidth: 4, borderLeftColor: c.primary }}
     >
       <div>
         <p className="font-bold text-[#111827]">{title}</p>
         <p
-          className={`mt-1 text-sm ${
-            available ? "text-[#16a34a]" : "text-gray-400"
-          }`}
+          className="mt-1 text-sm"
+          style={{ color: available ? c.text : "#9ca3af" }}
         >
           {detail}
         </p>
       </div>
-      <span className="text-[#16a34a] transition-transform group-hover:translate-x-1">
+      <span
+        className="transition-transform group-hover:translate-x-1"
+        style={{ color: c.primary }}
+      >
         →
       </span>
     </Link>

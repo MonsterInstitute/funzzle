@@ -2,9 +2,15 @@ name: Daily Content
 
 on:
   schedule:
-    # 07:15 UTC every day = 3:15 AM ET, just after NYT publishes at 3 AM ET.
+    # 07:15 UTC every day. Wordle & Connections publish just after midnight ET;
+    # the Mini answer sources are updated well before this.
     - cron: "15 7 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      backfill_last:
+        description: "Backfill the last N days for all games (blank = normal single-day run)"
+        required: false
+        default: ""
 
 jobs:
   generate:
@@ -22,26 +28,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Normal daily run. generate-daily-content.mjs fetches Wordle, Connections
+      # and the NYT Mini from PUBLIC sources and EXITS NON-ZERO if any of the
+      # three fails — so a broken source turns this job RED instead of passing as
+      # a silent partial success.
       - name: Generate today's content
+        if: ${{ github.event.inputs.backfill_last == '' }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # NYT-S cookie from a free nytimes.com account — required to fetch the
-          # real NYT Mini. Without it the Mini is skipped (Wordle still runs).
-          NYT_S: ${{ secrets.NYT_S }}
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: node scripts/generate-daily-content.mjs
 
+      # Manual backfill (workflow_dispatch with backfill_last=N). Non-destructive:
+      # a game that can't be fetched for a day leaves any existing row untouched.
+      - name: Backfill last N days
+        if: ${{ github.event.inputs.backfill_last != '' }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          node scripts/backfill-answers.mjs --last=${{ github.event.inputs.backfill_last }}
+          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+            echo "Triggering redeploy after backfill…"
+            curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" && echo " ok"
+          fi
+
       - name: Generate Reddit posts (logged for manual posting)
-        if: always()
+        if: ${{ always() && github.event.inputs.backfill_last == '' }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
         run: node scripts/reddit-post.mjs
 
       - name: Generate tweet (logged for manual posting)
-        if: always()
+        if: ${{ always() && github.event.inputs.backfill_last == '' }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
