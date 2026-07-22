@@ -6,9 +6,9 @@
  *   1. Fetches the REAL answer from public sources (see fetch-public-answers.mjs)
  *      — NYT's own free JSON for Wordle/Connections, public answer pages for the
  *      Mini. Never fabricates: an un-fetchable game is a failure, not a guess.
- *   2. Uses the Claude API ONLY to write human explanations / analysis around the
+ *   2. Uses the DeepSeek API ONLY to write human explanations / analysis around the
  *      REAL answers — never to invent them. Explanations are optional (skipped if
- *      no ANTHROPIC_API_KEY); the real answers are always stored.
+ *      no DEEPSEEK_API_KEY); the real answers are always stored.
  *   3. Upserts the row into Supabase, REPLACING any previously stored row for the
  *      same (date, type). Successful games are always written, even if others fail.
  *   4. Triggers a Vercel redeploy via the deploy hook so static pages rebuild.
@@ -18,18 +18,17 @@
  * run red instead of passing as a silent partial success.
  *
  * Required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE
- * Explanations: ANTHROPIC_API_KEY  (optional but recommended)
- * Optional:     VERCEL_DEPLOY_HOOK_URL, ANTHROPIC_MODEL
+ * Explanations: DEEPSEEK_API_KEY  (optional but recommended)
+ * Optional:     VERCEL_DEPLOY_HOOK_URL, DEEPSEEK_MODEL
  */
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { fetchWordle, fetchConnections, fetchMini } from "./fetch-public-answers.mjs";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEPLOY_HOOK = process.env.VERCEL_DEPLOY_HOOK_URL;
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
   console.error("Missing required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE");
@@ -39,7 +38,7 @@ if (!SUPABASE_URL || !SERVICE_ROLE) {
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false },
 });
-const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
+const deepseek = DEEPSEEK_API_KEY ? true : false;
 
 /** Today's calendar day in UTC (YYYY-MM-DD). */
 function todayISO() {
@@ -54,25 +53,34 @@ function extractJson(text) {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
-async function askClaudeJson(prompt) {
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 2048,
-    messages: [{ role: "user", content: prompt }],
+async function askDeepSeekJson(prompt) {
+  const res = await fetch("https://api.deepseek.com/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 2048,
+      messages: [{ role: "user", content: prompt }],
+    }),
   });
-  const text = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("");
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`${res.status} ${body}`);
+  }
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content ?? "";
   return extractJson(text);
 }
 
 // ---------------------------------------------------------------------------
-// Explanations (Claude writes prose about the REAL answers; never invents them)
+// Explanations (DeepSeek writes prose about the REAL answers; never invents them)
 // ---------------------------------------------------------------------------
 
 async function explainMini(puzzle) {
-  if (!anthropic) return { summary: null, clues: {} };
+  if (!deepseek) return { summary: null, clues: {} };
   const list = (arr, dir) =>
     arr.map((c) => `${c.number}${dir}. ${c.clue} => ${c.answer}`).join("\n");
   const prompt = `These are the REAL, already-solved answers to today's NYT Mini crossword. Do NOT change any answer. Write short explanations of why each answer fits its clue.
@@ -89,7 +97,7 @@ Return ONLY JSON (no markdown, no fences):
 }
 Include one entry in "clues" for every clue above, keyed by number + A (across) or D (down). Keep each explanation factual and under 20 words.`;
   try {
-    const out = await askClaudeJson(prompt);
+    const out = await askDeepSeekJson(prompt);
     return { summary: out?.summary ?? null, clues: out?.clues ?? {} };
   } catch (err) {
     console.warn(`⚠️  Mini explanations skipped: ${err.message}`);
@@ -98,11 +106,11 @@ Include one entry in "clues" for every clue above, keyed by number + A (across) 
 }
 
 async function explainWordle(answer) {
-  if (!anthropic) return null;
+  if (!deepseek) return null;
   const prompt = `Today's real Wordle answer is "${answer}". Do NOT change it. Return ONLY JSON (no markdown):
 {"summary": "<one factual sentence about the word ${answer} — its meaning and what makes it easy or tricky to guess>"}`;
   try {
-    const out = await askClaudeJson(prompt);
+    const out = await askDeepSeekJson(prompt);
     return typeof out?.summary === "string" ? out.summary : null;
   } catch (err) {
     console.warn(`⚠️  Wordle summary skipped: ${err.message}`);
@@ -111,7 +119,7 @@ async function explainWordle(answer) {
 }
 
 async function explainConnections(groups) {
-  if (!anthropic) return { summary: null, notes: {} };
+  if (!deepseek) return { summary: null, notes: {} };
   const list = groups
     .map((g) => `${g.color} — ${g.title}: ${g.words.join(", ")}`)
     .join("\n");
@@ -123,7 +131,7 @@ Return ONLY JSON (no markdown):
 {"summary":"<one sentence>","notes":{"${groups[0].title}":"<one concise sentence, under 22 words>"}}
 Include one entry in "notes" for every group title above.`;
   try {
-    const out = await askClaudeJson(prompt);
+    const out = await askDeepSeekJson(prompt);
     return { summary: out?.summary ?? null, notes: out?.notes ?? {} };
   } catch (err) {
     console.warn(`⚠️  Connections explanations skipped: ${err.message}`);
@@ -215,8 +223,8 @@ function previewRow(key, row) {
 async function main() {
   const date = todayISO();
   console.log(`Generating REAL content for ${date} (explanations via ${MODEL})`);
-  if (!anthropic) {
-    console.warn("⚠️  ANTHROPIC_API_KEY not set — storing real answers without explanations.");
+  if (!deepseek) {
+    console.warn("⚠️  DEEPSEEK_API_KEY not set — storing real answers without explanations.");
   }
 
   let wrote = 0;

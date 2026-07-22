@@ -1,6 +1,6 @@
 /**
  * Backfill REAL answers for a range of past dates by reusing the exact same
- * builders the daily job uses (fetch real public answer -> Claude explanations
+ * builders the daily job uses (fetch real public answer -> DeepSeek explanations
  * -> upsert). Covers Wordle, Connections and the NYT Mini.
  *
  * NON-DESTRUCTIVE: a (date, game) that fails to fetch is reported and SKIPPED —
@@ -13,7 +13,7 @@
  *   node --env-file=.env.local scripts/backfill-answers.mjs --last=8 --games=wordle,connections
  *
  * Env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE (required),
- *      ANTHROPIC_API_KEY (optional, for explanations).
+ *      DEEPSEEK_API_KEY (optional, for explanations).
  */
 import { GAMES, upsertAnswer } from "./generate-daily-content.mjs";
 
