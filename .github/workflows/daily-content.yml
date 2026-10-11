@@ -15,6 +15,9 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write # keepalive step below re-enables this workflow
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,3 +81,13 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
         run: node scripts/twitter-post.mjs
+
+      # GitHub disables scheduled workflows in a public repo after 60 days with
+      # no repository activity — that silently stopped this job on 2026-09-21.
+      # Re-enabling it through the API after every scheduled run keeps the
+      # schedule alive without making a commit (a commit would mean a deploy).
+      - name: Keep the schedule alive
+        if: ${{ always() && github.event_name == 'schedule' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/daily-content.yml/enable"
