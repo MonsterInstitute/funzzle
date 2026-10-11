@@ -9,10 +9,10 @@
  *   node --env-file=.env.local scripts/revalidate-site.mjs 2026-07-01 ...  # + specific dates
  *
  * Env: REVALIDATE_SECRET (required; same value as in Vercel),
- *      SITE_URL (optional, default https://funzzle.com).
+ *      SITE_URL (optional, default https://www.funzzle.com).
  */
 
-const SITE_URL = (process.env.SITE_URL || "https://funzzle.com").replace(/\/$/, "");
+const SITE_URL = (process.env.SITE_URL || "https://www.funzzle.com").replace(/\/$/, "");
 
 /** POST the dates to /api/revalidate. Returns true on success; never throws. */
 export async function revalidateSite(dates = []) {
