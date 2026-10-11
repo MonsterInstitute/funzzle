@@ -38,6 +38,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          # Refreshes today's pages on demand (app/api/revalidate). The deploy
+          # hook is only a fallback if that request fails.
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          SITE_URL: https://funzzle.com
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: node scripts/generate-daily-content.mjs
 
@@ -49,11 +53,16 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          SITE_URL: https://funzzle.com
         run: |
           node scripts/backfill-answers.mjs --last=${{ github.event.inputs.backfill_last }}
-          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
-            echo "Triggering redeploy after backfill…"
-            curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" && echo " ok"
+          # Refresh the backfilled answer pages on demand; redeploy only if that fails.
+          if ! node scripts/revalidate-site.mjs --last=${{ github.event.inputs.backfill_last }}; then
+            if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+              echo "Revalidation failed — triggering redeploy after backfill…"
+              curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" && echo " ok"
+            fi
           fi
 
       - name: Generate Reddit posts (logged for manual posting)

@@ -16,6 +16,7 @@ import { answerIntro, answerFacts, SOLVING_TIPS } from "@/lib/answerContent";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import {
   isValidISODate,
+  isServedAnswerDate,
   formatLongDate,
   shiftISODate,
   recentDates,
@@ -23,7 +24,9 @@ import {
 
 type Params = { date: string };
 
-export const revalidate = 3600;
+// A day's answers never change once written; new rows are picked up through
+// on-demand revalidation (app/api/revalidate), not a timer.
+export const revalidate = false;
 
 export async function generateStaticParams() {
   return recentDates(30).map((date) => ({ date }));
@@ -55,7 +58,7 @@ export default async function CrosswordAnswersPage({
   params: Promise<Params>;
 }) {
   const { date } = await params;
-  if (!isValidISODate(date)) notFound();
+  if (!isServedAnswerDate(date)) notFound();
 
   const long = formatLongDate(date);
   const prev = shiftISODate(date, -1);

@@ -23,7 +23,9 @@ export const metadata: Metadata = pageMetadata({
   ],
 });
 
-export const revalidate = 3600;
+// Shows "today": refreshed on demand at the UTC day change and after the daily
+// content run (lib/revalidation.ts); the 6h window is only a fallback.
+export const revalidate = 21600;
 
 export default function WordleFreePage() {
   const today = todayISO();

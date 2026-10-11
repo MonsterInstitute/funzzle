@@ -9,7 +9,8 @@ import { WORDS } from "@/lib/content/words";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 
 type Params = { slug: string };
-export const revalidate = 604800;
+// Bundled content (lib/content) — static until the next deploy.
+export const revalidate = false;
 
 export function generateStaticParams() {
   return WORDS.map((w) => ({ slug: w.slug }));

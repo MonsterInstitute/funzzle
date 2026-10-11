@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
+  "functions": {
+    "app/**/*": { "maxDuration": 30 }
+  },
+  "crons": [{ "path": "/api/revalidate", "schedule": "1 0 * * *" }]
+}

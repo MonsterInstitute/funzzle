@@ -9,7 +9,9 @@ import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { todayISO, formatLongDate } from "@/lib/dates";
 
-export const revalidate = 3600;
+// Shows "today": refreshed on demand at the UTC day change and after the daily
+// content run (lib/revalidation.ts); the 6h window is only a fallback.
+export const revalidate = 21600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const long = formatLongDate(todayISO());

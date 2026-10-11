@@ -48,3 +48,24 @@ export function recentDates(count: number): string[] {
   const today = todayISO();
   return Array.from({ length: count }, (_, i) => shiftISODate(today, -i));
 }
+
+/**
+ * Earliest date with stored answers (Wordle / NYT Mini rows start here;
+ * Connections later). Backfilling older dates? Move this back too.
+ */
+export const FIRST_ANSWER_DATE = "2026-06-01";
+
+/**
+ * Dates the database-backed answer pages serve: from FIRST_ANSWER_DATE up to
+ * tomorrow (UTC; a day of slack for time zones ahead of UTC). Anything else
+ * 404s before any data fetch, so crawlers following the prev/next links can't
+ * walk (and cache) an endless chain of empty pages. Future dates come into
+ * range via the daily on-demand revalidation (see lib/revalidation.ts).
+ */
+export function isServedAnswerDate(iso: string): boolean {
+  return (
+    isValidISODate(iso) &&
+    iso >= FIRST_ANSWER_DATE &&
+    iso <= shiftISODate(todayISO(), 1)
+  );
+}

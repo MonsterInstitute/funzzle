@@ -14,7 +14,9 @@ export const metadata: Metadata = {
 };
 
 // Pick up a freshly published daily puzzle within the hour.
-export const revalidate = 3600;
+// Shows "today": refreshed on demand at the UTC day change and after the daily
+// content run (lib/revalidation.ts); the 6h window is only a fallback.
+export const revalidate = 21600;
 
 export default async function MiniPlayPage() {
   const today = todayISO();

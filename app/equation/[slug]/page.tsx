@@ -9,7 +9,8 @@ import { EQUATIONS } from "@/lib/content/equations";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 
 type Params = { slug: string };
-export const revalidate = 604800;
+// Bundled content (lib/content) — static until the next deploy.
+export const revalidate = false;
 
 export function generateStaticParams() {
   return EQUATIONS.map((e) => ({ slug: e.slug }));

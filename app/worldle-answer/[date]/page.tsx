@@ -12,11 +12,12 @@ import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { isValidISODate, formatLongDate, recentDates } from "@/lib/dates";
 
 type Params = { date: string };
-export const revalidate = 86400;
+// Each date's puzzle is computed from bundled data — static until the next deploy.
+export const revalidate = false;
 export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return recentDates(90).map((date) => ({ date }));
+  return recentDates(30).map((date) => ({ date }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {

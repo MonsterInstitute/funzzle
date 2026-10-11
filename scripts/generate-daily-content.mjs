@@ -11,7 +11,9 @@
  *      no DEEPSEEK_API_KEY); the real answers are always stored.
  *   3. Upserts the row into Supabase, REPLACING any previously stored row for the
  *      same (date, type). Successful games are always written, even if others fail.
- *   4. Triggers a Vercel redeploy via the deploy hook so static pages rebuild.
+ *   4. Refreshes today's pages through the site's on-demand revalidation route
+ *      (scripts/revalidate-site.mjs). Only if that fails does it fall back to a
+ *      full redeploy via the deploy hook.
  *
  * FAILS LOUDLY: if ANY of the three games fails to fetch+write, the process exits
  * non-zero AFTER writing the ones that succeeded — so a broken source turns the CI
@@ -19,10 +21,12 @@
  *
  * Required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE
  * Explanations: DEEPSEEK_API_KEY  (optional but recommended)
- * Optional:     VERCEL_DEPLOY_HOOK_URL, DEEPSEEK_MODEL
+ * Revalidation: REVALIDATE_SECRET, SITE_URL (default https://funzzle.com)
+ * Optional:     VERCEL_DEPLOY_HOOK_URL (fallback only), DEEPSEEK_MODEL
  */
 import { createClient } from "@supabase/supabase-js";
 import { fetchWordle, fetchConnections, fetchMini } from "./fetch-public-answers.mjs";
+import { revalidateSite } from "./revalidate-site.mjs";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
@@ -244,11 +248,16 @@ async function main() {
 
   console.log(`Wrote ${wrote}/${GAMES.length} answer row(s) for ${date}.`);
 
-  if (DEPLOY_HOOK && wrote > 0) {
-    const res = await fetch(DEPLOY_HOOK, { method: "POST" });
-    console.log(`Deploy hook triggered: ${res.status}`);
-  } else if (!DEPLOY_HOOK) {
-    console.log("No VERCEL_DEPLOY_HOOK_URL set — skipping redeploy.");
+  // Pages are cached until revalidated: refresh today's pages on demand. A
+  // full redeploy (rebuilds everything, resets every cached page) is only the
+  // fallback when revalidation can't be reached.
+  if (wrote > 0 && !(await revalidateSite([date]))) {
+    if (DEPLOY_HOOK) {
+      const res = await fetch(DEPLOY_HOOK, { method: "POST" });
+      console.log(`Revalidation failed — deploy hook triggered instead: ${res.status}`);
+    } else {
+      console.error("Revalidation failed and no VERCEL_DEPLOY_HOOK_URL is set — pages update at the next midnight-UTC revalidation.");
+    }
   }
 
   // Fail loudly so a broken source turns the CI run RED (no silent green).

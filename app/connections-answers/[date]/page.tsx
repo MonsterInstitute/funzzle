@@ -11,6 +11,7 @@ import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { gameColor } from "@/lib/gameColors";
 import {
   isValidISODate,
+  isServedAnswerDate,
   formatLongDate,
   shiftISODate,
   recentDates,
@@ -20,7 +21,9 @@ type Params = { date: string };
 
 const C = gameColor("connections");
 
-export const revalidate = 3600;
+// A day's answers never change once written; new rows are picked up through
+// on-demand revalidation (app/api/revalidate), not a timer.
+export const revalidate = false;
 
 export async function generateStaticParams() {
   return recentDates(30).map((date) => ({ date }));
@@ -53,7 +56,7 @@ export default async function ConnectionsAnswersPage({
   params: Promise<Params>;
 }) {
   const { date } = await params;
-  if (!isValidISODate(date)) notFound();
+  if (!isServedAnswerDate(date)) notFound();
 
   const long = formatLongDate(date);
   const prev = shiftISODate(date, -1);
