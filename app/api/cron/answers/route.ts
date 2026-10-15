@@ -64,6 +64,9 @@ export async function GET(request: Request) {
           const { error: insErr } = await supabase
             .from("answers")
             .insert({ publish_date: date, type: game.type, answer_data, summary: null });
+          // 23505: another writer stored this row first (unique index on
+          // answers(publish_date, type)) — it exists, which is all we need.
+          if (insErr?.code === "23505") return { date, type: game.type, status: "present" };
           if (insErr) throw new Error(`insert failed: ${insErr.message}`);
           return { date, type: game.type, status: "written", source };
         } catch (err) {

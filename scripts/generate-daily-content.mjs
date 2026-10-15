@@ -215,8 +215,16 @@ export const GAMES = [
   { key: "nyt-mini", label: "NYT Mini", build: buildMiniRow },
 ];
 
-/** Delete any existing row for (date,type) then insert the fresh one. */
+/**
+ * Replace the row for (date,type). With the unique index on
+ * answers(publish_date, type) this is one atomic upsert; without it (Postgres
+ * 42P10: no matching constraint) it falls back to delete + insert.
+ */
 export async function upsertAnswer(row) {
+  const { error } = await supabase.from("answers").upsert(row, { onConflict: "publish_date,type" });
+  if (!error) return;
+  if (error.code !== "42P10") throw new Error(`upsert ${row.type} failed: ${error.message}`);
+
   const { error: delErr } = await supabase
     .from("answers")
     .delete()
