@@ -37,6 +37,9 @@ export async function createServerSupabase() {
   });
 }
 
+/** Client-side deadline for every service-role request (connect + query). */
+const SERVICE_TIMEOUT_MS = 10_000;
+
 /**
  * Service-role client for trusted server-side data fetching.
  * Bypasses RLS — never import this into a Client Component.
@@ -46,6 +49,13 @@ export function createServiceSupabase() {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
+    },
+    global: {
+      fetch: (input, init) => {
+        const deadline = AbortSignal.timeout(SERVICE_TIMEOUT_MS);
+        const signal = init?.signal ? AbortSignal.any([init.signal, deadline]) : deadline;
+        return fetch(input, { ...init, signal });
+      },
     },
   });
 }

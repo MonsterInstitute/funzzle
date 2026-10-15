@@ -1,8 +1,8 @@
 /**
  * Daily content generator — REAL answers from PUBLIC sources.
  *
- * For today's date it, for each of the three highest-traffic games
- * (Wordle, Connections, NYT Mini):
+ * For today AND tomorrow (UTC) it, for each of the three highest-traffic games
+ * (Wordle, Connections, NYT Mini), unless that row already has explanations:
  *   1. Fetches the REAL answer from public sources (see fetch-public-answers.mjs)
  *      — NYT's own free JSON for Wordle/Connections, public answer pages for the
  *      Mini. Never fabricates: an un-fetchable game is a failure, not a guess.
@@ -11,13 +11,20 @@
  *      no DEEPSEEK_API_KEY); the real answers are always stored.
  *   3. Upserts the row into Supabase, REPLACING any previously stored row for the
  *      same (date, type). Successful games are always written, even if others fail.
- *   4. Refreshes today's pages through the site's on-demand revalidation route
- *      (scripts/revalidate-site.mjs). Only if that fails does it fall back to a
- *      full redeploy via the deploy hook.
+ *   4. If it wrote any of TODAY's rows, refreshes today's pages through the
+ *      site's on-demand revalidation route (scripts/revalidate-site.mjs). Only
+ *      if that fails does it fall back to a full redeploy via the deploy hook.
+ *      Tomorrow's rows stay hidden until the 00:01 UTC revalidation.
  *
- * FAILS LOUDLY: if ANY of the three games fails to fetch+write, the process exits
- * non-zero AFTER writing the ones that succeeded — so a broken source turns the CI
- * run red instead of passing as a silent partial success.
+ * Timing: this job adds explanations; it is NOT what gets answers live on time.
+ * GitHub's schedule runs hours late, so the site's answers cron
+ * (app/api/cron/answers, Vercel Cron) stores the bare answers on the minute and
+ * this job replaces those rows with explained copies whenever it runs.
+ *
+ * FAILS LOUDLY: if any game fails to fetch+write, the process exits non-zero
+ * AFTER writing the ones that succeeded — so a broken source turns the CI run
+ * red instead of passing as a silent partial success. The one expected gap is
+ * tomorrow's Mini, which NYT releases only at 22:00 ET (18:00 ET weekends).
  *
  * Required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE
  * Explanations: DEEPSEEK_API_KEY  (optional but recommended)
@@ -47,6 +54,12 @@ const deepseek = DEEPSEEK_API_KEY ? true : false;
 /** Today's calendar day in UTC (YYYY-MM-DD). */
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function tomorrowISO() {
+  const d = new Date(`${todayISO()}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
 }
 
 function extractJson(text) {
@@ -224,34 +237,55 @@ function previewRow(key, row) {
   return "";
 }
 
+/** (date|type) keys of rows that already carry explanations, for `dates`. */
+async function explainedRows(dates) {
+  const { data, error } = await supabase
+    .from("answers")
+    .select("publish_date, type, summary")
+    .in("publish_date", dates);
+  if (error) throw new Error(`reading existing rows failed: ${error.message}`);
+  return new Set(data.filter((r) => r.summary).map((r) => `${r.publish_date}|${r.type}`));
+}
+
 async function main() {
-  const date = todayISO();
-  console.log(`Generating REAL content for ${date} (explanations via ${MODEL})`);
+  const today = todayISO();
+  const tomorrow = tomorrowISO();
+  const dates = [today, tomorrow];
+  console.log(`Generating REAL content for ${dates.join(" + ")} (explanations via ${MODEL})`);
   if (!deepseek) {
     console.warn("⚠️  DEEPSEEK_API_KEY not set — storing real answers without explanations.");
   }
 
-  let wrote = 0;
+  const done = await explainedRows(dates);
+  const wroteDates = new Set();
   const failures = [];
 
-  for (const game of GAMES) {
-    try {
-      const { row, source } = await game.build(date);
-      await upsertAnswer(row);
-      console.log(`✅ ${game.label} [${source}]: ${previewRow(game.key, row)}`);
-      wrote++;
-    } catch (err) {
-      console.error(`❌ ${game.label} failed: ${err.message}`);
-      failures.push(game.key);
+  for (const date of dates) {
+    for (const game of GAMES) {
+      if (done.has(`${date}|${game.key}`)) {
+        console.log(`·  ${date} ${game.label}: already has explanations — skipped`);
+        continue;
+      }
+      try {
+        const { row, source } = await game.build(date);
+        await upsertAnswer(row);
+        console.log(`✅ ${date} ${game.label} [${source}]: ${previewRow(game.key, row)}`);
+        wroteDates.add(date);
+      } catch (err) {
+        if (date === tomorrow && game.key === "nyt-mini") {
+          console.log(`·  ${date} ${game.label}: not available yet (${err.message})`);
+          continue;
+        }
+        console.error(`❌ ${date} ${game.label} failed: ${err.message}`);
+        failures.push(`${date} ${game.key}`);
+      }
     }
   }
 
-  console.log(`Wrote ${wrote}/${GAMES.length} answer row(s) for ${date}.`);
-
-  // Pages are cached until revalidated: refresh today's pages on demand. A
-  // full redeploy (rebuilds everything, resets every cached page) is only the
-  // fallback when revalidation can't be reached.
-  if (wrote > 0 && !(await revalidateSite([date]))) {
+  // Pages are cached until revalidated: refresh today's pages on demand when
+  // today's rows changed. A full redeploy (rebuilds everything, resets every
+  // cached page) is only the fallback when revalidation can't be reached.
+  if (wroteDates.has(today) && !(await revalidateSite([today]))) {
     if (DEPLOY_HOOK) {
       const res = await fetch(DEPLOY_HOOK, { method: "POST" });
       console.log(`Revalidation failed — deploy hook triggered instead: ${res.status}`);
@@ -262,9 +296,7 @@ async function main() {
 
   // Fail loudly so a broken source turns the CI run RED (no silent green).
   if (failures.length) {
-    throw new Error(
-      `${failures.length} of ${GAMES.length} games failed: ${failures.join(", ")}`
-    );
+    throw new Error(`${failures.length} answer(s) failed: ${failures.join(", ")}`);
   }
 }
 

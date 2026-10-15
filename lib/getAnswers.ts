@@ -1,6 +1,7 @@
 import { createServiceSupabase } from "./supabase";
 import { DAILY_CONTENT } from "./content/dailyAnswers";
 import { getLocalWordle } from "./content/wordleAnswers";
+import { todayISO } from "./dates";
 
 export type AnswerType = "nyt-mini" | "nyt-daily" | "wordle" | "connections";
 
@@ -101,18 +102,27 @@ export function localAnswer(
 /**
  * Fetch a single answer row by publish date (YYYY-MM-DD) and type.
  * Prefers Supabase; falls back to bundled local content.
+ *
+ * A date's answers are stored ahead of time (the answers cron fetches
+ * tomorrow's before midnight UTC) but stay hidden until that UTC day begins;
+ * the midnight revalidation then publishes them.
  */
 export async function getAnswer<T = unknown>(
   publishDate: string,
   type: AnswerType
 ): Promise<AnswerRow<T> | null> {
+  if (publishDate > todayISO()) return null;
   try {
     const supabase = createServiceSupabase();
+    // Newest row wins, so a transient duplicate (two writers racing) can't
+    // turn the page into an error.
     const { data, error } = await supabase
       .from("answers")
       .select("*")
       .eq("publish_date", publishDate)
       .eq("type", type)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {
@@ -138,6 +148,7 @@ export async function getAnswer<T = unknown>(
 export async function getAnswersByDate(
   publishDate: string
 ): Promise<AnswerRow[]> {
+  if (publishDate > todayISO()) return [];
   try {
     const supabase = createServiceSupabase();
     const { data, error } = await supabase

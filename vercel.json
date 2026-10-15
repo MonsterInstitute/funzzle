@@ -4,5 +4,8 @@
   "functions": {
     "app/**/*": { "maxDuration": 30 }
   },
-  "crons": [{ "path": "/api/revalidate", "schedule": "1 0 * * *" }]
+  "crons": [
+    { "path": "/api/cron/answers", "schedule": "5 2,3,6,14,22,23 * * *" },
+    { "path": "/api/revalidate", "schedule": "1 0 * * *" }
+  ]
 }

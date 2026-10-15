@@ -1,8 +1,8 @@
-import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isValidISODate } from "@/lib/dates";
 import { pathsToRevalidate } from "@/lib/revalidation";
+import { isVercelCron, secretMatches } from "@/lib/secret";
 
 /**
  * On-demand revalidation of the pages that change daily (lib/revalidation.ts),
@@ -15,13 +15,6 @@ import { pathsToRevalidate } from "@/lib/revalidation";
  *        — Vercel Cron just after midnight UTC (vercel.json), rolls "today" over.
  */
 
-function matches(given: string | null, secret: string | undefined): boolean {
-  if (!secret || !given) return false;
-  const a = Buffer.from(given);
-  const b = Buffer.from(secret);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
 function run(dates: string[]) {
   const paths = pathsToRevalidate(dates);
   for (const p of paths) revalidatePath(p);
@@ -29,7 +22,7 @@ function run(dates: string[]) {
 }
 
 export async function POST(request: Request) {
-  if (!matches(request.headers.get("x-revalidate-secret"), process.env.REVALIDATE_SECRET)) {
+  if (!secretMatches(request.headers.get("x-revalidate-secret"), process.env.REVALIDATE_SECRET)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   let dates: string[] = [];
@@ -46,8 +39,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const auth = request.headers.get("authorization");
-  if (!matches(auth?.replace(/^Bearer /, "") ?? null, process.env.CRON_SECRET)) {
+  if (!isVercelCron(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   return run([]);

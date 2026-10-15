@@ -1,16 +1,30 @@
 name: Daily Content
 
 on:
+  # This job adds DeepSeek explanations to today's and tomorrow's answers. It is
+  # NOT what gets answers live on time: GitHub starts scheduled runs hours late,
+  # so the site's answers cron (app/api/cron/answers, Vercel Cron, on the
+  # minute) stores the bare answers before each UTC day begins, and this job
+  # replaces those rows with explained copies whenever it runs. Two runs a day
+  # so a late or skipped run still leaves time to explain tomorrow's answers.
   schedule:
-    # 07:15 UTC every day. Wordle & Connections publish just after midnight ET;
-    # the Mini answer sources are updated well before this.
     - cron: "15 7 * * *"
+    - cron: "15 19 * * *"
   workflow_dispatch:
     inputs:
       backfill_last:
-        description: "Backfill the last N days for all games (blank = normal single-day run)"
+        description: "Backfill the last N days (blank = normal run)"
         required: false
         default: ""
+      backfill_games:
+        description: "Games to backfill (comma-separated)"
+        required: false
+        default: "wordle,connections,nyt-mini"
+      backfill_missing_only:
+        description: "Only fill missing rows (leave existing rows untouched)"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   generate:
@@ -50,6 +64,7 @@ jobs:
 
       # Manual backfill (workflow_dispatch with backfill_last=N). Non-destructive:
       # a game that can't be fetched for a day leaves any existing row untouched.
+      # Any failed (date, game) turns the run red, after refreshing what was written.
       - name: Backfill last N days
         if: ${{ github.event.inputs.backfill_last != '' }}
         env:
@@ -58,15 +73,21 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
           SITE_URL: https://www.funzzle.com
+          BACKFILL_LAST: ${{ github.event.inputs.backfill_last }}
+          BACKFILL_GAMES: ${{ github.event.inputs.backfill_games }}
+          BACKFILL_MISSING_ONLY: ${{ github.event.inputs.backfill_missing_only }}
         run: |
-          node scripts/backfill-answers.mjs --last=${{ github.event.inputs.backfill_last }}
+          status=0
+          node scripts/backfill-answers.mjs --last="$BACKFILL_LAST" --games="$BACKFILL_GAMES" \
+            $([ "$BACKFILL_MISSING_ONLY" = "true" ] && echo --missing-only) || status=$?
           # Refresh the backfilled answer pages on demand; redeploy only if that fails.
-          if ! node scripts/revalidate-site.mjs --last=${{ github.event.inputs.backfill_last }}; then
+          if ! node scripts/revalidate-site.mjs --last="$BACKFILL_LAST"; then
             if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
               echo "Revalidation failed — triggering redeploy after backfill…"
               curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" && echo " ok"
             fi
           fi
+          exit $status
 
       - name: Generate Reddit posts (logged for manual posting)
         if: ${{ always() && github.event.inputs.backfill_last == '' }}
