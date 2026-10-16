@@ -1,0 +1,15 @@
+{
+  "//": "worker.ts runs on Cloudflare Workers: checked with the Workers runtime types (cloudflare-env.d.ts), kept out of the app's tsconfig because they replace the DOM fetch types the app is written against.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": [],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowJs": true
+  },
+  "files": ["worker.ts", "cloudflare-env.d.ts"]
+}

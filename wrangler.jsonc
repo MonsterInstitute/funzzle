@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "funzzle",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // OpenNext calls back into this Worker (ISR regeneration via the DO queue).
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "funzzle" }],
+  "observability": { "enabled": true },
+  // funzzle.workers.dev is the pre-cutover verification host; worker.ts serves
+  // it with noindex so it can never be indexed as a duplicate of the site.
+  "workers_dev": true,
+  "preview_urls": false,
+  // www and apex are Worker routes over the zone's existing DNS records, not
+  // custom domains: Cloudflare won't attach a custom domain to a hostname that
+  // already has records, and deleting them first would mean downtime. Routes
+  // only apply to PROXIED records, so these take over the instant the apex
+  // and www records are switched from DNS-only to Proxied — and switching
+  // them back is the rollback to Vercel.
+  "routes": [
+    { "pattern": "www.funzzle.com/*", "zone_name": "funzzle.com" },
+    { "pattern": "funzzle.com/*", "zone_name": "funzzle.com" }
+  ],
+  // Cron Triggers replace Vercel Cron; worker.ts maps each schedule to its route.
+  "triggers": {
+    "crons": ["5 2,3,6,14,22,23 * * *", "1 0 * * *"]
+  },
+  // Non-secret runtime config. Secrets (wrangler secret put): SUPABASE_SERVICE_ROLE,
+  // CRON_SECRET, REVALIDATE_SECRET. NEXT_PUBLIC_* values are inlined by `next build`
+  // (from .env.production and the build environment), not read from here.
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://achypcdlupdenunfiiil.supabase.co"
+  },
+  // ISR cache for OpenNext: pages in R2 (fronted by the per-colo regional
+  // cache), the D1 tag cache that revalidatePath() needs, and the Durable
+  // Object queue for time-based regeneration.
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "funzzle-opennext-cache" }],
+  "d1_databases": [
+    { "binding": "NEXT_TAG_CACHE_D1", "database_name": "funzzle-tags", "database_id": "e283a45f-9de6-474f-a58f-3da9778e1440" }
+  ],
+  "durable_objects": { "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }]
+}

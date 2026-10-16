@@ -37,6 +37,9 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    ".open-next",
+    "cloudflare-env.d.ts",
+    "node_modules",
+    "worker.ts"
   ]
 }

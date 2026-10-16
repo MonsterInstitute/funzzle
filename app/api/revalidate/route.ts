@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isValidISODate } from "@/lib/dates";
 import { pathsToRevalidate } from "@/lib/revalidation";
-import { isVercelCron, secretMatches } from "@/lib/secret";
+import { isCronRequest, secretMatches } from "@/lib/secret";
 
 /**
  * On-demand revalidation of the pages that change daily (lib/revalidation.ts),
@@ -12,7 +12,8 @@ import { isVercelCron, secretMatches } from "@/lib/secret";
  *        { "dates": ["2026-10-01", …] }   optional: extra answer dates (backfill)
  *        — called by scripts/revalidate-site.mjs (Daily Content workflow).
  *   GET  /api/revalidate   Authorization: Bearer $CRON_SECRET
- *        — Vercel Cron just after midnight UTC (vercel.json), rolls "today" over.
+ *        — Cloudflare Cron Trigger just after midnight UTC (wrangler.jsonc ->
+ *          worker.ts), rolls "today" over.
  */
 
 function run(dates: string[]) {
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  if (!isVercelCron(request)) {
+  if (!isCronRequest(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   return run([]);

@@ -8,7 +8,7 @@
  *   node --env-file=.env.local scripts/revalidate-site.mjs --last=8        # + last 8 days of answers
  *   node --env-file=.env.local scripts/revalidate-site.mjs 2026-07-01 ...  # + specific dates
  *
- * Env: REVALIDATE_SECRET (required; same value as in Vercel),
+ * Env: REVALIDATE_SECRET (required; same value as the Worker's secret),
  *      SITE_URL (optional, default https://www.funzzle.com).
  */
 

@@ -2,14 +2,15 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { shiftISODate, todayISO } from "@/lib/dates";
 import { pathsToRevalidate } from "@/lib/revalidation";
-import { isVercelCron } from "@/lib/secret";
+import { isCronRequest } from "@/lib/secret";
 import { createServiceSupabase } from "@/lib/supabase";
 import { fetchConnections, fetchMini, fetchWordle } from "@/scripts/fetch-public-answers.mjs";
 
 /**
  * Fills in any missing answer rows for today and tomorrow (UTC) straight from
- * the public sources — no LLM, so it is fast and cheap. Vercel Cron runs it on
- * the minute (vercel.json), which GitHub's schedule can't guarantee:
+ * the public sources — no LLM, so it is fast and cheap. A Cloudflare Cron
+ * Trigger runs it on the minute (wrangler.jsonc -> worker.ts), which GitHub's
+ * schedule can't guarantee:
  *
  *   22:05, 23:05 UTC  tomorrow's Wordle + Connections (NYT publishes them days
  *                     ahead) and weekend Minis (released 18:00 ET) land BEFORE
@@ -37,7 +38,7 @@ type Result = { date: string; type: string } & (
 );
 
 export async function GET(request: Request) {
-  if (!isVercelCron(request)) {
+  if (!isCronRequest(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

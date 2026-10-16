@@ -2,7 +2,7 @@ import { shiftISODate, todayISO } from "./dates";
 
 /**
  * Paths that change from one UTC day to the next — refreshed on demand by
- * app/api/revalidate (Vercel Cron just after midnight UTC, and the Daily
+ * app/api/revalidate (Cloudflare Cron Trigger just after midnight UTC, and the Daily
  * Content workflow after it writes answers) instead of hourly ISR.
  */
 

@@ -11,8 +11,11 @@ export function secretMatches(given: string | null | undefined, secret: string |
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-/** True when the request carries `Authorization: Bearer $CRON_SECRET` (Vercel Cron). */
-export function isVercelCron(request: Request): boolean {
+/**
+ * True when the request carries `Authorization: Bearer $CRON_SECRET` — sent by
+ * the Cron Triggers in worker.ts (wrangler.jsonc).
+ */
+export function isCronRequest(request: Request): boolean {
   const auth = request.headers.get("authorization");
   return secretMatches(auth?.replace(/^Bearer /, ""), process.env.CRON_SECRET);
 }

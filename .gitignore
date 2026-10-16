@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# Public build-time values only (inlined into pages anyway); never secrets.
+!.env.production
 
 # local NYT auth capture (Copy-as-cURL) — never commit
 .nyt_curl.txt
@@ -46,3 +48,8 @@ next-env.d.ts
 # Generated keyword research outputs
 scripts/keyword-opportunities.json
 scripts/trending-opportunities.json
+
+# cloudflare / opennext
+.open-next
+.wrangler
+.dev.vars*

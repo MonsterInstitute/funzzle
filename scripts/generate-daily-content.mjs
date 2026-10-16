@@ -12,13 +12,14 @@
  *   3. Upserts the row into Supabase, REPLACING any previously stored row for the
  *      same (date, type). Successful games are always written, even if others fail.
  *   4. If it wrote any of TODAY's rows, refreshes today's pages through the
- *      site's on-demand revalidation route (scripts/revalidate-site.mjs). Only
- *      if that fails does it fall back to a full redeploy via the deploy hook.
+ *      site's on-demand revalidation route (scripts/revalidate-site.mjs). If
+ *      that fails the run fails (red); pages still roll over at the next
+ *      midnight-UTC revalidation.
  *      Tomorrow's rows stay hidden until the 00:01 UTC revalidation.
  *
  * Timing: this job adds explanations; it is NOT what gets answers live on time.
  * GitHub's schedule runs hours late, so the site's answers cron
- * (app/api/cron/answers, Vercel Cron) stores the bare answers on the minute and
+ * (app/api/cron/answers, a Cloudflare Cron Trigger) stores the bare answers on the minute and
  * this job replaces those rows with explained copies whenever it runs.
  *
  * FAILS LOUDLY: if any game fails to fetch+write, the process exits non-zero
@@ -29,7 +30,7 @@
  * Required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE
  * Explanations: DEEPSEEK_API_KEY  (optional but recommended)
  * Revalidation: REVALIDATE_SECRET, SITE_URL (default https://funzzle.com)
- * Optional:     VERCEL_DEPLOY_HOOK_URL (fallback only), DEEPSEEK_MODEL
+ * Optional:     DEEPSEEK_MODEL
  */
 import { createClient } from "@supabase/supabase-js";
 import { fetchWordle, fetchConnections, fetchMini } from "./fetch-public-answers.mjs";
@@ -38,7 +39,6 @@ import { revalidateSite } from "./revalidate-site.mjs";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const DEPLOY_HOOK = process.env.VERCEL_DEPLOY_HOOK_URL;
 const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
@@ -291,15 +291,11 @@ async function main() {
   }
 
   // Pages are cached until revalidated: refresh today's pages on demand when
-  // today's rows changed. A full redeploy (rebuilds everything, resets every
-  // cached page) is only the fallback when revalidation can't be reached.
+  // today's rows changed. A failed refresh fails the run: the answers are
+  // stored, but today's pages can show stale content until the next
+  // midnight-UTC revalidation.
   if (wroteDates.has(today) && !(await revalidateSite([today]))) {
-    if (DEPLOY_HOOK) {
-      const res = await fetch(DEPLOY_HOOK, { method: "POST" });
-      console.log(`Revalidation failed — deploy hook triggered instead: ${res.status}`);
-    } else {
-      console.error("Revalidation failed and no VERCEL_DEPLOY_HOOK_URL is set — pages update at the next midnight-UTC revalidation.");
-    }
+    failures.push("revalidation");
   }
 
   // Fail loudly so a broken source turns the CI run RED (no silent green).
