@@ -207,7 +207,8 @@ function validateConnections(groups) {
     assert(typeof g.title === "string" && g.title.length > 0, "group missing title");
     assert(Array.isArray(g.words) && g.words.length === 4, "group needs 4 words");
     for (const w of g.words) {
-      assert(/^[A-Z0-9'’.\- ]+$/i.test(w), `odd connections word: ${w}`);
+      // Any letter, not just A-Z: NYT uses accented words (e.g. BOHÈME).
+      assert(/^[\p{L}\p{M}\p{N}'’.\-&!? ]+$/u.test(w), `odd connections word: ${w}`);
       seen.add(w.toUpperCase());
     }
   }
