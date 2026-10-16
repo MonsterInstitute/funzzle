@@ -8,9 +8,10 @@
   // OpenNext calls back into this Worker (ISR regeneration via the DO queue).
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "funzzle" }],
   "observability": { "enabled": true },
-  // funzzle.workers.dev is the pre-cutover verification host; worker.ts serves
-  // it with noindex so it can never be indexed as a duplicate of the site.
-  "workers_dev": true,
+  // Only funzzle.com / www serve the site: no *.workers.dev or preview URLs,
+  // which would be duplicates of it. (workers.dev was the pre-cutover
+  // verification host.)
+  "workers_dev": false,
   "preview_urls": false,
   // www and apex are Worker routes over the zone's existing DNS records, not
   // custom domains: Cloudflare won't attach a custom domain to a hostname that

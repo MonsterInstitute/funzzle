@@ -1,8 +1,9 @@
 // Worker entry: wraps the OpenNext handler with
 //
 //  1. host handling, as on Vercel: the apex 308s to www (path and query
-//     kept). Any other hostname (funzzle.workers.dev, used to verify before
-//     cutover) serves the same site with noindex and a disallow-all robots.txt.
+//     kept). Only the www and apex routes reach the Worker (workers_dev is
+//     off), but any other hostname would be served with noindex and a
+//     disallow-all robots.txt so it can never be indexed as a duplicate.
 //  2. Cron Triggers (wrangler.jsonc), which replace Vercel Cron. Each schedule
 //     calls its route in-process with `Authorization: Bearer $CRON_SECRET`,
 //     exactly the request Vercel Cron sent, so the routes are unchanged. A
