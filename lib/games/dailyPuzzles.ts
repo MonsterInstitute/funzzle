@@ -10,8 +10,13 @@
  */
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
+import { daily2048, type Daily2048 } from "@/lib/games/t2048";
+import { dailyBlock, type DailyBlock } from "@/lib/games/block";
+import { dailyJigsaw, type DailyJigsaw } from "@/lib/games/jigsaw";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
+
+export type { Daily2048, DailyBlock, DailyJigsaw };
 
 export interface DailySudoku {
   date: string;
@@ -58,6 +63,34 @@ export async function getDailySolitaire(date: string, draw: 1 | 3): Promise<Dail
   return (await readRow<DailySolitaire>("solitaire", date, `draw${draw}`)) ?? generateDailySolitaire(date, draw);
 }
 
+export async function getDaily2048(date: string): Promise<Daily2048> {
+  return (await readRow<Daily2048>("2048", date, "")) ?? daily2048(date);
+}
+
+export async function getDailyBlock(date: string): Promise<DailyBlock> {
+  return (await readRow<DailyBlock>("block-puzzle", date, "")) ?? dailyBlock(date);
+}
+
+export async function getDailyJigsaw(date: string): Promise<DailyJigsaw> {
+  return (await readRow<DailyJigsaw>("jigsaw", date, "")) ?? dailyJigsaw(date);
+}
+
+/** The daily puzzle data stored for one (game, date, variant) row. */
+function generateDaily(game: string, date: string, variant: string): object {
+  switch (game) {
+    case "sudoku":
+      return generateDailySudoku(date);
+    case "2048":
+      return daily2048(date);
+    case "block-puzzle":
+      return dailyBlock(date);
+    case "jigsaw":
+      return dailyJigsaw(date);
+    default:
+      return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
+  }
+}
+
 /**
  * Store the daily puzzles for `dates` that aren't stored yet. Existing rows are
  * never overwritten. Returns what it wrote.
@@ -67,6 +100,9 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "sudoku", date, variant: "" },
     { game: "solitaire", date, variant: "draw1" },
     { game: "solitaire", date, variant: "draw3" },
+    { game: "2048", date, variant: "" },
+    { game: "block-puzzle", date, variant: "" },
+    { game: "jigsaw", date, variant: "" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,
@@ -77,7 +113,7 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     .filter((w) => !have.has(`${w.game}|${w.date}|${w.variant}`))
     .map((w) => ({
       ...w,
-      data: w.game === "sudoku" ? generateDailySudoku(w.date) : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
+      data: generateDaily(w.game, w.date, w.variant),
     }));
   if (!rows.length) return [];
   await batch(

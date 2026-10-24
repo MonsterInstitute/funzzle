@@ -34,3 +34,9 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Score games and the jigsaw: one daily puzzle each, rated like a medium grid. */
+export const T2048_PUZZLE_RATING = 1300;
+export const BLOCK_PUZZLE_RATING = 1250;
+/** Jigsaw by piece count (the daily is 24 pieces). */
+export const JIGSAW_PUZZLE_RATING: Record<number, number> = { 12: 900, 24: 1100, 48: 1350, 96: 1600 };

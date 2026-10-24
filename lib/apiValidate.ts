@@ -1,12 +1,13 @@
 /** Input checks shared by the anonymous write APIs (challenges, leagues, push). */
 import { isValidISODate, todayISO } from "./dates";
 import { cleanName } from "./games/kit/identity";
+import { isScoreGame, MAX_SCORE } from "./games/kit/resultConfig";
 
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const DAY_MS = 86_400_000;
 
 /** Games whose results can be compared (challenges, leagues). */
-export const COMPETITIVE_GAMES = new Set(["sudoku", "solitaire", "spider-solitaire", "freecell", "minesweeper", "mahjong"]);
+export const COMPETITIVE_GAMES = new Set(["sudoku", "solitaire", "spider-solitaire", "freecell", "minesweeper", "mahjong", "2048", "block-puzzle", "jigsaw"]);
 
 export function intIn(value: unknown, min: number, max: number): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : null;
@@ -22,6 +23,8 @@ export interface CheckedResult {
   mistakes: number;
   hints: number;
   moves: number | null;
+  /** Score games only; null otherwise. */
+  score: number | null;
 }
 
 export function result(value: unknown): CheckedResult | null {
@@ -30,8 +33,20 @@ export function result(value: unknown): CheckedResult | null {
   const mistakes = intIn(r.mistakes, 0, 999);
   const hints = intIn(r.hints, 0, 999);
   const moves = r.moves === undefined || r.moves === null ? null : intIn(r.moves, 0, 100_000);
+  const score = r.score === undefined || r.score === null ? null : intIn(r.score, 0, MAX_SCORE);
   if (timeMs === null || mistakes === null || hints === null || (r.moves !== undefined && r.moves !== null && moves === null)) return null;
-  return { timeMs, mistakes, hints, moves };
+  if (r.score !== undefined && r.score !== null && score === null) return null;
+  return { timeMs, mistakes, hints, moves, score };
+}
+
+/**
+ * The value a challenge entry is ranked by, stored in challenge_entries.time_ms:
+ * the time, or for score games the score (≥ 1: the column must be positive).
+ * Null when a score game sent no score.
+ */
+export function entryValue(game: string, r: CheckedResult): number | null {
+  if (!isScoreGame(game)) return r.timeMs;
+  return r.score === null ? null : Math.max(1, r.score);
 }
 
 /** A challenge puzzle spec: a past-or-today daily, or a practice seed. */

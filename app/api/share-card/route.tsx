@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
-import { formatTime } from "@/lib/games/kit/results";
+import { isScoreGame, MAX_SCORE } from "@/lib/games/kit/resultConfig";
+import { formatScore, formatTime } from "@/lib/games/kit/results";
 import { SUIT_PATHS } from "@/components/kit/SuitIcon";
 import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/shareFonts";
 
@@ -16,7 +17,15 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = {
+  sudoku: "Daily Sudoku",
+  solitaire: "Daily Solitaire",
+  "2048": "Daily 2048",
+  "block-puzzle": "Daily Block Puzzle",
+  jigsaw: "Daily Jigsaw",
+};
+/** 2048 tile colors by exponent (lib/games/t2048 uses the same ramp). */
+const TILE_BG = ["#FFF4DD", "#FFE9B8", "#FFD98A", "#FFC857", "#FFB547", "#FF9F43", "#FF8A3D", "#F7B32B", "#F29E1F", "#EC8A12", "#E07A00", "#111111"];
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -51,10 +60,16 @@ export async function GET(request: Request) {
   const moves = q.get("mv") === null ? null : int(q.get("mv"), 100_000);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
+  // Score games: the score (required) and, for 2048, the best tile.
+  const scored = isScoreGame(game);
+  const score = scored ? int(q.get("sc"), MAX_SCORE) : null;
+  const bestTile = q.get("bt") === null ? null : int(q.get("bt"), 1 << 20);
   if (
     !GAMES[game] ||
     !DATE_RE.test(date) ||
     time === null ||
+    (scored && score === null) ||
+    (q.get("bt") !== null && (bestTile === null || bestTile < 2 || (bestTile & (bestTile - 1)) !== 0)) ||
     (q.get("top") !== null && top === null) ||
     streak === null ||
     mistakes === null ||
@@ -74,11 +89,40 @@ export async function GET(request: Request) {
     streak > 0 ? `${streak}-day streak` : null,
     game === "sudoku"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+      : game === "2048"
+        ? `${bestTile ? `Best tile ${bestTile} · ` : ""}${moves ?? 0} moves`
+        : game === "block-puzzle" || game === "jigsaw"
+          ? `${moves ?? 0} pieces · ${hints} hint${hints === 1 ? "" : "s"}`
+          : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
+  const big = scored ? formatScore(score ?? 0) : formatTime(time);
+  // Monospace digits are ~0.6em wide; keep the number inside its 432px column.
+  const bigSize = Math.min(152, Math.floor(432 / (big.length * 0.62)));
+
+  // 2048: the best tile and the three below it, as tiles.
+  const exp = bestTile ? Math.log2(bestTile) : 11;
+  const tiles = [exp, exp - 1, exp - 2, exp - 3].map((e) => Math.max(1, e));
+  const glyph = GAME_BY_SLUG[game]?.glyph ?? "";
 
   const board =
-    game === "sudoku" && map ? (
+    game === "2048" ? (
+      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 28, gap: 24, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {tiles.map((e, i) => (
+          <div
+            key={i}
+            style={{ width: 176, height: 176, borderRadius: 22, background: TILE_BG[Math.min(TILE_BG.length - 1, e)], color: e >= 11 ? "#FFFFFF" : "#111111", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Bricolage", fontSize: 2 ** e >= 1000 ? 52 : 68 }}
+          >
+            {String(2 ** e)}
+          </div>
+        ))}
+      </div>
+    ) : game === "block-puzzle" || game === "jigsaw" ? (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 432, height: 432, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        <svg width="320" height="320" viewBox="0 0 48 48" fill="#FFFFFF" stroke="#111111" strokeWidth="2" strokeLinejoin="round">
+          <path d={glyph} />
+        </svg>
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />
@@ -113,7 +157,7 @@ export async function GET(request: Request) {
           <span style={{ fontFamily: "Geist Mono", fontSize: 28 }}>{dateLabel}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <span style={{ fontFamily: "Bricolage", fontSize: 92, lineHeight: 1, letterSpacing: "-0.035em" }}>{GAMES[game]}</span>
+          <span style={{ fontFamily: "Bricolage", fontSize: GAMES[game].length > 15 ? 72 : 92, lineHeight: 1, letterSpacing: "-0.035em" }}>{GAMES[game]}</span>
           {label && (
             <span style={{ padding: "10px 20px", borderRadius: 999, background: "#111111", color: "#FFFFFF", fontSize: 26, fontWeight: 700 }}>{label}</span>
           )}
@@ -121,7 +165,8 @@ export async function GET(request: Request) {
         <div style={{ display: "flex", gap: 56, alignItems: "center" }}>
           {board}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <span style={{ fontFamily: "Geist Mono", fontSize: 152, lineHeight: 1, letterSpacing: "-0.04em" }}>{formatTime(time)}</span>
+            <span style={{ fontFamily: "Geist Mono", fontSize: bigSize, lineHeight: 1, letterSpacing: "-0.04em" }}>{big}</span>
+            {scored && <span style={{ fontSize: 32, fontWeight: 700 }}>points</span>}
             {lines.map((line, i) => (
               <span key={line} style={{ fontSize: i === 0 ? 38 : 32, fontWeight: i === 0 ? 700 : 500 }}>{line}</span>
             ))}

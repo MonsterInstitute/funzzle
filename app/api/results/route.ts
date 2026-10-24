@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server";
 import { shiftISODate, todayISO } from "@/lib/dates";
-import { HISTOGRAM_BUCKETS, RESULT_GAMES } from "@/lib/games/kit/resultConfig";
+import { HISTOGRAM_BUCKETS, RESULT_GAMES, resultValue } from "@/lib/games/kit/resultConfig";
 import { exec, first } from "@/lib/db";
 
 /**
  * Anonymous daily results for the recap's "faster than N% of today's players".
  *
- *   POST {game, date, variant, clientId, timeMs, mistakes, hints, moves?}
+ *   POST {game, date, variant, clientId, timeMs, mistakes, hints, moves?, score?}
  *        → {percentile, count, buckets, lo, hi}. A browser's first result for
  *        a puzzle is the one that counts; resubmits return the same stats.
  *   GET  ?game=&date=&variant= → {count, buckets, lo, hi} (CDN-cached 60 s).
+ *
+ * Score games (resultConfig kind "score") send `score`; it is stored in the
+ * time_ms value column and compared the other way round (higher wins).
  */
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY_MS = 86_400_000;
 
 function intIn(value: unknown, min: number, max: number): number | null {
   return typeof value === "number" &&
@@ -96,7 +98,8 @@ export async function POST(request: Request) {
   const variant = String(body.variant ?? "");
   const clientId = String(body.clientId ?? "");
   const config = RESULT_GAMES[game];
-  const timeMs = intIn(body.timeMs, config?.minMs ?? 1, DAY_MS);
+  // The compared value: the time, or the score for score games.
+  const timeMs = resultValue(game, body);
   const mistakes = intIn(body.mistakes, 0, 999);
   const hints = intIn(body.hints, 0, 999);
   const moves = body.moves === undefined ? null : intIn(body.moves, 0, 100_000);
@@ -127,9 +130,14 @@ export async function POST(request: Request) {
       hints,
       moves,
     );
-    // Percentile against everyone else, using the stored (first) time.
+    // Percentile against everyone else, using the stored (first) result:
+    // beaten = slower times, or lower scores for score games.
     const mine = await first<{ slower: number }>(
-      `SELECT count(*) AS slower FROM game_results
+      config.kind === "score"
+        ? `SELECT count(*) AS slower FROM game_results
+       WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3
+         AND time_ms < (SELECT time_ms FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4)`
+        : `SELECT count(*) AS slower FROM game_results
        WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3
          AND time_ms > (SELECT time_ms FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4)`,
       game,

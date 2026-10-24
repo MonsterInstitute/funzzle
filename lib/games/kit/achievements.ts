@@ -14,6 +14,8 @@ export interface GameStats {
   won: number;
   noHintWins: number;
   bestMs?: number;
+  /** Score games: the best score. */
+  bestScore?: number;
   /** Wins per difficulty / variant label, e.g. {expert: 2, "draw-3": 5}. */
   levels: Record<string, number>;
   /** Puzzles solved that needed each skill (technique, pattern, …). */
@@ -34,6 +36,8 @@ export function gameStats(game: string): GameStats {
 export interface FinishInput {
   won: boolean;
   timeMs?: number;
+  /** Score games: the final score (kept as bestScore). */
+  score?: number;
   hints?: number;
   level?: string;
   /** Skills this puzzle exercised, e.g. the Sudoku techniques its solve path needs. */
@@ -48,6 +52,7 @@ export function recordFinish(game: string, f: FinishInput): void {
     s.won++;
     if (!f.hints) s.noHintWins++;
     if (f.timeMs && (!s.bestMs || f.timeMs < s.bestMs)) s.bestMs = f.timeMs;
+    if (f.score !== undefined && f.score > (s.bestScore ?? 0)) s.bestScore = f.score;
     if (f.level) s.levels[f.level] = (s.levels[f.level] ?? 0) + 1;
     for (const k of new Set(f.skills ?? [])) s.skills[k] = (s.skills[k] ?? 0) + 1;
   }
@@ -103,6 +108,42 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "fast", name: "Quick hands", tier: 2, what: "Win in under 5 minutes" },
       { id: "efficient", name: "Efficient", tier: 2, what: "Win in under 120 moves" },
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
+    ],
+  },
+  "2048": {
+    title: "2048 skills",
+    skills: [
+      { id: "reach-256", name: "256", tier: 0, what: "Make a 256 tile" },
+      { id: "reach-512", name: "512", tier: 0, what: "Make a 512 tile" },
+      { id: "corner", name: "Corner keeper", tier: 1, what: "Keep your biggest tile in a corner for most of a game" },
+      { id: "reach-1024", name: "1024", tier: 1, what: "Make a 1024 tile" },
+      { id: "reach-2048", name: "2048", tier: 2, what: "Make the 2048 tile" },
+      { id: "no-undo-1024", name: "No take-backs", tier: 2, what: "Make 1024 without undo or the coach" },
+      { id: "reach-4096", name: "4096", tier: 3, what: "Keep going to 4096" },
+    ],
+  },
+  "block-puzzle": {
+    title: "Block Puzzle skills",
+    skills: [
+      { id: "clear-line", name: "First clear", tier: 0, what: "Clear a row or column" },
+      { id: "double", name: "Double", tier: 0, what: "Clear two lines with one piece" },
+      { id: "combo-3", name: "Combo", tier: 1, what: "Clear lines with three pieces in a row" },
+      { id: "score-1000", name: "1,000 club", tier: 1, what: "Score 1,000 points in one game" },
+      { id: "full-daily", name: "Every piece", tier: 2, what: "Place every piece of the daily sequence" },
+      { id: "clean-board", name: "Clean sweep", tier: 2, what: "Empty the whole board with a clear" },
+      { id: "unaided", name: "Unaided", tier: 3, what: "Score 1,500 without the coach" },
+    ],
+  },
+  jigsaw: {
+    title: "Jigsaw skills",
+    skills: [
+      { id: "edges-first", name: "Edges first", tier: 0, what: "Finish the border before any inside piece" },
+      { id: "solve-24", name: "24 pieces", tier: 0, what: "Finish a 24-piece puzzle" },
+      { id: "solve-48", name: "48 pieces", tier: 1, what: "Finish a 48-piece puzzle" },
+      { id: "unaided", name: "Unaided", tier: 1, what: "Finish without “Show a piece”" },
+      { id: "fast", name: "Quick hands", tier: 2, what: "Finish 24 pieces in under 4 minutes" },
+      { id: "solve-96", name: "96 pieces", tier: 2, what: "Finish a 96-piece puzzle" },
+      { id: "no-preview", name: "From memory", tier: 3, what: "Finish without opening the preview" },
     ],
   },
 };

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { HeadToHead } from "@/components/kit/ChallengePanel";
+import { HeadToHead, resultText } from "@/components/kit/ChallengePanel";
 import { challengePlayHref, fetchChallenge, myEntry, type Challenge } from "@/lib/games/kit/challenge";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
-import { formatTime } from "@/lib/games/kit/results";
+import { isScoreGame } from "@/lib/games/kit/resultConfig";
 
 /** /challenge?id=…: who set it, the board so far, and a button to play. */
 export default function ChallengeView() {
@@ -50,7 +50,7 @@ export default function ChallengeView() {
           {played ? "Your challenge" : `${creator.name} challenges you`}
         </h1>
         <p className="m-0 text-[17px]">
-          {creator.name} finished in <strong className="font-mono">{formatTime(creator.timeMs)}</strong>
+          {creator.name} {isScoreGame(challenge.game) ? "scored" : "finished in"} <strong className="font-mono">{resultText(challenge.game, creator)}</strong>
           {creator.hints ? ` with ${creator.hints} hint${creator.hints === 1 ? "" : "s"}` : " without a hint"}. Same puzzle, your turn.
         </p>
         {!played && (

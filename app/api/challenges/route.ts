@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { COMPETITIVE_GAMES, name, puzzle, randomCode, result, UUID_RE } from "@/lib/apiValidate";
+import { COMPETITIVE_GAMES, entryValue, name, puzzle, randomCode, result, UUID_RE } from "@/lib/apiValidate";
 import { all, batch, exec, first } from "@/lib/db";
+import { isScoreGame } from "@/lib/games/kit/resultConfig";
 
 /**
  * Friend challenges (lib/games/kit/challenge.ts). No login: entries are keyed
@@ -19,8 +20,12 @@ async function load(id: string) {
     id
   );
   if (!c) return null;
+  // Score games keep the score in time_ms (entryValue) and rank it highest first.
+  const scored = isScoreGame(c.game);
   const entries = await all<{ client_id: string; name: string; time_ms: number; mistakes: number; hints: number; moves: number | null }>(
-    "SELECT client_id, name, time_ms, mistakes, hints, moves FROM challenge_entries WHERE challenge_id = ? ORDER BY time_ms LIMIT 50",
+    scored
+      ? "SELECT client_id, name, time_ms, mistakes, hints, moves FROM challenge_entries WHERE challenge_id = ? ORDER BY time_ms DESC LIMIT 50"
+      : "SELECT client_id, name, time_ms, mistakes, hints, moves FROM challenge_entries WHERE challenge_id = ? ORDER BY time_ms LIMIT 50",
     id
   );
   return {
@@ -30,7 +35,8 @@ async function load(id: string) {
     label: c.label,
     entries: entries.map((e) => ({
       name: e.name,
-      timeMs: e.time_ms,
+      // A score game's time isn't stored: 0, with the points in `score`.
+      ...(scored ? { timeMs: 0, score: e.time_ms } : { timeMs: e.time_ms }),
       mistakes: e.mistakes,
       hints: e.hints,
       ...(e.moves === null ? {} : { moves: e.moves }),
@@ -60,7 +66,8 @@ export async function POST(request: Request) {
   const clientId = String(body?.clientId ?? "");
   const n = name(body?.name);
   const r = result(body?.result);
-  if (!COMPETITIVE_GAMES.has(game) || !p || !label || !UUID_RE.test(clientId) || !n || !r) {
+  const value = r && entryValue(game, r);
+  if (!COMPETITIVE_GAMES.has(game) || !p || !label || !UUID_RE.test(clientId) || !n || !r || value === null) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
   const id = randomCode(8);
@@ -72,7 +79,7 @@ export async function POST(request: Request) {
         id,
         clientId,
         n,
-        r.timeMs,
+        value,
         r.mistakes,
         r.hints,
         r.moves,
@@ -93,13 +100,18 @@ export async function PUT(request: Request) {
   const r = result(body?.result);
   if (!ID_RE.test(id) || !UUID_RE.test(clientId) || !n || !r) return NextResponse.json({ error: "bad request" }, { status: 400 });
   try {
+    // The ranked value depends on the game (time, or score for score games).
+    const target = await first<{ game: string }>("SELECT game FROM challenges WHERE id = ?", id);
+    if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });
+    const value = entryValue(target.game, r);
+    if (value === null) return NextResponse.json({ error: "bad request" }, { status: 400 });
     await exec(
       `INSERT INTO challenge_entries (challenge_id, client_id, name, time_ms, mistakes, hints, moves)
        SELECT id, ?, ?, ?, ?, ?, ? FROM challenges WHERE id = ?
        ON CONFLICT DO NOTHING`,
       clientId,
       n,
-      r.timeMs,
+      value,
       r.mistakes,
       r.hints,
       r.moves,

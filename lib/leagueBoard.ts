@@ -1,15 +1,17 @@
 /**
  * Weekly league boards from the members' daily results. For each daily
  * puzzle (game, date, variant), every member who finished scores 1 point plus
- * 1 for each member they beat on time. A game's board sums its puzzles over
- * the week; the overall board sums every game.
+ * 1 for each member they beat on time (on points, for score games). A game's
+ * board sums its puzzles over the week; the overall board sums every game.
  */
+import { beats } from "./games/kit/resultConfig";
 
 export interface MemberResult {
   name: string;
   game: string;
   date: string;
   variant: string;
+  /** game_results.time_ms: the time, or the score for score games. */
   timeMs: number;
 }
 
@@ -35,7 +37,7 @@ export function leagueBoards(members: string[], results: MemberResult[]): Record
   };
   for (const entries of puzzles.values()) {
     for (const r of entries) {
-      const beaten = entries.filter((o) => o.timeMs > r.timeMs).length;
+      const beaten = entries.filter((o) => beats(r.game, r.timeMs, o.timeMs)).length;
       add(r.game, r.name, 1 + beaten);
       add("overall", r.name, 1 + beaten);
     }
