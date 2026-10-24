@@ -29,6 +29,7 @@ export function GET() {
     { path: "/play/sudoku", priority: 0.9, lastmod: today },
     { path: "/play/solitaire", priority: 0.9, lastmod: today },
     { path: "/play/freecell", priority: 0.9, lastmod: today },
+    { path: "/play/minesweeper", priority: 0.9, lastmod: today },
     { path: "/play/mini", priority: 0.8, lastmod: today },
     { path: "/play/wordle", priority: 0.8, lastmod: today },
     { path: "/play/connections", priority: 0.8, lastmod: today },

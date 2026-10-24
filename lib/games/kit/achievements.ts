@@ -117,6 +117,20 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "clean", name: "Clean win", tier: 3, what: "Win without the coach or undo" },
     ],
   },
+  // Ids are the engine's technique names (lib/games/minesweeper TECHNIQUES):
+  // a cleared board counts every technique its logical solve path needs.
+  minesweeper: {
+    title: "Minesweeper techniques",
+    skills: [
+      { id: "single-flag", name: "Single flag", tier: 0, what: "A number with only that many hidden cells" },
+      { id: "single-safe", name: "Single safe", tier: 0, what: "A number that already has all its mines" },
+      { id: "1-1 pattern", name: "1-1 pattern", tier: 1, what: "Two 1s sharing the same mine" },
+      { id: "1-2 pattern", name: "1-2 pattern", tier: 1, what: "A 2 next to a 1 forces a mine" },
+      { id: "subset", name: "Subset", tier: 2, what: "One number’s cells inside another’s" },
+      { id: "frontier enumeration", name: "Frontier", tier: 3, what: "Try every layout along an edge" },
+      { id: "mine count", name: "Mine count", tier: 3, what: "Use the mines left to finish" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

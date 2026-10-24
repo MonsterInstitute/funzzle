@@ -125,6 +125,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  minesweeper: {
+    name: "Daily Minesweeper",
+    genre: "Puzzle",
+    summary:
+      "Daily Minesweeper is a free no-guess Minesweeper: one 16×16 board with 40 mines for everyone today, opening at the center, where every cell can be worked out by logic. Stuck? The coach points to the next safe cell or mine and explains why, and your time ranks against today's players.",
+    description: "Free daily no-guess Minesweeper with a step-by-step coach, plus unlimited Beginner, Intermediate and Expert practice.",
+    qa: [
+      {
+        q: "How do you play Minesweeper?",
+        a: "Open every cell that isn't a mine. Each opened cell shows how many of its neighbors hide mines; use those numbers to work out which hidden cells are safe and which to flag. Opening a mine ends the game. Tap or left-click to open a cell; long-press, right-click or turn on Flag mode to place a flag.",
+      },
+      {
+        q: "Is every Minesweeper board solvable without guessing?",
+        a: "On Funzzle, yes. Every board is checked by a logical solver before you get it: from the opening at the center, each cell can be proved safe or a mine from the numbers (and, near the end, the count of mines left). A layout that would need a guess is thrown away and a new one is generated.",
+      },
+      {
+        q: "What do the numbers in Minesweeper mean?",
+        a: "A number counts the mines in the up to eight cells touching it, diagonals included. A blank opened cell touches no mines, so its neighbors open automatically. The counter above the board shows the mines left: total mines minus the flags you've placed.",
+      },
+      {
+        q: "What is chording in Minesweeper?",
+        a: "When a number already has that many flags around it, tap or click the number to open all its other hidden neighbors at once. If one of those flags is wrong, chording opens a mine and ends the game, as in the classic version.",
+      },
+      {
+        q: "How big are Beginner, Intermediate and Expert boards?",
+        a: "Beginner is 9×9 with 10 mines, Intermediate is 16×16 with 40 mines, and Expert is 30×16 with 99 mines, stood upright to 16×30 on phones. The daily board is Intermediate; Practice gives unlimited boards at any level.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

@@ -18,6 +18,7 @@ export const TODAY_PATHS = [
   "/play/sudoku",
   "/play/solitaire",
   "/play/freecell",
+  "/play/minesweeper",
   "/play/wordle",
   "/play/mini",
   "/play/connections",

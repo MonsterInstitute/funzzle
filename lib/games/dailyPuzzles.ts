@@ -11,7 +11,8 @@
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
 import { dailyDeal as dailyFreeCellDeal, type Move as FreeCellMove, type State as FreeCellState } from "@/lib/games/freecell";
-import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
+import { dailyBoard, type Board } from "@/lib/games/minesweeper";
+import { MINESWEEPER_DAILY_LEVEL, sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
 export interface DailySudoku {
@@ -36,6 +37,11 @@ export interface DailyFreeCell {
   state: FreeCellState;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: FreeCellMove[];
+}
+
+/** The day's no-guess board (it opens at the center cell), plus its date. */
+export interface DailyMinesweeper extends Board {
+  date: string;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -64,6 +70,10 @@ export function generateDailyFreeCell(date: string): DailyFreeCell {
   return { date, seed: d.seed, state: d.state, solution: d.solution };
 }
 
+export function generateDailyMinesweeper(date: string): DailyMinesweeper {
+  return { date, ...dailyBoard(date, MINESWEEPER_DAILY_LEVEL) };
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
@@ -76,6 +86,17 @@ export async function getDailyFreeCell(date: string): Promise<DailyFreeCell> {
   return (await readRow<DailyFreeCell>("freecell", date, "")) ?? generateDailyFreeCell(date);
 }
 
+export async function getDailyMinesweeper(date: string): Promise<DailyMinesweeper> {
+  return (await readRow<DailyMinesweeper>("minesweeper", date, MINESWEEPER_DAILY_LEVEL)) ?? generateDailyMinesweeper(date);
+}
+
+function generateRow(game: string, date: string, variant: string): object {
+  if (game === "sudoku") return generateDailySudoku(date);
+  if (game === "minesweeper") return generateDailyMinesweeper(date);
+  if (game === "freecell") return generateDailyFreeCell(date);
+  return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
+}
+
 /**
  * Store the daily puzzles for `dates` that aren't stored yet. Existing rows are
  * never overwritten. Returns what it wrote.
@@ -86,6 +107,7 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "solitaire", date, variant: "draw1" },
     { game: "solitaire", date, variant: "draw3" },
     { game: "freecell", date, variant: "" },
+    { game: "minesweeper", date, variant: MINESWEEPER_DAILY_LEVEL },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,
@@ -96,12 +118,7 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     .filter((w) => !have.has(`${w.game}|${w.date}|${w.variant}`))
     .map((w) => ({
       ...w,
-      data:
-        w.game === "sudoku"
-          ? generateDailySudoku(w.date)
-          : w.game === "freecell"
-            ? generateDailyFreeCell(w.date)
-            : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
+      data: generateRow(w.game, w.date, w.variant),
     }));
   if (!rows.length) return [];
   await batch(
