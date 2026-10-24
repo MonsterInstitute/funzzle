@@ -20,6 +20,7 @@ on:
       - "**/*.spec.*"
       - ".github/workflows/gsc-report.yml"
       - "scripts/gsc-report.mjs"
+      - "scripts/lib/cloudflare-report.mjs"
       - "reports/**"
       - "design/**"
       - ".github/workflows/test.yml"

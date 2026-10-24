@@ -12,7 +12,7 @@ import { referralSource } from "@/lib/referral";
  *   blob1    event        blob2  game ("" if none)   blob3  client id
  *   blob4    referral source (lib/referral.ts)       blob5  country
  *   blob6    props JSON (≤ 1 KB)
- *   double1  1 (count)
+ *   double1  1 (count)    double2  visit: days since the browser was first seen
  */
 
 const EVENTS = new Set([
@@ -32,6 +32,11 @@ const EVENTS = new Set([
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SLUG_RE = /^[a-z0-9-]{1,40}$/;
 const MAX_PROPS_BYTES = 1024;
+
+function visitAge(props: object): number {
+  const age = (props as { age?: unknown }).age;
+  return typeof age === "number" && Number.isInteger(age) && age >= 0 && age < 10_000 ? age : 0;
+}
 
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
@@ -55,7 +60,7 @@ export async function POST(request: Request) {
     (env as CloudflareEnv).EVENTS.writeDataPoint({
       indexes: [event],
       blobs: [event, game, clientId, referralSource(ref), country, propsJson],
-      doubles: [1],
+      doubles: [1, event === "visit" ? visitAge(props) : 0],
     });
   } catch (err) {
     console.error(`analytics engine write: ${(err as Error).message}`);

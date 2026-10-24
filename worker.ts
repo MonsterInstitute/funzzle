@@ -30,18 +30,28 @@ type Env = {
   ALERT_EMAIL?: SendEmail;
   ALERT_EMAIL_TO?: string;
   ALERT_EMAIL_FROM?: string;
+  /** Secret: an already-verified address, used while ALERT_EMAIL_TO is unverified. */
+  ALERT_EMAIL_FALLBACK?: string;
 };
 
-/** Email a cron failure. Never throws: the run is already failing. */
+/**
+ * Email a cron failure. Email Routing only delivers to verified destination
+ * addresses, so if ALERT_EMAIL_TO is refused the alert goes to
+ * ALERT_EMAIL_FALLBACK. Never throws: the run is already failing.
+ */
 async function alert(env: Env, subject: string, text: string): Promise<void> {
-  if (!env.ALERT_EMAIL || !env.ALERT_EMAIL_TO || !env.ALERT_EMAIL_FROM) {
+  if (!env.ALERT_EMAIL || !env.ALERT_EMAIL_FROM) {
     console.error(JSON.stringify({ m: "alert-not-configured", subject }));
     return;
   }
-  try {
-    await env.ALERT_EMAIL.send({ from: env.ALERT_EMAIL_FROM, to: env.ALERT_EMAIL_TO, subject, text } as unknown as EmailMessage);
-  } catch (err) {
-    console.error(JSON.stringify({ m: "alert-failed", subject, error: (err as Error).message }));
+  for (const to of [env.ALERT_EMAIL_TO, env.ALERT_EMAIL_FALLBACK]) {
+    if (!to) continue;
+    try {
+      await env.ALERT_EMAIL.send({ from: env.ALERT_EMAIL_FROM, to, subject, text } as unknown as EmailMessage);
+      return;
+    } catch (err) {
+      console.error(JSON.stringify({ m: "alert-failed", to, subject, error: (err as Error).message }));
+    }
   }
 }
 

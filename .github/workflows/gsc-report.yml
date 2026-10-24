@@ -7,7 +7,9 @@ name: Search Console Report
 #
 # Needs repository secret GSC_SERVICE_ACCOUNT_JSON: the key of
 # gsc-reader@funzzle-gsc.iam.gserviceaccount.com, which must be a user on the
-# funzzle.com Search Console property.
+# funzzle.com Search Console property. The Cloudflare sections (analytics and
+# cost, scripts/lib/cloudflare-report.mjs) need CLOUDFLARE_ANALYTICS_TOKEN:
+# Account Analytics: Read + D1: Read. Without it they print a note.
 
 on:
   schedule:
@@ -36,6 +38,8 @@ jobs:
       - name: Generate report
         env:
           GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/gsc-report.mjs
 
       - name: Commit report

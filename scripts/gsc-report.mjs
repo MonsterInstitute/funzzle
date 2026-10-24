@@ -14,6 +14,7 @@
 // No dependencies: signs the OAuth JWT with node:crypto.
 import { createSign } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cloudflareSections } from "./lib/cloudflare-report.mjs";
 import { dirname } from "node:path";
 
 const SITEMAP_URL = process.env.SITEMAP_URL || "https://www.funzzle.com/sitemap.xml";
@@ -319,6 +320,9 @@ async function main() {
   } else {
     out.push("Couldn't read the sitemap.", "");
   }
+
+  // Cloudflare: product analytics (Analytics Engine) and the monthly cost estimate.
+  out.push(...(await cloudflareSections(today)));
 
   const md = out.join("\n");
   const dest = arg("out") ?? `reports/gsc/${today}.md`;
