@@ -61,8 +61,10 @@ export async function GET(request: Request) {
     ["mini-crossword", "/play/mini", ensureMiniPuzzles],
     ["word-hunt", "/play/word-hunt", ensureWordHuntPuzzles],
     ["word-search", "/play/word-search", ensureWordSearchPuzzles],
-    // Crosswords are clued up to a week ahead (many clues per grid).
-    ["crossword", "/play/crossword", () => ensureCrosswordPuzzles(crosswordDatesAhead())],
+    // Crosswords take several clue calls each: today + 2 days ahead per run
+    // keeps every run well inside a cron's 15-minute limit, and four runs a
+    // day keep a 2-day buffer against a DeepSeek outage.
+    ["crossword", "/play/crossword", () => ensureCrosswordPuzzles(crosswordDatesAhead().slice(0, 3))],
   ];
   for (const [game, path, ensure] of jobs) {
     try {
