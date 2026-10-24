@@ -105,6 +105,31 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
     ],
   },
+  "word-search": {
+    title: "Word Search skills",
+    skills: [
+      { id: "across", name: "Across", tier: 0, what: "Find a word reading left to right" },
+      { id: "down", name: "Down", tier: 0, what: "Find a word reading top to bottom" },
+      { id: "diagonal", name: "Diagonal", tier: 1, what: "Find a word on a diagonal" },
+      { id: "backward", name: "Backward", tier: 1, what: "Find a word reading right to left or upward" },
+      { id: "reverse-diagonal", name: "Backward diagonal", tier: 2, what: "Find a word on a diagonal, read backward" },
+      { id: "unaided", name: "Sharp eyes", tier: 2, what: "Clear a grid without the coach" },
+      { id: "big-grid", name: "Big grid", tier: 3, what: "Clear a 15×15 grid" },
+      { id: "quick", name: "Quick scan", tier: 3, what: "Clear a 12×12 or bigger grid in under 4 minutes" },
+    ],
+  },
+  crossword: {
+    title: "Crossword skills",
+    skills: [
+      { id: "grid-11", name: "Weekday grid", tier: 0, what: "Solve an 11×11 crossword" },
+      { id: "long-entry", name: "Long answer", tier: 1, what: "Fill a 9+ letter answer with no help" },
+      { id: "grid-13", name: "Late-week grid", tier: 1, what: "Solve a 13×13 crossword" },
+      { id: "clean", name: "Clean solve", tier: 2, what: "Solve without check, reveal or hints" },
+      { id: "grid-15", name: "Weekend grid", tier: 2, what: "Solve a 15×15 crossword" },
+      { id: "quick", name: "Quick solve", tier: 3, what: "Solve an 11×11 in under 8 minutes" },
+      { id: "ink", name: "In ink", tier: 3, what: "Solve a 13×13 or bigger with no pencil, check or reveal" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

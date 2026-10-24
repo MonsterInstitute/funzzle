@@ -12,6 +12,8 @@ import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
+import { fallbackDailyWordSearch, type WordSearchPuzzle } from "@/lib/games/wordsearch";
+import { fallbackDailyCrossword, type CrosswordPuzzle } from "@/lib/games/crossword";
 
 export interface DailySudoku {
   date: string;
@@ -27,6 +29,39 @@ export interface DailySolitaire {
   state: State;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: Move[];
+}
+
+/**
+ * Word Search and Crossword rows are written by their content jobs
+ * (lib/cron/content/wordsearch.ts, crossword.ts: DeepSeek themes / clues,
+ * validated in code), not by ensureDailyPuzzles: a bank row written first
+ * would block the LLM one. Without a row the page uses the fallback bank,
+ * picked by date, so it never shows an empty puzzle.
+ */
+export interface DailyWordSearch extends WordSearchPuzzle {
+  date: string;
+  source: "llm" | "bank";
+}
+
+export interface DailyCrossword extends CrosswordPuzzle {
+  date: string;
+  source: "llm" | "bank";
+}
+
+export function generateDailyWordSearch(date: string): DailyWordSearch {
+  return { date, source: "bank", ...fallbackDailyWordSearch(date) };
+}
+
+export function generateDailyCrossword(date: string): DailyCrossword {
+  return { date, source: "bank", ...fallbackDailyCrossword(date) };
+}
+
+export async function getDailyWordSearch(date: string): Promise<DailyWordSearch> {
+  return (await readRow<DailyWordSearch>("word-search", date, "")) ?? generateDailyWordSearch(date);
+}
+
+export async function getDailyCrossword(date: string): Promise<DailyCrossword> {
+  return (await readRow<DailyCrossword>("crossword", date, "")) ?? generateDailyCrossword(date);
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {

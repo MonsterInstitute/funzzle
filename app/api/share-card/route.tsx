@@ -10,13 +10,16 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
  * cells (lighter = later), never digits.
  *
  * GET ?g=sudoku&d=2026-10-24&t=408000&top=27&s=12&m=0&h=1&lv=Hard&map=<81 chars 0-4>
+ * Word Search: &wl=<word lengths in the order found, comma-separated> (bars,
+ * no letters or positions). Crossword: &cw=<size² chars: 0 black, 1 solved,
+ * 2 helped> (the grid's black-square shape, no letters).
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", "word-search": "Daily Word Search", crossword: "Daily Crossword" };
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -51,6 +54,9 @@ export async function GET(request: Request) {
   const moves = q.get("mv") === null ? null : int(q.get("mv"), 100_000);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
+  const wl = q.get("wl") ?? "";
+  const cw = q.get("cw") ?? "";
+  const cwSize = Math.round(Math.sqrt(cw.length));
   if (
     !GAMES[game] ||
     !DATE_RE.test(date) ||
@@ -61,7 +67,9 @@ export async function GET(request: Request) {
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
-    (map && !/^[0-4]{81}$/.test(map))
+    (map && !/^[0-4]{81}$/.test(map)) ||
+    (wl && !/^(1[0-5]|[3-9])(,(1[0-5]|[3-9])){0,15}$/.test(wl)) ||
+    (cw && (!/^[0-2]+$/.test(cw) || ![11, 13, 15].includes(cwSize) || cwSize * cwSize !== cw.length))
   ) {
     return new Response("bad request", { status: 400 });
   }
@@ -74,11 +82,29 @@ export async function GET(request: Request) {
     streak > 0 ? `${streak}-day streak` : null,
     game === "sudoku"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+      : game === "word-search"
+        ? `${wl ? wl.split(",").length : (moves ?? 0)} words · ${hints} hint${hints === 1 ? "" : "s"}`
+        : game === "crossword"
+          ? `${cw ? `${cwSize}×${cwSize} · ` : ""}${hints} hint${hints === 1 ? "" : "s"}`
+          : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
+  const wordBars = wl ? wl.split(",").map(Number) : [];
+  const cwCell = cwSize ? Math.floor((400 - 2 * (cwSize - 1)) / cwSize) : 0;
   const board =
-    game === "sudoku" && map ? (
+    game === "word-search" && wordBars.length ? (
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", width: 432, height: 432, padding: 28, gap: 8, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {wordBars.map((len, i) => (
+          <div key={i} style={{ height: Math.min(22, Math.floor(360 / wordBars.length) - 8), width: `${Math.round((len / 15) * 100)}%`, borderRadius: 999, background: i === wordBars.length - 1 ? "#111111" : "#FFFFFF" }} />
+        ))}
+      </div>
+    ) : game === "crossword" && cw ? (
+      <div style={{ display: "flex", flexWrap: "wrap", alignContent: "center", justifyContent: "center", width: 432, height: 432, padding: 16, gap: 2, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {cw.split("").map((c, i) => (
+          <div key={i} style={{ width: cwCell, height: cwCell, borderRadius: 4, background: c === "0" ? "#111111" : c === "1" ? "#FFFFFF" : "rgba(255,255,255,0.45)" }} />
+        ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />

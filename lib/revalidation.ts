@@ -17,6 +17,8 @@ export const TODAY_PATHS = [
   "/free-crossword-puzzle-daily",
   "/play/sudoku",
   "/play/solitaire",
+  "/play/word-search",
+  "/play/crossword",
   "/play/wordle",
   "/play/mini",
   "/play/connections",

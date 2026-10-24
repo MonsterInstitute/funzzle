@@ -34,3 +34,9 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Word Search ratings by grid size (the daily is 12×12). */
+export const WORD_SEARCH_PUZZLE_RATING: Record<number, number> = { 10: 1000, 12: 1150, 15: 1350 };
+
+/** Crossword ratings by grid size (11×11 Mon–Wed, 13×13 Thu–Fri, 15×15 weekends). */
+export const CROSSWORD_PUZZLE_RATING: Record<number, number> = { 11: 1300, 13: 1500, 15: 1700 };
