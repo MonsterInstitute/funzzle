@@ -407,19 +407,25 @@ export const DAILY_BUDGET: Record<SuitCount, number> = { 1: 20_000, 2: 60_000, 4
  * The daily deal: the first seed `spider:${date}:${suits}:${n}` the solver
  * can win, so "every daily deal is winnable" is backed by an actual solution.
  */
+/** Longest winning line a daily deal may have (it is sent to the browser). */
+export const MAX_DAILY_LINE = 3000;
+
 export function dailyDeal(
   date: string,
   suits: SuitCount = 1,
-  opts: { maxNodes?: number; maxTries?: number } = {},
+  opts: { maxNodes?: number; maxTries?: number; maxLine?: number } = {},
 ): { seed: string; state: State; solution: Move[] } {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`dailyDeal: bad date ${date}`);
   const maxNodes = opts.maxNodes ?? DAILY_BUDGET[suits];
   const maxTries = opts.maxTries ?? 200;
+  // The winning line ships with the page for the coach: skip the rare deal
+  // whose line the greedy search makes absurdly long (one 4-suit deal: 30k moves).
+  const maxLine = opts.maxLine ?? MAX_DAILY_LINE;
   for (let n = 0; n < maxTries; n++) {
     const seed = `spider:${date}:${suits}:${n}`;
     const state = deal(seed, suits);
     const { result, moves } = solve(state, { maxNodes });
-    if (result === "win") return { seed, state, solution: moves };
+    if (result === "win" && moves.length <= maxLine) return { seed, state, solution: moves };
   }
   throw new Error(`dailyDeal: no winnable ${suits}-suit deal found for ${date}`);
 }
