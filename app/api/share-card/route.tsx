@@ -38,6 +38,7 @@ const GAMES: Record<string, string> = {
   "letter-box": "Letter Box",
   groups: "Groups",
   chess: "Chess Puzzle",
+  "mini-crossword": "Mini Crossword",
 };
 /** Chess vs the computer (?g=chess&r=win|draw|loss): a game result, not a daily rank. */
 const CHESS_RESULT: Record<string, string> = {
@@ -135,7 +136,11 @@ export async function GET(request: Request) {
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
-    (map && game !== "groups" && !/^[0-4]{81}$/.test(map)) ||
+    (map &&
+      game !== "groups" &&
+      !(
+        game === "mini-crossword" ? /^(?:[0-5]{25}|[0-5]{49})$/ : /^[0-4]{81}$/
+      ).test(map)) ||
     (game === "groups" &&
       (!/^[1-4]{4,32}$/.test(map) || map.length % 4 !== 0 || found === null)) ||
     (q.get("sc") !== null && score === null) ||
@@ -163,13 +168,17 @@ export async function GET(request: Request) {
           streak > 0 ? `${streak}-day streak` : null,
           game === "sudoku" || game === "groups" || game === "chess"
             ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-            : game === "minesweeper"
-              ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
-              : game === "mahjong"
-                ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
-                : game === "spelling-hive" || game === "letter-box"
-                  ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                  : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+            : game === "mini-crossword"
+              ? hints
+                ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
+                : "No checks, no hints"
+              : game === "minesweeper"
+                ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                : game === "mahjong"
+                  ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
+                  : game === "spelling-hive" || game === "letter-box"
+                    ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                    : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
         ]
   ).filter(Boolean) as string[];
   const title = chessResult ? "Chess" : GAMES[game];
@@ -181,6 +190,9 @@ export async function GET(request: Request) {
     72,
     Math.floor((400 - (rows.length - 1) * 10) / Math.max(1, rows.length)),
   );
+  // Mini Crossword map: black squares, then solve order (lighter = later); "5" = revealed.
+  const miniSide = map.length === 49 ? 7 : 5;
+  const miniCell = Math.floor((400 - (miniSide - 1) * 8) / miniSide);
   const board =
     game === "chess" ? (
       // A plain board: nothing about the position or the solution.
@@ -333,6 +345,31 @@ export async function GET(request: Request) {
       <HiveBoard />
     ) : game === "letter-box" ? (
       <BoxBoard path={path} />
+    ) : game === "mini-crossword" && map ? (
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: 432,
+          height: 432,
+          padding: 16,
+          gap: 8,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        {map.split("").map((c, i) => (
+          <div
+            key={i}
+            style={{
+              width: miniCell,
+              height: miniCell,
+              borderRadius: 10,
+              background: c === "5" ? "rgba(17,17,17,0.28)" : SHADES[Number(c)],
+            }}
+          />
+        ))}
+      </div>
     ) : game === "sudoku" && map ? (
       <div
         style={{

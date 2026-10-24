@@ -328,6 +328,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  "mini-crossword": {
+    name: "Mini Crossword",
+    genre: "Puzzle",
+    summary:
+      "Mini Crossword is a free 5×5 crossword that's the same grid for everyone today and takes about a minute or two. Every answer is an everyday word, the coach can point you to the easiest clue or fill a letter, and your time is ranked against today's players.",
+    description: "Free daily 5×5 mini crossword with a hint coach, check and reveal, and unlimited practice grids.",
+    qa: [
+      {
+        q: "How do you play a mini crossword?",
+        a: "Tap a square to pick it, tap it again to switch between Across and Down, and type the answer to the clue shown above the keyboard. The cursor jumps ahead as you type; fill every square with the right letter to finish.",
+      },
+      {
+        q: "How long does a mini crossword take?",
+        a: "Most players finish a 5×5 mini in one to three minutes; fast solvers get under 30 seconds. Saturday's grid can be a bigger 7×7, which takes a little longer.",
+      },
+      {
+        q: "When does a new Mini Crossword come out?",
+        a: "Every day at midnight UTC, together with the rest of the Daily Set. Missed one? Past days are in the archive, and practice gives you more grids any time.",
+      },
+      {
+        q: "Can I get a hint on the Mini Crossword?",
+        a: "Yes. Check marks wrong letters, Reveal fills in the current word, and the coach gives up to three hints per puzzle: first the easiest clue to try, then one of its letters, then the word. Help counts in your result, so a clean solve ranks higher.",
+      },
+      {
+        q: "How do I solve crosswords faster?",
+        a: "Start with fill-in-the-blank clues and the shortest answers, then use the letters they give you on the crossing words. Watch the clue's tense and number: a plural clue usually means a plural answer.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

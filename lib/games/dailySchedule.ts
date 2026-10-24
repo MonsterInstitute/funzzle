@@ -75,3 +75,5 @@ export const CHESS_PUZZLE_RATING = { easy: 1100, medium: 1450, hard: 1800 } as c
 
 /** Chess vs the computer: each level's rating as the "opponent". */
 export const CHESS_LEVEL_RATING = { 1: 700, 2: 1000, 3: 1300, 4: 1600, 5: 1900, 6: 2200 } as const;
+/** Mini Crossword "opponent" ratings: the everyday 5×5 and the Saturday 7×7. */
+export const MINI_PUZZLE_RATING: Record<number, number> = { 5: 1100, 7: 1450 };

@@ -206,6 +206,18 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "mate-in-3", name: "Mate in 3", tier: 4, what: "A three-move mating attack" },
     ],
   },
+  "mini-crossword": {
+    title: "Mini Crossword skills",
+    skills: [
+      { id: "solve", name: "Solver", tier: 0, what: "Finish a mini" },
+      { id: "no-check", name: "No checks", tier: 1, what: "Solve without Check, Reveal or the coach" },
+      { id: "open-grid", name: "Open grid", tier: 1, what: "Solve a grid with no black squares" },
+      { id: "under-60", name: "Minute mini", tier: 2, what: "Solve in under 60 seconds" },
+      { id: "big-grid", name: "Saturday size", tier: 2, what: "Solve a 7×7 mini" },
+      { id: "clean-minute", name: "Clean minute", tier: 3, what: "Under 60 seconds with no help" },
+      { id: "under-30", name: "Lightning", tier: 3, what: "Solve a 5×5 in under 30 seconds" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

@@ -5,6 +5,7 @@
  * the anonymous client id and show a display name.
  */
 import { track } from "./analytics";
+import { GAME_BY_SLUG } from "./catalog";
 import { getDisplayName } from "./identity";
 import { clientId, readJson, writeJson } from "./storage";
 
@@ -46,7 +47,8 @@ export function challengeLink(id: string): string {
 }
 
 export function challengePlayHref(game: string, id: string): string {
-  return `/play/${game}?challenge=${id}`;
+  // The catalog href: some games keep an older URL (mini-crossword → /play/mini).
+  return `${GAME_BY_SLUG[game]?.href ?? `/play/${game}`}?challenge=${id}`;
 }
 
 /** My own entry in a challenge (remembered locally, to mark it as "you"). */
