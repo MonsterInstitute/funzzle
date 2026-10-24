@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const c = bySlug.get(slug);
   if (!c) return { title: "Country" };
   return pageMetadata({
-    title: `${c.name} — Capital, Population & Facts`,
-    description: `Facts about ${c.name}: capital ${c.capital}, population, region, bordering countries, and more. ${c.description}`,
+    title: `${c.name} Facts: Capital, Population, Region & Neighbors`,
+    description: `${c.name} at a glance: its capital, population, region, location and every neighboring country, on one page. ${c.description}`,
     path: `/country/${slug}`,
   });
 }

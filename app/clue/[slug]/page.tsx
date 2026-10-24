@@ -33,9 +33,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const clue = await getClue(slug);
   if (!clue) return { title: "Crossword Clue" };
+  // The answer stays out of the title and description: a result that shows
+  // it gets no click (pages ranking 1-3 had 0% CTR). The length and first
+  // letter are the hint that makes the reveal worth opening.
+  const letters = clue.answer.replace(/[^A-Za-z]/g, "");
   return pageMetadata({
-    title: `${clue.clue_text} — Crossword Clue Answer: ${clue.answer}`,
-    description: `The answer to the crossword clue "${clue.clue_text}" is ${clue.answer}. ${clue.explanation}`,
+    title: `${clue.clue_text} Crossword Clue: ${letters.length} Letters, Answer & Hint`,
+    description: `Stuck on "${clue.clue_text}"? It's ${letters.length} letters, starting with ${letters.charAt(0).toUpperCase()}. Tap to reveal the answer, then see why it fits and which puzzles it appeared in.`,
     path: `/clue/${slug}`,
     keywords: [
       clue.clue_text,

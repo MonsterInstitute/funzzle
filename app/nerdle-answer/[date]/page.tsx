@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   if (!isValidISODate(date)) return { title: "Nerdle Answer" };
   const long = formatLongDate(date);
   return pageMetadata({
-    title: `Nerdle Answer ${long} — Today's Equation`,
-    description: `Today's Nerdle answer for ${long}, revealed and explained. Plus play free Nerdle on Funzzle.`,
+    title: `Nerdle Answer for ${long}: Equation Solved & Explained`,
+    description: `The Nerdle answer for ${long}, with how each part of the equation works so the next one is easier. Then play free Nerdle on Funzzle.`,
     path: `/nerdle-answer/${date}`,
   });
 }

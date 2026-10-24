@@ -18,13 +18,16 @@ export function generateStaticParams() {
 
 const bySlug = new Map(WORDS.map((w) => [w.slug, w]));
 
+// Dataset words are uppercase (game answers); titles read better as "Earlobe".
+const titleCase = (word: string) => word.charAt(0) + word.slice(1).toLowerCase();
+
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
   const w = bySlug.get(slug);
   if (!w) return { title: "Word" };
   return pageMetadata({
-    title: `${w.word} — Meaning & Word Facts`,
-    description: `What does ${w.word} mean? ${w.explanation}`,
+    title: `What Does ${titleCase(w.word)} Mean? Meaning & Quick Facts`,
+    description: `${titleCase(w.word)} explained in two sentences: what it means and a fact worth knowing. ${w.explanation}`,
     path: `/word/${slug}`,
   });
 }

@@ -18,13 +18,16 @@ export function generateStaticParams() {
 
 const bySlug = new Map(EQUATIONS.map((e) => [e.slug, e]));
 
+// "156-divided-by-4-equals-39" -> "156 divided by 4": the way people search it.
+const spoken = (slug: string) => slug.replace(/-equals-.*$/, "").replace(/-/g, " ");
+
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
   const e = bySlug.get(slug);
   if (!e) return { title: "Equation" };
   return pageMetadata({
-    title: `${e.equation} — ${e.concept} Explained`,
-    description: `The equation ${e.equation} is a ${e.concept.toLowerCase()} problem. ${e.explanation}`,
+    title: `What Is ${spoken(slug)}? ${e.concept} Worked Out & Explained`,
+    description: `How to work out ${spoken(slug)}: a quick ${e.concept.toLowerCase()} walkthrough, plus how the equation fits a Nerdle row. ${e.explanation}`,
     path: `/equation/${slug}`,
   });
 }

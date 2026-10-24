@@ -41,8 +41,8 @@ export async function generateMetadata({
   if (!isValidISODate(date)) return { title: "Crossword Answers" };
   const long = formatLongDate(date);
   return pageMetadata({
-    title: `NYT Crossword Answers ${long}`,
-    description: `Complete answers for the NYT Mini crossword on ${long}. Every clue solved and explained.`,
+    title: `NYT Mini Crossword Answers for ${long}: All Clues Solved`,
+    description: `Every across and down answer for the NYT Mini on ${long}, each with a short explanation. Check one clue or the whole grid.`,
     path: `/nyt-crossword-answers/${date}`,
     keywords: [
       `nyt crossword answers ${long}`,
