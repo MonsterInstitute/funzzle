@@ -12,6 +12,7 @@ import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
 import { dailyDeal as dailyFreeCellDeal, type Move as FreeCellMove, type State as FreeCellState } from "@/lib/games/freecell";
 import { dailyBoard, type Board } from "@/lib/games/minesweeper";
+import { dailyDeal as mahjongDailyDeal, type LayoutId, type Pair, type State as MahjongState } from "@/lib/games/mahjong";
 import { MINESWEEPER_DAILY_LEVEL, sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -44,6 +45,18 @@ export interface DailyMinesweeper extends Board {
   date: string;
 }
 
+export interface DailyMahjong {
+  date: string;
+  layout: LayoutId;
+  seed: string;
+  state: MahjongState;
+  /** Winning line replayed to an empty board: proof the deal can be cleared. */
+  solution: Pair[];
+}
+
+/** Daily Mahjong is always the 144-tile Turtle. */
+export const MAHJONG_DAILY_LAYOUT: LayoutId = "turtle";
+
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
   const row = await first<{ data: string }>(
     "SELECT data FROM daily_puzzles WHERE game = ? AND puzzle_date = ? AND variant = ?",
@@ -74,12 +87,21 @@ export function generateDailyMinesweeper(date: string): DailyMinesweeper {
   return { date, ...dailyBoard(date, MINESWEEPER_DAILY_LEVEL) };
 }
 
+export function generateDailyMahjong(date: string): DailyMahjong {
+  const d = mahjongDailyDeal(date, MAHJONG_DAILY_LAYOUT);
+  return { date, layout: MAHJONG_DAILY_LAYOUT, seed: d.seed, state: d.state, solution: d.solution };
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
 
 export async function getDailySolitaire(date: string, draw: 1 | 3): Promise<DailySolitaire> {
   return (await readRow<DailySolitaire>("solitaire", date, `draw${draw}`)) ?? generateDailySolitaire(date, draw);
+}
+
+export async function getDailyMahjong(date: string): Promise<DailyMahjong> {
+  return (await readRow<DailyMahjong>("mahjong", date, MAHJONG_DAILY_LAYOUT)) ?? generateDailyMahjong(date);
 }
 
 export async function getDailyFreeCell(date: string): Promise<DailyFreeCell> {
@@ -94,6 +116,7 @@ function generateRow(game: string, date: string, variant: string): object {
   if (game === "sudoku") return generateDailySudoku(date);
   if (game === "minesweeper") return generateDailyMinesweeper(date);
   if (game === "freecell") return generateDailyFreeCell(date);
+  if (game === "mahjong") return generateDailyMahjong(date);
   return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
 }
 
@@ -108,6 +131,7 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "solitaire", date, variant: "draw3" },
     { game: "freecell", date, variant: "" },
     { game: "minesweeper", date, variant: MINESWEEPER_DAILY_LEVEL },
+    { game: "mahjong", date, variant: MAHJONG_DAILY_LAYOUT },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,

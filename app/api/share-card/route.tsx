@@ -2,7 +2,12 @@ import { ImageResponse } from "next/og";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { formatTime } from "@/lib/games/kit/results";
 import { SUIT_PATHS } from "@/components/kit/SuitIcon";
-import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/shareFonts";
+import {
+  bricolage800,
+  geist500,
+  geist700,
+  geistMono600,
+} from "@/lib/games/kit/shareFonts";
 
 /**
  * 1080×1080 social result card (design/ShareCard.dc.html), spoiler-free:
@@ -16,7 +21,13 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,24}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", minesweeper: "Daily Minesweeper", freecell: "Daily FreeCell" };
+const GAMES: Record<string, string> = {
+  sudoku: "Daily Sudoku",
+  solitaire: "Daily Solitaire",
+  minesweeper: "Daily Minesweeper",
+  freecell: "Daily FreeCell",
+  mahjong: "Daily Mahjong",
+};
 
 /**
  * Minesweeper's card shows a fixed, made-up corner of a board (consistent
@@ -44,7 +55,39 @@ function int(value: string | null, max: number): number | null {
   return n <= max ? n : null;
 }
 
-const SHADES = ["#111111", "#FFFFFF", "rgba(255,255,255,0.72)", "rgba(255,255,255,0.45)", "rgba(255,255,255,0.22)"];
+/** Four original tile faces for the Mahjong card: dots, bamboo, a dragon, a flower. */
+const MAHJONG_TILES = [
+  <g key="dots" fill="#2456A6">
+    <circle cx="31" cy="22" r="7" />
+    <circle cx="31" cy="40" r="7" />
+    <circle cx="31" cy="58" r="7" />
+  </g>,
+  <g key="bamboo" fill="#1F7A4D">
+    <rect x="17" y="16" width="7" height="48" rx="3.5" />
+    <rect x="27.5" y="16" width="7" height="48" rx="3.5" />
+    <rect x="38" y="16" width="7" height="48" rx="3.5" />
+  </g>,
+  <g key="dragon">
+    <circle cx="31" cy="40" r="19" fill="#C8102E" />
+    <circle cx="31" cy="40" r="9" fill="#FFFDF7" />
+  </g>,
+  <g key="flower" fill="#C2378A">
+    <circle cx="31" cy="27" r="8" />
+    <circle cx="43" cy="36" r="8" />
+    <circle cx="38" cy="50" r="8" />
+    <circle cx="24" cy="50" r="8" />
+    <circle cx="19" cy="36" r="8" />
+    <circle cx="31" cy="40" r="6" fill="#F2B233" />
+  </g>,
+];
+
+const SHADES = [
+  "#111111",
+  "#FFFFFF",
+  "rgba(255,255,255,0.72)",
+  "rgba(255,255,255,0.45)",
+  "rgba(255,255,255,0.22)",
+];
 
 export async function GET(request: Request) {
   const q = new URL(request.url).searchParams;
@@ -83,12 +126,25 @@ export async function GET(request: Request) {
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
       : game === "minesweeper"
         ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
-        : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+        : game === "mahjong"
+          ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
+          : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
   const board =
     game === "minesweeper" ? (
-      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 8, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: 432,
+          height: 432,
+          padding: 16,
+          gap: 8,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
         {MINE_ART.join("")
           .split("")
           .map((c, i) => (
@@ -101,7 +157,8 @@ export async function GET(request: Request) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: c === "h" || c === "F" ? "rgba(255,255,255,0.45)" : "#FFFFFF",
+                background:
+                  c === "h" || c === "F" ? "rgba(255,255,255,0.45)" : "#FFFFFF",
                 fontFamily: "Bricolage",
                 fontSize: 38,
                 color: MINE_NUMBER[Number(c)] ?? "#111111",
@@ -109,7 +166,12 @@ export async function GET(request: Request) {
             >
               {c === "F" ? (
                 <svg width="40" height="40" viewBox="0 0 24 24">
-                  <path d="M7 21V4M4 21h7" stroke="#111111" strokeWidth="2.4" strokeLinecap="round" />
+                  <path
+                    d="M7 21V4M4 21h7"
+                    stroke="#111111"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  />
                   <path d="M7 4h11l-3 4.5 3 4.5H7z" fill="#C8102E" />
                 </svg>
               ) : /\d/.test(c) ? (
@@ -118,18 +180,109 @@ export async function GET(request: Request) {
             </div>
           ))}
       </div>
+    ) : game === "mahjong" ? (
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: 432,
+          height: 432,
+          padding: 28,
+          gap: 24,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        {MAHJONG_TILES.map((face, i) => (
+          <div
+            key={i}
+            style={{
+              width: 176,
+              height: 176,
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <svg width="140" height="176" viewBox="0 0 70 88">
+              <rect x="6" y="6" width="62" height="80" rx="9" fill="#C9746E" />
+              <rect
+                x="0"
+                y="0"
+                width="62"
+                height="80"
+                rx="9"
+                fill="#FFFDF7"
+                stroke="#E9DCCB"
+                strokeWidth="1.5"
+              />
+              {face}
+            </svg>
+          </div>
+        ))}
+      </div>
     ) : game === "sudoku" && map ? (
-      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: 432,
+          height: 432,
+          padding: 16,
+          gap: 6,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
         {map.split("").map((c, i) => (
-          <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />
+          <div
+            key={i}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 8,
+              background: SHADES[Number(c)],
+            }}
+          />
         ))}
       </div>
     ) : (
-      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 28, gap: 24, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: 432,
+          height: 432,
+          padding: 28,
+          gap: 24,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
         {SUITS.map(({ s, red }) => (
-          <div key={s} style={{ width: 176, height: 176, borderRadius: 22, background: "#FFFFFF", display: "flex", flexDirection: "column", padding: 16, color: red ? "#C8102E" : "#111111" }}>
-            <span style={{ fontFamily: "Bricolage", fontSize: 44, lineHeight: 1 }}>K</span>
-            <svg style={{ marginTop: "auto", alignSelf: "center" }} width="84" height="84" viewBox="0 0 24 24">
+          <div
+            key={s}
+            style={{
+              width: 176,
+              height: 176,
+              borderRadius: 22,
+              background: "#FFFFFF",
+              display: "flex",
+              flexDirection: "column",
+              padding: 16,
+              color: red ? "#C8102E" : "#111111",
+            }}
+          >
+            <span
+              style={{ fontFamily: "Bricolage", fontSize: 44, lineHeight: 1 }}
+            >
+              K
+            </span>
+            <svg
+              style={{ marginTop: "auto", alignSelf: "center" }}
+              width="84"
+              height="84"
+              viewBox="0 0 24 24"
+            >
               <path d={SUIT_PATHS[s]} fill={red ? "#C8102E" : "#111111"} />
             </svg>
           </div>
@@ -138,51 +291,143 @@ export async function GET(request: Request) {
     );
 
   return new ImageResponse(
-    (
-      <div style={{ width: 1080, height: 1080, display: "flex", flexDirection: "column", padding: 80, gap: 44, background: accent, color: "#111111", fontFamily: "Geist" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <svg width="60" height="60" viewBox="0 0 34 34">
-              <rect x="1" y="1" width="15" height="15" rx="4" fill="#111111" />
-              <rect x="18" y="1" width="15" height="15" rx="7.5" fill="#FFFFFF" />
-              <rect x="1" y="18" width="15" height="15" rx="7.5" fill="#FFFFFF" />
-              <rect x="18" y="18" width="15" height="15" rx="4" fill="#111111" />
-            </svg>
-            <span style={{ fontFamily: "Bricolage", fontSize: 48, letterSpacing: "-0.03em" }}>funzzle</span>
-          </div>
-          <span style={{ fontFamily: "Geist Mono", fontSize: 28 }}>{dateLabel}</span>
+    <div
+      style={{
+        width: 1080,
+        height: 1080,
+        display: "flex",
+        flexDirection: "column",
+        padding: 80,
+        gap: 44,
+        background: accent,
+        color: "#111111",
+        fontFamily: "Geist",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <svg width="60" height="60" viewBox="0 0 34 34">
+            <rect x="1" y="1" width="15" height="15" rx="4" fill="#111111" />
+            <rect x="18" y="1" width="15" height="15" rx="7.5" fill="#FFFFFF" />
+            <rect x="1" y="18" width="15" height="15" rx="7.5" fill="#FFFFFF" />
+            <rect x="18" y="18" width="15" height="15" rx="4" fill="#111111" />
+          </svg>
+          <span
+            style={{
+              fontFamily: "Bricolage",
+              fontSize: 48,
+              letterSpacing: "-0.03em",
+            }}
+          >
+            funzzle
+          </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <span style={{ fontFamily: "Bricolage", fontSize: GAMES[game].length > 15 ? 68 : 92, lineHeight: 1, letterSpacing: "-0.035em" }}>{GAMES[game]}</span>
-          {label && (
-            <span style={{ padding: "10px 20px", borderRadius: 999, background: "#111111", color: "#FFFFFF", fontSize: 26, fontWeight: 700 }}>{label}</span>
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 56, alignItems: "center" }}>
-          {board}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <span style={{ fontFamily: "Geist Mono", fontSize: 152, lineHeight: 1, letterSpacing: "-0.04em" }}>{formatTime(time)}</span>
-            {lines.map((line, i) => (
-              <span key={line} style={{ fontSize: i === 0 ? 38 : 32, fontWeight: i === 0 ? 700 : 500 }}>{line}</span>
-            ))}
-          </div>
-        </div>
-        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 36, borderTop: "4px solid #111111" }}>
-          <span style={{ fontFamily: "Bricolage", fontSize: 44, letterSpacing: "-0.02em" }}>Can you beat it?</span>
-          <span style={{ fontFamily: "Geist Mono", fontSize: 30 }}>funzzle.com/daily</span>
+        <span style={{ fontFamily: "Geist Mono", fontSize: 28 }}>
+          {dateLabel}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <span
+          style={{
+            fontFamily: "Bricolage",
+            fontSize: GAMES[game].length > 15 ? 68 : 92,
+            lineHeight: 1,
+            letterSpacing: "-0.035em",
+          }}
+        >
+          {GAMES[game]}
+        </span>
+        {label && (
+          <span
+            style={{
+              padding: "10px 20px",
+              borderRadius: 999,
+              background: "#111111",
+              color: "#FFFFFF",
+              fontSize: 26,
+              fontWeight: 700,
+            }}
+          >
+            {label}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 56, alignItems: "center" }}>
+        {board}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <span
+            style={{
+              fontFamily: "Geist Mono",
+              fontSize: 152,
+              lineHeight: 1,
+              letterSpacing: "-0.04em",
+            }}
+          >
+            {formatTime(time)}
+          </span>
+          {lines.map((line, i) => (
+            <span
+              key={line}
+              style={{
+                fontSize: i === 0 ? 38 : 32,
+                fontWeight: i === 0 ? 700 : 500,
+              }}
+            >
+              {line}
+            </span>
+          ))}
         </div>
       </div>
-    ),
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingTop: 36,
+          borderTop: "4px solid #111111",
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "Bricolage",
+            fontSize: 44,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Can you beat it?
+        </span>
+        <span style={{ fontFamily: "Geist Mono", fontSize: 30 }}>
+          funzzle.com/daily
+        </span>
+      </div>
+    </div>,
     {
       width: 1080,
       height: 1080,
       fonts: [
-        { name: "Bricolage", data: font(bricolage800), weight: 800, style: "normal" },
+        {
+          name: "Bricolage",
+          data: font(bricolage800),
+          weight: 800,
+          style: "normal",
+        },
         { name: "Geist", data: font(geist500), weight: 500, style: "normal" },
         { name: "Geist", data: font(geist700), weight: 700, style: "normal" },
-        { name: "Geist Mono", data: font(geistMono600), weight: 600, style: "normal" },
+        {
+          name: "Geist Mono",
+          data: font(geistMono600),
+          weight: 600,
+          style: "normal",
+        },
       ],
       headers: { "Cache-Control": "public, max-age=31536000, immutable" },
-    }
+    },
   );
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isValidISODate, todayISO } from "@/lib/dates";
-import { getDailyFreeCell, getDailyMinesweeper, getDailySolitaire, getDailySudoku } from "@/lib/games/dailyPuzzles";
+import { getDailyFreeCell, getDailyMahjong, getDailyMinesweeper, getDailySolitaire, getDailySudoku, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
 
 /**
  * A past day's daily puzzle for the archive (/archive) and challenges:
@@ -17,6 +17,8 @@ const LOADERS: Record<string, (date: string, draw: 1 | 3) => Promise<unknown>> =
   solitaire: (date, draw) => getDailySolitaire(date, draw),
   freecell: (date) => getDailyFreeCell(date),
   minesweeper: (date) => getDailyMinesweeper(date),
+  // Only the Turtle has dailies (MAHJONG_DAILY_LAYOUT); ?layout= is accepted for clarity.
+  mahjong: (date) => getDailyMahjong(date),
 };
 
 export async function GET(request: Request) {
@@ -24,8 +26,9 @@ export async function GET(request: Request) {
   const game = url.searchParams.get("game");
   const date = url.searchParams.get("date") ?? "";
   const draw = url.searchParams.get("draw") === "3" ? 3 : 1;
+  const layout = url.searchParams.get("layout") ?? MAHJONG_DAILY_LAYOUT;
   const today = todayISO();
-  if (!game || !Object.hasOwn(LOADERS, game) || !isValidISODate(date) || date < FIRST || date > today) {
+  if (!game || !Object.hasOwn(LOADERS, game) || (game === "mahjong" && layout !== MAHJONG_DAILY_LAYOUT) || !isValidISODate(date) || date < FIRST || date > today) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
   try {

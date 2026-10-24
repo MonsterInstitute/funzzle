@@ -48,7 +48,7 @@ type Row = [slug: string, name: string, category: GameCategory, description: str
 const ROWS: Row[] = [
   ["solitaire", "Solitaire", "Cards", "Klondike, draw 1 or 3. Every daily deal is winnable.", "#7FD6A0", "#E9F7EE", "solitaire", "/play/solitaire"],
   ["sudoku", "Sudoku", "Logic", "Easy to expert, with a coach that explains every step.", "#9DB4FF", "#EAF0FF", "sudoku", "/play/sudoku"],
-  ["mahjong", "Mahjong", "Casual", "Match free tiles across hundreds of layouts.", "#F6A6A1", "#FDEDEC", "mahjong", null],
+  ["mahjong", "Mahjong", "Casual", "Match free tiles to clear the board. Every deal can be cleared.", "#F6A6A1", "#FDEDEC", "mahjong", "/play/mahjong"],
   ["minesweeper", "Minesweeper", "Logic", "No-guess boards: always solvable by logic.", "#8FE3CF", "#E8F9F4", "mines", "/play/minesweeper"],
   ["spider-solitaire", "Spider Solitaire", "Cards", "One, two or four suits. Unlimited undo.", "#A7E07A", "#EFF9E6", "spider", null],
   ["freecell", "FreeCell", "Cards", "Pure skill. Every daily deal is solver-verified.", "#6FD0E8", "#E5F6FB", "freecell", "/play/freecell"],

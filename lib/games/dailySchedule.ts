@@ -55,3 +55,11 @@ export const MINESWEEPER_PUZZLE_RATING: Record<MinesweeperLevel, number> = {
   intermediate: 1350,
   expert: 1750,
 };
+/** Mahjong Solitaire by layout: more tiles and taller stacks rate higher. */
+export const MAHJONG_PUZZLE_RATING = {
+  quick: 1000,
+  bridge: 1150,
+  fortress: 1250,
+  pyramid: 1300,
+  turtle: 1400,
+} as const;

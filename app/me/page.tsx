@@ -30,6 +30,7 @@ export default function MePage() {
             <SkillTree game="solitaire" />
             <SkillTree game="freecell" />
             <SkillTree game="minesweeper" />
+            <SkillTree game="mahjong" />
           </div>
           <BadgeGrid />
           <Passport />

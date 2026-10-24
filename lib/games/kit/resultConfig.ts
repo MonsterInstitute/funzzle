@@ -19,6 +19,9 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   // Variant = level; only the Intermediate daily board submits today. A
   // no-guess 16×16 clear takes fast players about a minute, most 3–10.
   minesweeper: { variants: ["beginner", "intermediate", "expert"], lo: 60_000, hi: 900_000, minMs: 10_000 },
+  // Daily Mahjong is always the 144-tile Turtle (variant = layout id): 72
+  // matches take a quick player about 4 minutes, most players 6–20.
+  mahjong: { variants: ["turtle"], lo: 120_000, hi: 1_500_000, minMs: 45_000 },
 };
 
 export const HISTOGRAM_BUCKETS = 14;
