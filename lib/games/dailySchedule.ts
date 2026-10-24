@@ -34,3 +34,6 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Funzzle Word modes: Quad and Math take more deduction than one word. */
+export const WORD_PUZZLE_RATING = { classic: 1250, quad: 1450, geo: 1300, math: 1450 } as const;

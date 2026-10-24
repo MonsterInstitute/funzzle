@@ -148,3 +148,27 @@ body {
   --suit-C: #12703f;
   --suit-D: #1d4fd8;
 }
+
+/*
+ * Funzzle Word tiles: right spot / wrong spot / absent. Color-blind mode
+ * (<html data-cb="1">) swaps green and yellow for orange and blue.
+ */
+:root {
+  --word-hit: #2e8540;
+  --word-hit-ink: #ffffff;
+  --word-near: #e2b622;
+  --word-near-ink: #111111;
+  --word-miss: #6b6b78;
+  --word-miss-ink: #ffffff;
+}
+:root[data-cb="1"] {
+  --word-hit: #f5793a;
+  --word-hit-ink: #111111;
+  --word-near: #85c0f9;
+  --word-near-ink: #111111;
+}
+@keyframes word-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}

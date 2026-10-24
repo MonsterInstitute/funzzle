@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { isValidISODate, todayISO } from "@/lib/dates";
-import { getDailySolitaire, getDailySudoku } from "@/lib/games/dailyPuzzles";
+import { getDailySolitaire, getDailySudoku, getDailyWord } from "@/lib/games/dailyPuzzles";
+import { WORD_MODES, type WordMode } from "@/lib/games/word";
 
 /**
  * A past day's daily puzzle for the archive (/archive) and challenges:
- * GET ?game=sudoku|solitaire&date=YYYY-MM-DD[&draw=1|3]. The stored row, or the
+ * GET ?game=sudoku|solitaire|word&date=YYYY-MM-DD[&draw=1|3][&mode=classic|quad|geo|math].
+ * The stored row, or the
  * same puzzle regenerated from its seed. Past puzzles never change, so the
  * CDN keeps them for a day; today's only for a minute (it's on the page).
  */
@@ -16,12 +18,20 @@ export async function GET(request: Request) {
   const game = url.searchParams.get("game");
   const date = url.searchParams.get("date") ?? "";
   const draw = url.searchParams.get("draw") === "3" ? 3 : 1;
+  const mode = (url.searchParams.get("mode") ?? "classic") as WordMode;
   const today = todayISO();
-  if ((game !== "sudoku" && game !== "solitaire") || !isValidISODate(date) || date < FIRST || date > today) {
+  if (
+    (game !== "sudoku" && game !== "solitaire" && game !== "word") ||
+    (game === "word" && !WORD_MODES.includes(mode)) ||
+    !isValidISODate(date) ||
+    date < FIRST ||
+    date > today
+  ) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
   try {
-    const data = game === "sudoku" ? await getDailySudoku(date) : await getDailySolitaire(date, draw);
+    const data =
+      game === "sudoku" ? await getDailySudoku(date) : game === "word" ? await getDailyWord(date, mode) : await getDailySolitaire(date, draw);
     const maxAge = date < today ? 86_400 : 60;
     return NextResponse.json(data, { headers: { "Cache-Control": `public, s-maxage=${maxAge}, stale-while-revalidate=${maxAge}` } });
   } catch (err) {

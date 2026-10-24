@@ -105,6 +105,21 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
     ],
   },
+  word: {
+    title: "Funzzle Word skills",
+    skills: [
+      { id: "solve", name: "First word", tier: 0, what: "Solve a five-letter word" },
+      { id: "in-four", name: "Sharp", tier: 1, what: "Solve a word in four guesses or fewer" },
+      { id: "unaided", name: "Unaided", tier: 1, what: "Solve a word without the coach" },
+      { id: "hard-mode", name: "Hard mode", tier: 2, what: "Solve with every clue reused" },
+      { id: "in-three", name: "Deduction", tier: 2, what: "Solve a word in three guesses or fewer" },
+      { id: "quad", name: "Four at once", tier: 2, what: "Solve all four Quad boards" },
+      { id: "geo", name: "Navigator", tier: 3, what: "Find the Geo country" },
+      { id: "math", name: "Equation", tier: 3, what: "Solve a Math equation" },
+      { id: "quad-eight", name: "Quad sweep", tier: 4, what: "Solve Quad in eight guesses or fewer" },
+      { id: "geo-three", name: "Pathfinder", tier: 4, what: "Find the Geo country in three guesses" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

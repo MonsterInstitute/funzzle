@@ -9,6 +9,8 @@ import { exec, first } from "@/lib/db";
  *   POST {game, date, variant, clientId, timeMs, mistakes, hints, moves?}
  *        → {percentile, count, buckets, lo, hi}. A browser's first result for
  *        a puzzle is the one that counts; resubmits return the same stats.
+ *        Games ranked by moves (RESULT_GAMES rank "moves": Funzzle Word's
+ *        guesses) must send moves; fewer moves rank first, then time.
  *   GET  ?game=&date=&variant= → {count, buckets, lo, hi} (CDN-cached 60 s).
  */
 
@@ -109,7 +111,8 @@ export async function POST(request: Request) {
     timeMs === null ||
     mistakes === null ||
     hints === null ||
-    (body.moves !== undefined && moves === null)
+    (body.moves !== undefined && moves === null) ||
+    (config.rank === "moves" && (moves === null || moves < 1 || moves > 100))
   ) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
@@ -127,11 +130,16 @@ export async function POST(request: Request) {
       hints,
       moves,
     );
-    // Percentile against everyone else, using the stored (first) time.
+    // Percentile against everyone else, using the stored (first) result.
     const mine = await first<{ slower: number }>(
-      `SELECT count(*) AS slower FROM game_results
-       WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3
-         AND time_ms > (SELECT time_ms FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4)`,
+      config.rank === "moves"
+        ? `SELECT count(*) AS slower FROM game_results r,
+             (SELECT time_ms, moves FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4) me
+           WHERE r.game = ?1 AND r.puzzle_date = ?2 AND r.variant = ?3
+             AND (r.moves > me.moves OR (r.moves = me.moves AND r.time_ms > me.time_ms))`
+        : `SELECT count(*) AS slower FROM game_results
+           WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3
+             AND time_ms > (SELECT time_ms FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4)`,
       game,
       date,
       variant,

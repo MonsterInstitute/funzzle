@@ -26,6 +26,10 @@ export const TODAY_PATHS = [
   "/play/quordle",
   "/play/worldle",
   "/play/nerdle",
+  "/play/word",
+  "/play/word/quad",
+  "/play/word/geo",
+  "/play/word/math",
   "/sitemap.xml",
 ];
 

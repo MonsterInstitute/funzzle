@@ -10,13 +10,17 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
  * cells (lighter = later), never digits.
  *
  * GET ?g=sudoku&d=2026-10-24&t=408000&top=27&s=12&m=0&h=1&lv=Hard&map=<81 chars 0-4>
+ * Funzzle Word: ?g=word&…&lv=Classic&sc=3/6&map=<rows of tile marks 0-2,
+ * "-" between rows, "_" between Quad boards> (colors only, never letters).
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", word: "Funzzle Word" };
+const WORD_MAP_RE = /^[0-2]{5,8}(-[0-2]{5,8}){0,8}(_[0-2]{5,8}(-[0-2]{5,8}){0,8}){0,3}$/;
+const WORD_TILE = ["#FFFFFF", "#F2C230", "#2E7D32"];
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -51,6 +55,7 @@ export async function GET(request: Request) {
   const moves = q.get("mv") === null ? null : int(q.get("mv"), 100_000);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
+  const sc = q.get("sc") ?? "";
   if (
     !GAMES[game] ||
     !DATE_RE.test(date) ||
@@ -61,7 +66,8 @@ export async function GET(request: Request) {
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
-    (map && !/^[0-4]{81}$/.test(map))
+    (map && game !== "word" && !/^[0-4]{81}$/.test(map)) ||
+    (game === "word" && (!WORD_MAP_RE.test(map) || !/^([1-9]|X)\/[69]$/.test(sc)))
   ) {
     return new Response("bad request", { status: 400 });
   }
@@ -74,11 +80,38 @@ export async function GET(request: Request) {
     streak > 0 ? `${streak}-day streak` : null,
     game === "sudoku"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+      : game === "word"
+        ? `${formatTime(time)} · ${hints} hint${hints === 1 ? "" : "s"}`
+        : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
+  const wordBoards = game === "word" ? map.split("_").map((b) => b.split("-")) : [];
+  const cols = wordBoards[0]?.[0]?.length ?? 5;
+  const quad = wordBoards.length > 1;
+  // Fit the grid in the 400px board area: Quad shows four small grids.
+  const cell = quad ? 17 : Math.min(60, Math.floor((400 - (cols - 1) * 10) / cols));
+  const gap = quad ? 3 : 10;
+  const grid = (rows: string[], b: number) => (
+    <div key={b} style={{ display: "flex", flexDirection: "column", gap }}>
+      {rows.map((row, r) => (
+        <div key={r} style={{ display: "flex", gap }}>
+          {row.split("").map((m, i) => (
+            <div key={i} style={{ width: cell, height: cell, borderRadius: quad ? 4 : 10, background: WORD_TILE[Number(m)] }} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
   const board =
-    game === "sudoku" && map ? (
+    game === "word" ? (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: 432, height: 432, padding: 16, gap: 24, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {(quad ? [wordBoards.slice(0, 2), wordBoards.slice(2, 4)] : [wordBoards]).map((pair, p) => (
+          <div key={p} style={{ display: "flex", gap: 32 }}>
+            {pair.map((rows, b) => grid(rows, p * 2 + b))}
+          </div>
+        ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />
@@ -121,7 +154,7 @@ export async function GET(request: Request) {
         <div style={{ display: "flex", gap: 56, alignItems: "center" }}>
           {board}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <span style={{ fontFamily: "Geist Mono", fontSize: 152, lineHeight: 1, letterSpacing: "-0.04em" }}>{formatTime(time)}</span>
+            <span style={{ fontFamily: "Geist Mono", fontSize: 152, lineHeight: 1, letterSpacing: "-0.04em" }}>{game === "word" ? sc : formatTime(time)}</span>
             {lines.map((line, i) => (
               <span key={line} style={{ fontSize: i === 0 ? 38 : 32, fontWeight: i === 0 ? 700 : 500 }}>{line}</span>
             ))}

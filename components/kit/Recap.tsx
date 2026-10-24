@@ -35,6 +35,8 @@ export interface RecapProps {
   extraActions?: ReactNode;
   /** Friend challenge for this puzzle (omit for games without comparable results). */
   challenge?: ChallengeInfo;
+  /** Rank wording: "Faster" (default) or "Better" for games ranked by moves first (Funzzle Word). */
+  rankWord?: string;
 }
 
 const SET_LABEL: Record<string, string> = { sudoku: "Sudoku", solitaire: "Solitaire", word: "Word", "mini-crossword": "Mini" };
@@ -69,7 +71,7 @@ export default function Recap(props: RecapProps) {
     percentile === null
       ? "First to finish today. Nice."
       : percentile !== undefined
-        ? `Faster than ${percentile}% of today’s players`
+        ? `${props.rankWord ?? "Faster"} than ${percentile}% of today’s players`
         : loadingStats
           ? "Comparing with today’s players…"
           : "Practice puzzle";

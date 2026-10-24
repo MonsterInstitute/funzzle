@@ -96,6 +96,86 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  word: {
+    name: "Funzzle Word",
+    genre: "Word game",
+    summary:
+      "Funzzle Word is a free daily five-letter word game: everyone gets the same hidden word today and six guesses to find it. Each tile turns green (right letter, right spot), yellow (in the word, wrong spot) or gray (not in the word); the coach explains what your guesses rule out and which guess narrows things down most.",
+    description: "Free daily five-letter word game with hard mode, a deduction coach, Quad, Geo and Math modes, and unlimited practice.",
+    qa: [
+      {
+        q: "How do you play Funzzle Word?",
+        a: "Type any real five-letter word and press Enter. Green means the letter is in that exact spot, yellow means it's in the word but somewhere else, and gray means it isn't in the word. Use the clues to find the word in six guesses or fewer.",
+      },
+      {
+        q: "What is the best first guess?",
+        a: "Five different common letters, ideally two vowels and three of S, T, L, R and N. Funzzle's solver rates SLATE as the strongest opener for its answer list: whatever colors come back, at most 179 of about 2,000 possible answers are left.",
+      },
+      {
+        q: "What does hard mode change?",
+        a: "In hard mode every green letter has to stay in its spot and every yellow letter has to be used again in your next guesses. Turn it on before your first guess; a hard-mode result is marked with an asterisk when you share it.",
+      },
+      {
+        q: "Can a letter appear twice?",
+        a: "Yes. If you guess a letter twice and the word has it once, only one of your copies lights up (green first, then yellow) and the other turns gray, which tells you there is exactly one.",
+      },
+      {
+        q: "Is there a new word every day, and can I play more?",
+        a: "A new word goes live at midnight UTC, the same for everyone, and no answer repeats within a year. After the daily word you can play unlimited practice words, past days from the archive, or the Quad, Geo and Math modes.",
+      },
+    ],
+  },
+  "word-quad": {
+    name: "Word Quad",
+    genre: "Word game",
+    summary:
+      "Word Quad is Funzzle Word on four boards at once: every guess is played on all four hidden five-letter words, and you have nine guesses to solve them all. Today's four words are the same for everyone.",
+    description: "Free daily four-board word game: four five-letter words, nine guesses, with a coach.",
+    qa: [
+      {
+        q: "How does Word Quad work?",
+        a: "Each guess is scored on all four boards at once. A board stops taking guesses once you solve it; solve all four within nine guesses to win. The keyboard shows each letter's color on every board.",
+      },
+      {
+        q: "What's the best Quad strategy?",
+        a: "Spend the first two or three guesses on wide openers with different letters, then finish the board with the fewest possible words left. The coach picks the guess that splits all open boards best.",
+      },
+    ],
+  },
+  "word-geo": {
+    name: "Word Geo",
+    genre: "Geography game",
+    summary:
+      "Word Geo is a free daily geography puzzle: name the country from its silhouette in six guesses. Each wrong guess shows how far away it is, an arrow pointing toward the answer and a proximity score.",
+    description: "Free daily country-guessing game from a silhouette, with distance, direction and a geography coach.",
+    qa: [
+      {
+        q: "How do the arrows and percentages work?",
+        a: "The distance is measured between the two countries' center points over the globe, and the arrow points along the shortest route from your guess to the answer. The percentage is how close you are: 100% is the answer and 0% is the far side of the Earth.",
+      },
+      {
+        q: "Which countries can come up?",
+        a: "Any of the 195 countries can be guessed. The answer is always a country with a recognizable outline, so tiny states and atolls never come up; today's country is the same for everyone.",
+      },
+    ],
+  },
+  "word-math": {
+    name: "Word Math",
+    genre: "Math puzzle",
+    summary:
+      "Word Math is a free daily equation puzzle: find the hidden 8-character equation, like 12+46=58, in six guesses. Every guess has to be a true equation, and the tiles turn green, yellow or gray like letters do.",
+    description: "Free daily equation-guessing game: eight characters, six guesses, with a coach.",
+    qa: [
+      {
+        q: "What are the rules for a Word Math guess?",
+        a: "Use digits and + − × ÷ with exactly one = sign, eight characters in all, and the calculation has to be correct. Normal order of operations applies (× and ÷ before + and −), divisions must come out exact, and numbers can't have a leading zero (05).",
+      },
+      {
+        q: "What does the answer look like?",
+        a: "The answer is one or two operations on the left, such as 7*6-7=35 or 46-27=19, and a single positive number on the right. It never multiplies or divides by 1 or uses zero as a number on the left.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;
