@@ -105,6 +105,18 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
     ],
   },
+  "spider-solitaire": {
+    title: "Spider skills",
+    skills: [
+      { id: "win-1-suit", name: "One suit", tier: 0, what: "Win a 1-suit deal" },
+      { id: "no-hint", name: "Unaided", tier: 1, what: "Win without the coach" },
+      { id: "win-2-suits", name: "Two suits", tier: 1, what: "Win a 2-suit deal" },
+      { id: "no-undo", name: "No take-backs", tier: 2, what: "Win without undoing a move" },
+      { id: "efficient", name: "Efficient", tier: 2, what: "Win in under 200 moves" },
+      { id: "win-4-suits", name: "Four suits", tier: 3, what: "Win a 4-suit deal" },
+      { id: "4-suits-unaided", name: "Four suits unaided", tier: 4, what: "Win 4 suits without the coach" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

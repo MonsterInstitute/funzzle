@@ -16,7 +16,7 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", "spider-solitaire": "Daily Spider" };
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },

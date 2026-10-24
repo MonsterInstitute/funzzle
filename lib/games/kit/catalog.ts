@@ -50,7 +50,7 @@ const ROWS: Row[] = [
   ["sudoku", "Sudoku", "Logic", "Easy to expert, with a coach that explains every step.", "#9DB4FF", "#EAF0FF", "sudoku", "/play/sudoku"],
   ["mahjong", "Mahjong", "Casual", "Match free tiles across hundreds of layouts.", "#F6A6A1", "#FDEDEC", "mahjong", null],
   ["minesweeper", "Minesweeper", "Logic", "No-guess boards: always solvable by logic.", "#8FE3CF", "#E8F9F4", "mines", null],
-  ["spider-solitaire", "Spider Solitaire", "Cards", "One, two or four suits. Unlimited undo.", "#A7E07A", "#EFF9E6", "spider", null],
+  ["spider-solitaire", "Spider Solitaire", "Cards", "One, two or four suits. Unlimited undo.", "#A7E07A", "#EFF9E6", "spider", "/play/spider-solitaire"],
   ["freecell", "FreeCell", "Cards", "Pure skill. Every deal is solvable.", "#6FD0E8", "#E5F6FB", "freecell", null],
   ["word-search", "Word Search", "Words", "A themed grid every day, or make your own.", "#FFE066", "#FFF8DB", "search", null],
   ["crossword", "Crossword", "Words", "A fresh full-size crossword every day.", "#D9DCE6", "#F3F4F8", "cross", null],

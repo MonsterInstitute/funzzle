@@ -34,3 +34,6 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Spider by suit count: one suit is gentle, four is one of the hardest card games. */
+export const SPIDER_PUZZLE_RATING = { 1: 1150, 2: 1500, 4: 1900 } as const;

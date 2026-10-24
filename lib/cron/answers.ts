@@ -92,6 +92,9 @@ export async function runAnswersCron(): Promise<AnswersRun> {
   let puzzles: AnswersRun["puzzles"];
   try {
     puzzles = await ensureDailyPuzzles(dates);
+    // The one exception: the Spider page never generates a 4-suit deal, so it
+    // only offers today's once the row exists (normally written the day before).
+    if (puzzles.includes(`spider-solitaire/suits4 ${today}`)) revalidatePath("/play/spider-solitaire");
   } catch (err) {
     puzzles = { error: (err as Error).message };
   }
