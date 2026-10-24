@@ -83,7 +83,8 @@ function DayGames({ date, isToday }: { date: string; isToday: boolean }) {
 export default function ArchiveCalendar() {
   const now = useSyncExternalStore(subscribe, today, () => null);
   const [picked, setPicked] = useState<string | null>(null);
-  if (!now) return <p className="text-muted">Loading the calendar…</p>;
+  // Reserve roughly the calendar's height so it doesn't push the page when it appears.
+  if (!now) return <p className="min-h-[1100px] text-muted">Loading the calendar…</p>;
   const selected = picked ?? now;
   const months: string[] = [];
   for (let m = now.slice(0, 7); m >= ARCHIVE_START.slice(0, 7); ) {
