@@ -1,14 +1,19 @@
 /**
  * Games that submit anonymous daily results, with the variants they accept
- * and the time range of their recap histogram. Shared by /api/results and
- * the recap screen so both bucket times the same way.
+ * and the range of their recap histogram. Shared by /api/results and the
+ * recap screen so both bucket results the same way.
+ *
+ * Most games compare times (lower is better). A `kind: "score"` game compares
+ * points (higher is better): its results keep the score in the same value
+ * column (game_results.time_ms, challenge_entries.time_ms), and `lo`, `hi` and
+ * `minMs` are in points. No schema change, and time games are untouched.
  */
 export interface ResultGame {
   variants: string[];
-  /** Histogram range, ms. Faster/slower times land in the end buckets. */
+  /** Histogram range, ms (points for score games). Outliers land in the end buckets. */
   lo: number;
   hi: number;
-  /** Times below this are rejected as impossible. */
+  /** Values below this are rejected as impossible (ms, or points for score games). */
   minMs: number;
   /** How results rank (default "time"); see ResultOrder. */
   order?: ResultOrder;
@@ -54,7 +59,20 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   "mini-crossword": { variants: [""], lo: 20_000, hi: 600_000, minMs: 5_000 },
   word: { variants: ["classic", "quad", "geo", "math"], lo: 15_000, hi: 600_000, minMs: 2_000, order: "fewest", unit: ["guess", "guesses"] },
   "word-hunt": { variants: [""], lo: 60_000, hi: 900_000, minMs: 15_000 },
+  // Score games: the score is `moves`, ranked higher-first; the recap histogram
+  // buckets scores (lo/hi in points). minMs still guards the time.
+  "2048": { variants: [""], lo: 0, hi: 28_000, minMs: 1_000, order: "score", histogram: "score" },
+  "block-puzzle": { variants: [""], lo: 0, hi: 1_400, minMs: 1_000, order: "score", histogram: "score" },
+  jigsaw: { variants: [""], lo: 60_000, hi: 1_200_000, minMs: 20_000 },
 };
+
+/** Highest score accepted from a score game; anything above isn't a real game. */
+export const MAX_SCORE = 10_000_000;
+
+/** True for games whose results are points, higher is better. */
+export function isScoreGame(game: string): boolean {
+  return resultOrder(game) === "score";
+}
 
 export const HISTOGRAM_BUCKETS = 14;
 

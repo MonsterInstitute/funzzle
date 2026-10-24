@@ -466,6 +466,85 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  "2048": {
+    name: "Daily 2048",
+    genre: "Puzzle",
+    summary:
+      "Daily 2048 is the free 4×4 sliding-tile game where equal numbers merge, with the same sequence of new tiles for everyone today, so your score is compared fairly with today's players. The coach looks a few moves ahead and suggests the best slide, with a plain-English reason.",
+    description: "Free daily 2048 with the same tiles for everyone, a look-ahead coach and unlimited practice games.",
+    qa: [
+      {
+        q: "How do you play 2048?",
+        a: "Swipe (or press an arrow key) to slide every tile on the 4×4 board in one direction. Two tiles with the same number that touch merge into one with their sum, and a new 2 or 4 appears in an empty square after each move. The game ends when the board is full and no slide merges anything.",
+      },
+      {
+        q: "What is the best strategy for 2048?",
+        a: "Pick a corner and keep your biggest tile in it, keep the row along that corner full and ordered from big to small, and mostly slide in just two or three directions. Merge small tiles early so the board keeps empty squares. The coach scores moves on exactly these things: empty squares, ordered rows, merges and the corner.",
+      },
+      {
+        q: "How is the 2048 score calculated?",
+        a: "Every merge adds the new tile's value to your score: merging two 8s into a 16 is worth 16 points. Making a 2048 tile usually takes a score of about 20,000.",
+      },
+      {
+        q: "Is the daily 2048 the same for everyone?",
+        a: "Yes. Where each new tile appears, and whether it's a 2 or a 4, comes from today's seed and your move number, so players who make the same moves see the same tiles. That makes today's scores comparable.",
+      },
+      {
+        q: "Can you undo a move in 2048?",
+        a: "You get one free undo per game. After that you can watch an optional short ad for another one, and if no ad is available there are no extra undos.",
+      },
+    ],
+  },
+  "block-puzzle": {
+    name: "Daily Block Puzzle",
+    genre: "Puzzle",
+    summary:
+      "Daily Block Puzzle is a free 8×8 block-fitting game: place three pieces at a time, fill a row or column to clear it, and chain clears for combo points. Everyone gets the same pieces in the same order today, and the coach finds the placement that clears the most lines while keeping the board open.",
+    description: "Free daily block puzzle on an 8×8 board with the same pieces for everyone, a placement coach and practice games.",
+    qa: [
+      {
+        q: "How do you play Block Puzzle?",
+        a: "Drag each of the three pieces onto the 8×8 board. Pieces can't be rotated. A completely filled row or column clears and scores points; when all three pieces are placed you get three new ones. The game ends when none of your pieces fits anywhere.",
+      },
+      {
+        q: "How does scoring work in Block Puzzle?",
+        a: "Each placed piece scores one point per square. Clearing lines scores 10 points per line, more when you clear several lines with one piece, and a combo bonus grows each time consecutive pieces clear lines.",
+      },
+      {
+        q: "What's the best strategy for block puzzles?",
+        a: "Keep the middle open and fill along the edges, leave room for the 3×3 square and the long 1×5 bars, and avoid single empty holes that only a one-square piece can fill. Clearing several lines at once is worth more than clearing them one by one.",
+      },
+      {
+        q: "Is the daily Block Puzzle the same for everyone?",
+        a: "Yes. Today's sequence of pieces comes from the date, so every player gets the same pieces in the same order, and scores are ranked against today's players.",
+      },
+    ],
+  },
+  jigsaw: {
+    name: "Daily Jigsaw",
+    genre: "Puzzle",
+    summary:
+      "Daily Jigsaw is a free online jigsaw puzzle with a new original picture every day, cut into 24 classic tab-and-blank pieces for everyone, plus practice puzzles from 12 to 96 pieces. Drag pieces from the tray, they snap into place when close, and your time is ranked against today's players.",
+    description: "Free daily jigsaw puzzle: a new picture every day, 12 to 96 pieces, edge filter, preview and a hint that shows where a piece goes.",
+    qa: [
+      {
+        q: "How do you play an online jigsaw puzzle?",
+        a: "Drag a piece from the tray onto the board. When it's close to its correct spot it snaps in and locks. Pieces aren't rotated, so every piece already faces the right way. The puzzle is done when every piece is in place.",
+      },
+      {
+        q: "What's the best way to solve a jigsaw puzzle?",
+        a: "Do the edges first: use the edge filter to show only border pieces and build the frame. Then fill in by color and by area, using the preview picture to see where skies, hills and shapes go.",
+      },
+      {
+        q: "How many pieces is the daily jigsaw?",
+        a: "The daily puzzle is 24 pieces, the same picture and cut for everyone. Practice puzzles come in 12, 24, 48 or 96 pieces.",
+      },
+      {
+        q: "Is there a hint if I'm stuck?",
+        a: "Yes. “Show a piece” highlights a piece from the tray that fits next to the pieces you've already placed, and the spot where it goes. Hints are counted in your result.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

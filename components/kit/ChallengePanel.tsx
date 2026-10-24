@@ -13,7 +13,8 @@ import {
 } from "@/lib/games/kit/challenge";
 import { getDisplayName, NAME_MAX, setDisplayName } from "@/lib/games/kit/identity";
 import { resultHeadline, resultOrder } from "@/lib/games/kit/resultConfig";
-import { formatTime } from "@/lib/games/kit/results";
+import { isScoreGame } from "@/lib/games/kit/resultConfig";
+import { formatScore, formatTime } from "@/lib/games/kit/results";
 import { Icon } from "./Icons";
 
 export interface ChallengeInfo {
@@ -24,13 +25,19 @@ export interface ChallengeInfo {
   activeId?: string | null;
 }
 
+/** "6:48", or "12,480 pts" for score games. */
+export function resultText(game: string, r: { timeMs: number; score?: number }): string {
+  return isScoreGame(game) ? `${formatScore(r.score ?? 0)} pts` : formatTime(r.timeMs);
+}
+
 /** The ranked entries of a challenge, "you" highlighted. */
 export function HeadToHead({ challenge }: { challenge: Challenge }) {
   const mine = myEntry(challenge.id);
+  const scored = isScoreGame(challenge.game);
   return (
     <ol className="m-0 flex list-none flex-col gap-1.5 p-0">
       {challenge.entries.map((e, i) => {
-        const isMe = !!mine && mine.name === e.name && mine.timeMs === e.timeMs;
+        const isMe = !!mine && mine.name === e.name && (scored ? Math.max(1, mine.score ?? 0) === e.score : mine.timeMs === e.timeMs);
         return (
           <li key={`${e.name}-${e.timeMs}-${i}`} className={`flex items-center justify-between rounded-2xl px-3.5 py-2.5 ${isMe ? "bg-violet-tint" : "bg-soft"}`}>
             <span className="flex items-center gap-2.5">

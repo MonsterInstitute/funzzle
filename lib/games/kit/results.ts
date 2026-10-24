@@ -1,6 +1,7 @@
 /**
  * Anonymous daily results: submit a finish, get "faster than N% of today's
- * players" and the day's time histogram back.
+ * players" (or "a higher score than", for score games) and the day's
+ * histogram back.
  */
 import { clientId } from "./storage";
 
@@ -27,6 +28,8 @@ export async function submitResult(input: {
   mistakes: number;
   hints: number;
   moves?: number;
+  /** Score games (resultConfig kind "score"): the points that are compared. */
+  score?: number;
 }): Promise<SubmitResult | null> {
   try {
     const res = await fetch("/api/results", {
@@ -49,6 +52,11 @@ export function formatTime(ms: number): string {
   const s = total % 60;
   const ss = String(s).padStart(2, "0");
   return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+}
+
+/** "12,480"-style points for score games. */
+export function formatScore(points: number): string {
+  return Math.round(points).toLocaleString("en-US");
 }
 
 /** "06:12"-style clock for the in-game timer chip. */

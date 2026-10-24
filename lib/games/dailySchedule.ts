@@ -81,3 +81,8 @@ export const MINI_PUZZLE_RATING: Record<number, number> = { 5: 1100, 7: 1450 };
 export const WORD_PUZZLE_RATING = { classic: 1250, quad: 1450, geo: 1300, math: 1450 } as const;
 /** Word Hunt has no difficulty levels: every theme plays as one "opponent". */
 export const WORD_HUNT_PUZZLE_RATING = 1350;
+/** Score games and the jigsaw: one daily puzzle each, rated like a medium grid. */
+export const T2048_PUZZLE_RATING = 1300;
+export const BLOCK_PUZZLE_RATING = 1250;
+/** Jigsaw by piece count (the daily is 24 pieces). */
+export const JIGSAW_PUZZLE_RATING: Record<number, number> = { 12: 900, 24: 1100, 48: 1350, 96: 1600 };

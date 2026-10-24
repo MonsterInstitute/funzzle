@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { COMPETITIVE_GAMES, name, puzzle, randomCode, result, UUID_RE } from "@/lib/apiValidate";
 import { all, batch, exec, first } from "@/lib/db";
-import { resultOrder, resultOrderSql } from "@/lib/games/kit/resultConfig";
+import { isScoreGame, resultOrder, resultOrderSql } from "@/lib/games/kit/resultConfig";
 
 /**
  * Friend challenges (lib/games/kit/challenge.ts). No login: entries are keyed
@@ -33,6 +33,8 @@ async function load(id: string) {
     entries: entries.map((e) => ({
       name: e.name,
       timeMs: e.time_ms,
+      // Score games keep their points in `moves`.
+      ...(isScoreGame(c.game) && e.moves !== null ? { score: e.moves } : {}),
       mistakes: e.mistakes,
       hints: e.hints,
       ...(e.moves === null ? {} : { moves: e.moves }),

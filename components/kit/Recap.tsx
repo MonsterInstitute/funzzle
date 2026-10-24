@@ -6,7 +6,7 @@ import { nextWithBreak } from "@/lib/ads/placements";
 import { track } from "@/lib/games/kit/analytics";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { DAILY_SET, getDayStatus, getStreak, utcToday } from "@/lib/games/kit/daily";
-import { formatTime, type DayStats } from "@/lib/games/kit/results";
+import { formatScore, formatTime, type DayStats } from "@/lib/games/kit/results";
 import { snapshot, useLocal } from "@/lib/games/kit/useLocal";
 import ChallengePanel, { type ChallengeInfo } from "./ChallengePanel";
 import { Icon } from "./Icons";
@@ -24,6 +24,11 @@ export interface RecapProps {
   /** "Solved." / "Won." */
   title: string;
   timeMs: number;
+  /**
+   * Score games (resultConfig kind "score"): the points, shown instead of the
+   * time and placed on the histogram (whose lo/hi are then points).
+   */
+  score?: number;
   /** Share of today's players beaten; null = first finisher; undefined = practice / still loading. */
   percentile?: number | null;
   stats?: DayStats | null;
@@ -52,7 +57,7 @@ const SET_NAME: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "D
 
 const readSet = snapshot(() => ({ day: getDayStatus(utcToday()), streak: getStreak().current }));
 
-/** Which histogram bucket a time falls in, matching daily_result_stats (width_bucket). */
+/** Which histogram bucket a time (or score) falls in, matching /api/results' bucketing. */
 function bucketOf(ms: number, stats: DayStats): number {
   const n = stats.buckets.length;
   const b = Math.floor(((ms - stats.lo) / (stats.hi - stats.lo)) * n);
@@ -65,15 +70,16 @@ function bucketOf(ms: number, stats: DayStats): number {
  * ad placement allowed around play.
  */
 export default function Recap(props: RecapProps) {
-  const { game, heading, title, timeMs, percentile, stats, loadingStats, tiles, coach, share, onClose } = props;
+  const { game, heading, title, timeMs, score, percentile, stats, loadingStats, tiles, coach, share, onClose } = props;
   const accent = GAME_BY_SLUG[game].color;
   const { day, streak } = useLocal(readSet, { day: {}, streak: 0 });
   const doneCount = DAILY_SET.filter((g) => day[g]?.state === "done").length;
   const next = DAILY_SET.find((g) => day[g]?.state !== "done");
   const [learnOpen, setLearnOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const scored = score !== undefined;
   const max = stats ? Math.max(1, ...stats.buckets) : 1;
-  const you = stats ? bucketOf(timeMs, stats) : -1;
+  const you = stats ? bucketOf(scored ? score : timeMs, stats) : -1;
 
   const rankLine =
     props.rankLine ??
@@ -140,9 +146,9 @@ export default function Recap(props: RecapProps) {
                 ))}
               </div>
               <div className="flex justify-between font-mono text-[11px] text-[#1E2A55]">
-                <span>{Math.round(stats.lo / 60000)} min</span>
+                <span>{scored ? `${formatScore(stats.lo)} pts` : `${Math.round(stats.lo / 60000)} min`}</span>
                 <span>You</span>
-                <span>{Math.round(stats.hi / 60000)} min+</span>
+                <span>{scored ? `${formatScore(stats.hi)}+ pts` : `${Math.round(stats.hi / 60000)} min+`}</span>
               </div>
               <span className="sr-only">{stats.count} players finished today.</span>
             </>

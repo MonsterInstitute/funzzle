@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
-import { formatTime } from "@/lib/games/kit/results";
+import { formatScore, formatTime } from "@/lib/games/kit/results";
 import { LEVEL_COLOR, type Level } from "@/lib/games/groups/puzzle";
 import { SUIT_PATHS } from "@/components/kit/SuitIcon";
 import {
@@ -45,7 +45,25 @@ const GAMES: Record<string, string> = {
   "mini-crossword": "Mini Crossword",
   word: "Funzzle Word",
   "word-hunt": "Word Hunt",
+  "2048": "Daily 2048",
+  "block-puzzle": "Daily Block Puzzle",
+  jigsaw: "Daily Jigsaw",
 };
+/** 2048 tile colors by exponent (lib/games/t2048 uses the same ramp). */
+const TILE_BG = [
+  "#FFF4DD",
+  "#FFE9B8",
+  "#FFD98A",
+  "#FFC857",
+  "#FFB547",
+  "#FF9F43",
+  "#FF8A3D",
+  "#F7B32B",
+  "#F29E1F",
+  "#EC8A12",
+  "#E07A00",
+  "#111111",
+];
 const HUNT_DOT: Record<string, { bg: string; border: string }> = {
   s: { bg: "#FFE066", border: "#111111" },
   t: { bg: "#FFFFFF", border: "#FFFFFF" },
@@ -135,18 +153,24 @@ export async function GET(request: Request) {
   const bonusWords = q.get("bw") === null ? null : int(q.get("bw"), 999);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
-  const score = q.get("sc") === null ? null : int(q.get("sc"), 100_000);
+  const score = q.get("sc") === null ? null : int(q.get("sc"), 10_000_000);
   const words = q.get("w") === null ? null : int(q.get("w"), 999);
   const path = q.get("p") ?? "";
   const found = int(q.get("f") ?? "4", 4);
   const chessResult = q.get("r");
   const gs = q.get("gs") ?? "";
+  const bestTile = q.get("bt") === null ? null : int(q.get("bt"), 1 << 20);
   if (
     (chessResult !== null &&
       (game !== "chess" || !CHESS_RESULT[chessResult])) ||
     !GAMES[game] ||
     !DATE_RE.test(date) ||
     time === null ||
+    ((game === "2048" || game === "block-puzzle") && score === null) ||
+    (q.get("bt") !== null &&
+      (bestTile === null ||
+        bestTile < 2 ||
+        (bestTile & (bestTile - 1)) !== 0)) ||
     (q.get("top") !== null && top === null) ||
     streak === null ||
     mistakes === null ||
@@ -191,26 +215,40 @@ export async function GET(request: Request) {
           streak > 0 ? `${streak}-day streak` : null,
           game === "sudoku" || game === "groups" || game === "chess"
             ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-            : game === "word-hunt"
-              ? `${bonusWords ?? 0} bonus word${bonusWords === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-              : game === "word"
-                ? `${formatTime(time)} · ${hints} hint${hints === 1 ? "" : "s"}`
-                : game === "mini-crossword"
-                  ? hints
-                    ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
-                    : "No checks, no hints"
-                  : game === "minesweeper"
-                    ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                    : game === "mahjong"
-                      ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
-                      : game === "spelling-hive" || game === "letter-box"
-                        ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                        : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+            : game === "2048"
+              ? `${bestTile ? `Best tile ${bestTile} · ` : ""}${moves ?? 0} moves`
+              : game === "block-puzzle" || game === "jigsaw"
+                ? `${moves ?? 0} pieces · ${hints} hint${hints === 1 ? "" : "s"}`
+                : game === "word-hunt"
+                  ? `${bonusWords ?? 0} bonus word${bonusWords === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                  : game === "word"
+                    ? `${formatTime(time)} · ${hints} hint${hints === 1 ? "" : "s"}`
+                    : game === "mini-crossword"
+                      ? hints
+                        ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
+                        : "No checks, no hints"
+                      : game === "minesweeper"
+                        ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                        : game === "mahjong"
+                          ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
+                          : game === "spelling-hive" || game === "letter-box"
+                            ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                            : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
         ]
   ).filter(Boolean) as string[];
   const title = chessResult ? "Chess" : GAMES[game];
+  // Score games show their score; the rest their time.
   const headline =
-    game === "spelling-hive" ? `${score ?? 0} pts` : formatTime(time);
+    game === "spelling-hive"
+      ? `${score ?? 0} pts`
+      : game === "2048" || game === "block-puzzle"
+        ? formatScore(score ?? 0)
+        : formatTime(time);
+
+  // 2048: the best tile and the three below it, as tiles.
+  const exp = bestTile ? Math.log2(bestTile) : 11;
+  const tiles = [exp, exp - 1, exp - 2, exp - 3].map((e) => Math.max(1, e));
+  const glyph = GAME_BY_SLUG[game]?.glyph ?? "";
 
   const rows = game === "groups" ? (map.match(/.{4}/g) ?? []) : [];
   const cell = Math.min(
@@ -249,7 +287,64 @@ export async function GET(request: Request) {
     </div>
   );
   const board =
-    game === "word-hunt" && map ? (
+    game === "2048" ? (
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: 432,
+          height: 432,
+          padding: 28,
+          gap: 24,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        {tiles.map((e, i) => (
+          <div
+            key={i}
+            style={{
+              width: 176,
+              height: 176,
+              borderRadius: 22,
+              background: TILE_BG[Math.min(TILE_BG.length - 1, e)],
+              color: e >= 11 ? "#FFFFFF" : "#111111",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: "Bricolage",
+              fontSize: 2 ** e >= 1000 ? 52 : 68,
+            }}
+          >
+            {String(2 ** e)}
+          </div>
+        ))}
+      </div>
+    ) : game === "block-puzzle" || game === "jigsaw" ? (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 432,
+          height: 432,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        <svg
+          width="320"
+          height="320"
+          viewBox="0 0 48 48"
+          fill="#FFFFFF"
+          stroke="#111111"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        >
+          <path d={glyph} />
+        </svg>
+      </div>
+    ) : game === "word-hunt" && map ? (
       <div
         style={{
           display: "flex",

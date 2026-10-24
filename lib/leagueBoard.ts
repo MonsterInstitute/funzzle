@@ -12,6 +12,7 @@ export interface MemberResult {
   game: string;
   date: string;
   variant: string;
+  /** game_results.time_ms: the time, or the score for score games. */
   timeMs: number;
   /** Score / words used, for score-ranked games. */
   moves?: number | null;

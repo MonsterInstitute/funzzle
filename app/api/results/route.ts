@@ -1,23 +1,27 @@
 import { NextResponse } from "next/server";
 import { shiftISODate, todayISO } from "@/lib/dates";
-import { beatenSql, HISTOGRAM_BUCKETS, RESULT_GAMES } from "@/lib/games/kit/resultConfig";
+import { beatenSql, HISTOGRAM_BUCKETS, isScoreGame, MAX_SCORE, RESULT_GAMES } from "@/lib/games/kit/resultConfig";
 import { exec, first } from "@/lib/db";
+
+const DAY_MS = 86_400_000;
 
 /**
  * Anonymous daily results for the recap's "faster than N% of today's players".
  *
- *   POST {game, date, variant, clientId, timeMs, mistakes, hints, moves?}
+ *   POST {game, date, variant, clientId, timeMs, mistakes, hints, moves?, score?}
  *        → {percentile, count, buckets, lo, hi}. A browser's first result for
  *        a puzzle is the one that counts; resubmits return the same stats.
  *        Games ranked by moves (RESULT_GAMES rank "moves": Funzzle Word's
  *        guesses) must send moves; fewer moves rank first, then time.
  *   GET  ?game=&date=&variant= → {count, buckets, lo, hi} (CDN-cached 60 s).
+ *
+ * Score games (resultConfig kind "score") send `score`; it is stored in the
+ * time_ms value column and compared the other way round (higher wins).
  */
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY_MS = 86_400_000;
 
 function intIn(value: unknown, min: number, max: number): number | null {
   return typeof value === "number" &&
@@ -103,7 +107,9 @@ export async function POST(request: Request) {
   const timeMs = intIn(body.timeMs, config?.minMs ?? 1, DAY_MS);
   const mistakes = intIn(body.mistakes, 0, 999);
   const hints = intIn(body.hints, 0, 999);
-  const moves = body.moves === undefined ? null : intIn(body.moves, 0, 100_000);
+  // Score games may send `score`: it is their ranked number, stored in `moves`.
+  const rawMoves = isScoreGame(game) && body.score !== undefined ? body.score : body.moves;
+  const moves = rawMoves === undefined ? null : intIn(rawMoves, 0, MAX_SCORE);
   if (
     !config ||
     !config.variants.includes(variant) ||
@@ -113,7 +119,7 @@ export async function POST(request: Request) {
     timeMs === null ||
     mistakes === null ||
     hints === null ||
-    (body.moves !== undefined && moves === null) ||
+    (rawMoves !== undefined && moves === null) ||
     // Score/count-ranked games need their number.
     ((config.order ?? "time") !== "time" && (config.order ?? "time") !== "mistakes" && moves === null) ||
     // A count ("fewest": guesses, words) is at least 1.

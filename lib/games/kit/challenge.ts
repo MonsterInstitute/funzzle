@@ -18,6 +18,8 @@ export interface ChallengeResult {
   mistakes: number;
   hints: number;
   moves?: number;
+  /** Score games (resultConfig kind "score"): the points compared, highest first. */
+  score?: number;
 }
 
 export interface ChallengeEntry extends ChallengeResult {
@@ -29,7 +31,7 @@ export interface Challenge {
   game: string;
   puzzle: ChallengePuzzle;
   label: string;
-  /** Fastest first; the creator's entry is the earliest. */
+  /** Best first (fastest, or highest score for score games). */
   entries: (ChallengeEntry & { creator: boolean })[];
 }
 

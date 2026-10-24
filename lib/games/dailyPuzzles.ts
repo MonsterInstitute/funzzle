@@ -28,7 +28,12 @@ import { classicAnswer, mathAnswer, quadAnswers, WORD_MODES, type DailyWord, typ
 import { geoAnswer } from "@/lib/games/word/geoData";
 import type { WordHuntPuzzle } from "@/lib/games/wordhunt";
 import { bankIdForDate, bankPuzzle } from "@/lib/games/wordhunt/server";
+import { daily2048, type Daily2048 } from "@/lib/games/t2048";
+import { dailyBlock, type DailyBlock } from "@/lib/games/block";
+import { dailyJigsaw, type DailyJigsaw } from "@/lib/games/jigsaw";
 import { all, batch, first, parseJson } from "@/lib/db";
+
+export type { Daily2048, DailyBlock, DailyJigsaw };
 
 export interface DailySudoku {
   date: string;
@@ -271,6 +276,9 @@ function generateRow(game: string, date: string, variant: string): object {
   if (game === "letter-box") return generateDailyLetterBox(date);
   if (game === "chess") return generateDailyChess(date);
   if (game === "word") return generateDailyWord(date, variant as WordMode);
+  if (game === "2048") return daily2048(date);
+  if (game === "block-puzzle") return dailyBlock(date);
+  if (game === "jigsaw") return dailyJigsaw(date);
   return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
 }
 
@@ -296,6 +304,18 @@ export async function getDailyMini(date: string): Promise<DailyMini> {
   return fallbackDailyMini(date);
 }
 
+export async function getDaily2048(date: string): Promise<Daily2048> {
+  return (await readRow<Daily2048>("2048", date, "")) ?? daily2048(date);
+}
+
+export async function getDailyBlock(date: string): Promise<DailyBlock> {
+  return (await readRow<DailyBlock>("block-puzzle", date, "")) ?? dailyBlock(date);
+}
+
+export async function getDailyJigsaw(date: string): Promise<DailyJigsaw> {
+  return (await readRow<DailyJigsaw>("jigsaw", date, "")) ?? dailyJigsaw(date);
+}
+
 /**
  * Store the daily puzzles for `dates` that aren't stored yet. Existing rows are
  * never overwritten. Returns what it wrote.
@@ -314,6 +334,9 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "letter-box", date, variant: "" },
     { game: "chess", date, variant: "" },
     ...WORD_MODES.map((variant) => ({ game: "word", date, variant })),
+    { game: "2048", date, variant: "" },
+    { game: "block-puzzle", date, variant: "" },
+    { game: "jigsaw", date, variant: "" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,
