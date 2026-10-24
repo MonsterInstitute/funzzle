@@ -24,20 +24,42 @@
     { "pattern": "funzzle.com/*", "zone_name": "funzzle.com" }
   ],
   // Cron Triggers replace Vercel Cron; worker.ts maps each schedule to its route.
+  // Every scheduled job lives here (docs/cloudflare-stack.md has the layout):
+  //   00:01           rollover: revalidate today's pages
+  //   02:05 … 23:05   answers: fetch missing NYT answers + store daily puzzles
+  //   03:20 … 23:20   explain: DeepSeek answer explanations + Sudoku coach text
   "triggers": {
-    "crons": ["5 2,3,6,14,22,23 * * *", "1 0 * * *"]
+    "crons": ["1 0 * * *", "5 2,3,6,14,22,23 * * *", "20 3,7,15,23 * * *"]
   },
-  // Non-secret runtime config. Secrets (wrangler secret put): SUPABASE_SERVICE_ROLE,
-  // CRON_SECRET, REVALIDATE_SECRET. NEXT_PUBLIC_* values are inlined by `next build`
-  // (from .env.production and the build environment), not read from here.
+  // Cron invocations may use up to 5 min of CPU (the coach cron walks the
+  // Sudoku solver); requests keep the 30 s default via their own work size.
+  "limits": { "cpu_ms": 300000 },
+  // Secrets (wrangler secret put): CRON_SECRET, REVALIDATE_SECRET, DEEPSEEK_API_KEY.
+  // NEXT_PUBLIC_* values are inlined by `next build` (from .env.production and
+  // the build environment), not read from here.
   "vars": {
-    "NEXT_PUBLIC_SUPABASE_URL": "https://achypcdlupdenunfiiil.supabase.co"
+    "ALERT_EMAIL_TO": "hello@funzzle.com",
+    "ALERT_EMAIL_FROM": "alerts@funzzle.com"
   },
+  // Failure alerts from cron jobs (worker.ts), sent through Email Routing.
+  "send_email": [{ "name": "ALERT_EMAIL" }],
+  // Gameplay analytics events (app/api/events): Analytics Engine, not D1, so
+  // they never touch the D1 write quota.
+  "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "funzzle_events" }],
   // ISR cache for OpenNext: pages in R2 (fronted by the per-colo regional
   // cache), the D1 tag cache that revalidatePath() needs, and the Durable
   // Object queue for time-based regeneration.
   "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "funzzle-opennext-cache" }],
   "d1_databases": [
+    // App data (migrations/). "remote" makes `next build` and local dev read the
+    // production database through Wrangler, as builds once read Supabase.
+    {
+      "binding": "DB",
+      "database_name": "funzzle-db",
+      "database_id": "550335eb-16b4-4fcd-a469-6e3f3a79a78a",
+      "migrations_dir": "migrations",
+      "remote": true
+    },
     { "binding": "NEXT_TAG_CACHE_D1", "database_name": "funzzle-tags", "database_id": "e283a45f-9de6-474f-a58f-3da9778e1440" }
   ],
   "durable_objects": { "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }] },

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { createServiceSupabase } from "@/lib/supabase";
+import { exec } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Unsubscribe",
@@ -16,14 +16,8 @@ async function unsubscribe(token: string): Promise<"done" | "notfound" | "error"
   // Basic UUID shape check before hitting the DB.
   if (!/^[0-9a-f-]{16,}$/i.test(token)) return "notfound";
   try {
-    const supabase = createServiceSupabase();
-    const { data, error } = await supabase
-      .from("email_subscribers")
-      .update({ unsubscribed: true })
-      .eq("unsubscribe_token", token)
-      .select("email");
-    if (error) return "error";
-    return data && data.length > 0 ? "done" : "notfound";
+    const changed = await exec("UPDATE email_subscribers SET unsubscribed = 1 WHERE unsubscribe_token = ?", token.toLowerCase());
+    return changed > 0 ? "done" : "notfound";
   } catch {
     return "error";
   }

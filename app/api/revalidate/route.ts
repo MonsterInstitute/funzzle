@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isValidISODate } from "@/lib/dates";
 import { pathsToRevalidate } from "@/lib/revalidation";
+import { logRun } from "@/lib/cron/runLog";
 import { isCronRequest, secretMatches } from "@/lib/secret";
 
 /**
@@ -10,7 +11,7 @@ import { isCronRequest, secretMatches } from "@/lib/secret";
  *
  *   POST /api/revalidate   x-revalidate-secret: $REVALIDATE_SECRET
  *        { "dates": ["2026-10-01", …] }   optional: extra answer dates (backfill)
- *        — called by scripts/revalidate-site.mjs (Daily Content workflow).
+ *        — called by scripts/revalidate-site.mjs (manual backfills).
  *   GET  /api/revalidate   Authorization: Bearer $CRON_SECRET
  *        — Cloudflare Cron Trigger just after midnight UTC (wrangler.jsonc ->
  *          worker.ts), rolls "today" over.
@@ -43,5 +44,8 @@ export async function GET(request: Request) {
   if (!isCronRequest(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  return run([]);
+  const startedAt = new Date().toISOString();
+  const res = run([]);
+  await logRun("rollover", startedAt, true, { revalidated: pathsToRevalidate([]).length });
+  return res;
 }

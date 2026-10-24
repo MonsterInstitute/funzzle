@@ -22,7 +22,7 @@ export const revalidate = 21600;
 
 export default async function MiniPlayPage() {
   const today = todayISO();
-  // Use today's published puzzle from Supabase when available; otherwise fall
+  // Use today's published puzzle from D1 when available; otherwise fall
   // back to the built-in sample so the page is always playable.
   const puzzle = (await getMiniPuzzle(today)) ?? SAMPLE_MINI;
 

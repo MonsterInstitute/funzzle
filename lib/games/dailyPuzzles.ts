@@ -2,7 +2,7 @@
  * Daily puzzles: one per game per UTC day, the same for everyone.
  *
  * The stored row in daily_puzzles is the source of truth (written ahead of
- * time by the answers cron and the Daily Content workflow), so a later
+ * time by the answers cron), so a later
  * generator change never swaps a puzzle people are already playing. When the
  * row doesn't exist yet the page generates the same puzzle from the same seed.
  * A database error throws instead: a cached page built from a fallback during
@@ -11,7 +11,7 @@
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
-import { createServiceSupabase, hasServiceSupabase } from "@/lib/supabase";
+import { all, batch, first, parseJson } from "@/lib/db";
 
 export interface DailySudoku {
   date: string;
@@ -30,16 +30,13 @@ export interface DailySolitaire {
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
-  if (!hasServiceSupabase) return null;
-  const { data, error } = await createServiceSupabase()
-    .from("daily_puzzles")
-    .select("data")
-    .eq("game", game)
-    .eq("puzzle_date", date)
-    .eq("variant", variant)
-    .maybeSingle();
-  if (error) throw new Error(`daily_puzzles read ${game} ${date}: ${error.message}`);
-  return (data?.data as T) ?? null;
+  const row = await first<{ data: string }>(
+    "SELECT data FROM daily_puzzles WHERE game = ? AND puzzle_date = ? AND variant = ?",
+    game,
+    date,
+    variant
+  );
+  return row ? parseJson<T>(row.data) : null;
 }
 
 export function generateDailySudoku(date: string): DailySudoku {
@@ -66,30 +63,31 @@ export async function getDailySolitaire(date: string, draw: 1 | 3): Promise<Dail
  * never overwritten. Returns what it wrote.
  */
 export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
-  const supabase = createServiceSupabase();
   const wanted = dates.flatMap((date) => [
     { game: "sudoku", date, variant: "" },
     { game: "solitaire", date, variant: "draw1" },
     { game: "solitaire", date, variant: "draw3" },
   ]);
-  const { data: existing, error } = await supabase
-    .from("daily_puzzles")
-    .select("game, puzzle_date, variant")
-    .in("puzzle_date", dates);
-  if (error) throw new Error(`daily_puzzles list: ${error.message}`);
-  const have = new Set((existing ?? []).map((r) => `${r.game}|${r.puzzle_date}|${r.variant}`));
+  const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
+    `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,
+    ...dates
+  );
+  const have = new Set(existing.map((r) => `${r.game}|${r.puzzle_date}|${r.variant}`));
   const rows = wanted
     .filter((w) => !have.has(`${w.game}|${w.date}|${w.variant}`))
     .map((w) => ({
-      game: w.game,
-      puzzle_date: w.date,
-      variant: w.variant,
+      ...w,
       data: w.game === "sudoku" ? generateDailySudoku(w.date) : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
     }));
   if (!rows.length) return [];
-  const { error: insertError } = await supabase
-    .from("daily_puzzles")
-    .upsert(rows, { onConflict: "game,puzzle_date,variant", ignoreDuplicates: true });
-  if (insertError) throw new Error(`daily_puzzles insert: ${insertError.message}`);
-  return rows.map((r) => `${r.game}${r.variant ? `/${r.variant}` : ""} ${r.puzzle_date}`);
+  await batch(
+    rows.map((r) => [
+      "INSERT INTO daily_puzzles (game, puzzle_date, variant, data) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
+      r.game,
+      r.date,
+      r.variant,
+      JSON.stringify(r.data),
+    ])
+  );
+  return rows.map((r) => `${r.game}${r.variant ? `/${r.variant}` : ""} ${r.date}`);
 }

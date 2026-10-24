@@ -18,12 +18,12 @@ on:
       - "e2e/**"
       - "**/*.test.*"
       - "**/*.spec.*"
-      - ".github/workflows/daily-content.yml"
       - ".github/workflows/gsc-report.yml"
       - "scripts/gsc-report.mjs"
       - "reports/**"
       - "design/**"
       - ".github/workflows/test.yml"
+      - ".github/workflows/sync-worker-secrets.yml"
       - ".claude/**"
       - ".vscode/**"
   workflow_dispatch:
@@ -61,14 +61,21 @@ jobs:
         if: steps.creds.outputs.ok == 'true'
         run: npm ci
 
-      # The build prerenders pages from Supabase, as Vercel builds did; the
-      # service role is used only by the build here (scripts/strip-bundled-env.mjs
-      # keeps it out of the Worker bundle — the Worker reads its own secret).
+      # Schema first (migrations/, tracked in d1_migrations): a deploy whose
+      # code needs a new column never runs against the old schema. Applied
+      # migrations are skipped, so this is a no-op on most deploys.
+      - name: Apply D1 migrations
+        if: steps.creds.outputs.ok == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 migrations apply funzzle-db --remote
+
+      # The build prerenders pages from D1 through the binding's remote proxy
+      # (wrangler.jsonc "remote": true), authenticated by the same token.
       - name: Build and deploy
         if: steps.creds.outputs.ok == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
         run: npm run cf:deploy

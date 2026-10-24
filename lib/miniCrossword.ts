@@ -151,7 +151,7 @@ export { cellKey };
 /**
  * Normalize a stored grid into a square matrix of single uppercase letters,
  * using "#" for black squares. Accepts several shapes so we're tolerant of how
- * the Supabase `puzzles.grid` column happens to be authored:
+ * the `puzzles.grid` column happens to be authored:
  *   - string[][]                       (matrix of cells)
  *   - string[]                         (one string per row)
  *   - string                           (rows separated by "\n" or "/")
@@ -221,7 +221,7 @@ function normalizeClueList(input: unknown): MiniClue[] | null {
 }
 
 /**
- * Map a Supabase `puzzles` row into a playable MiniPuzzle.
+ * Map a `puzzles` row into a playable MiniPuzzle.
  * Returns null when the row can't be interpreted, so callers fall back to the
  * built-in sample rather than rendering a broken grid.
  */

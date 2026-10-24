@@ -1,4 +1,4 @@
-import { createServiceSupabase } from "./supabase";
+import { all, first } from "./db";
 import { CLUE_CONTENT } from "./content/clues";
 import type { ClueEntry } from "./content/types";
 
@@ -40,25 +40,13 @@ function mapRow(row: Record<string, unknown>): ClueRecord {
 }
 
 /**
- * Load every clue — from Supabase when available, otherwise from bundled local
- * content. Local content guarantees the clue pages build and render.
+ * Load every clue from D1, or bundled local content while the table is empty.
+ * A database failure throws (see AnswersUnavailableError in getAnswers.ts for
+ * why an error must not be cached as a fallback page).
  */
 export async function loadAllClues(): Promise<ClueRecord[]> {
-  try {
-    const supabase = createServiceSupabase();
-    const { data, error } = await supabase.from("clues").select("*");
-    if (error) {
-      console.error("loadAllClues failed:", error.message);
-      return CLUE_CONTENT;
-    }
-    if (data && data.length > 0) {
-      return (data as Record<string, unknown>[]).map(mapRow).map(enrich);
-    }
-    return CLUE_CONTENT;
-  } catch (err) {
-    console.error("loadAllClues threw:", err);
-    return CLUE_CONTENT;
-  }
+  const rows = await all("SELECT * FROM clues");
+  return rows.length ? rows.map(mapRow).map(enrich) : CLUE_CONTENT;
 }
 
 /** All clue slugs, for generateStaticParams. */
@@ -71,19 +59,10 @@ export async function getAllClueSlugs(): Promise<string[]> {
   return [...slugs].filter(Boolean);
 }
 
-/** A single clue by slug. */
+/** A single clue by slug. Throws on a database failure. */
 export async function getClue(slug: string): Promise<ClueRecord | null> {
-  try {
-    const supabase = createServiceSupabase();
-    const { data, error } = await supabase
-      .from("clues")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (!error && data) return enrich(mapRow(data as Record<string, unknown>));
-  } catch (err) {
-    console.error(`getClue(${slug}) threw:`, err);
-  }
+  const row = await first("SELECT * FROM clues WHERE slug = ?", slug);
+  if (row) return enrich(mapRow(row));
   return CLUE_CONTENT.find((c) => c.slug === slug) ?? null;
 }
 

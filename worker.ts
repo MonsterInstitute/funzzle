@@ -4,10 +4,10 @@
 //     kept). Only the www and apex routes reach the Worker (workers_dev is
 //     off), but any other hostname would be served with noindex and a
 //     disallow-all robots.txt so it can never be indexed as a duplicate.
-//  2. Cron Triggers (wrangler.jsonc), which replace Vercel Cron. Each schedule
-//     calls its route in-process with `Authorization: Bearer $CRON_SECRET`,
-//     exactly the request Vercel Cron sent, so the routes are unchanged. A
-//     non-2xx response throws, so the run shows as failed in the dashboard.
+//  2. Cron Triggers (wrangler.jsonc): every scheduled job. Each schedule calls
+//     its route in-process with `Authorization: Bearer $CRON_SECRET`. A
+//     non-2xx response (or a throw) emails an alert to ALERT_EMAIL_TO and then
+//     throws, so the run also shows as failed in the dashboard.
 
 // `.open-next/worker.js` exists only after a build, so this must compile both
 // with and without it: @ts-expect-error would fail once it exists.
@@ -20,11 +20,30 @@ const APEX_HOST = "funzzle.com";
 
 /** Cron expression (wrangler.jsonc "triggers") -> route it runs. */
 const CRON_ROUTES: Record<string, string> = {
-  "5 2,3,6,14,22,23 * * *": "/api/cron/answers",
   "1 0 * * *": "/api/revalidate",
+  "5 2,3,6,14,22,23 * * *": "/api/cron/answers",
+  "20 3,7,15,23 * * *": "/api/cron/explain",
 };
 
-type Env = { CRON_SECRET?: string };
+type Env = {
+  CRON_SECRET?: string;
+  ALERT_EMAIL?: SendEmail;
+  ALERT_EMAIL_TO?: string;
+  ALERT_EMAIL_FROM?: string;
+};
+
+/** Email a cron failure. Never throws: the run is already failing. */
+async function alert(env: Env, subject: string, text: string): Promise<void> {
+  if (!env.ALERT_EMAIL || !env.ALERT_EMAIL_TO || !env.ALERT_EMAIL_FROM) {
+    console.error(JSON.stringify({ m: "alert-not-configured", subject }));
+    return;
+  }
+  try {
+    await env.ALERT_EMAIL.send({ from: env.ALERT_EMAIL_FROM, to: env.ALERT_EMAIL_TO, subject, text } as unknown as EmailMessage);
+  } catch (err) {
+    console.error(JSON.stringify({ m: "alert-failed", subject, error: (err as Error).message }));
+  }
+}
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -51,16 +70,32 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     const path = CRON_ROUTES[controller.cron];
-    if (!path) throw new Error(`No route for cron "${controller.cron}"`);
-    if (!env.CRON_SECRET) throw new Error("CRON_SECRET is not set — cron routes would reject the call");
-
-    const request = new Request(`https://${PRODUCTION_HOST}${path}`, {
-      headers: { authorization: `Bearer ${env.CRON_SECRET}`, "user-agent": "cloudflare-cron" },
-    });
-    const res: Response = await handler.fetch(request, env, ctx);
-    const body = await res.text();
-    console.log(JSON.stringify({ m: "cron", cron: controller.cron, path, status: res.status, body: body.slice(0, 2000) }));
-    if (!res.ok) throw new Error(`${path} returned ${res.status}`);
+    const when = new Date(controller.scheduledTime).toISOString();
+    let failure: string | null = null;
+    let body = "";
+    if (!path) failure = `No route for cron "${controller.cron}"`;
+    else if (!env.CRON_SECRET) failure = "CRON_SECRET is not set — cron routes would reject the call";
+    else {
+      try {
+        const request = new Request(`https://${PRODUCTION_HOST}${path}`, {
+          headers: { authorization: `Bearer ${env.CRON_SECRET}`, "user-agent": "cloudflare-cron" },
+        });
+        const res: Response = await handler.fetch(request, env, ctx);
+        body = await res.text();
+        console.log(JSON.stringify({ m: "cron", cron: controller.cron, path, status: res.status, body: body.slice(0, 2000) }));
+        if (!res.ok) failure = `${path} returned ${res.status}`;
+      } catch (err) {
+        failure = `${path} threw: ${(err as Error).message}`;
+      }
+    }
+    if (failure) {
+      await alert(
+        env,
+        `[funzzle] cron failed: ${path ?? controller.cron}`,
+        `Cron "${controller.cron}" scheduled at ${when} failed.\n\n${failure}\n\nResponse:\n${body.slice(0, 8000)}\n\nRuns: SELECT * FROM cron_runs ORDER BY id DESC LIMIT 20 (wrangler d1 execute funzzle-db --remote).`
+      );
+      throw new Error(failure);
+    }
   },
 } satisfies ExportedHandler<Env>;
 

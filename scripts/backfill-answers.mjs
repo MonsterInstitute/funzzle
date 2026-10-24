@@ -1,7 +1,9 @@
 /**
- * Backfill REAL answers for a range of past dates by reusing the exact same
- * builders the daily job uses (fetch real public answer -> DeepSeek explanations
- * -> upsert). Covers Wordle, Connections and the NYT Mini.
+ * Backfill REAL answers for a range of past dates with the same public-source
+ * fetchers the answers cron uses, written to D1 over the REST API. Covers
+ * Wordle, Connections and the NYT Mini. Rows are stored without DeepSeek
+ * prose (summary NULL); the explain cron only covers today and tomorrow, so
+ * backfilled pages show the answers and hints without the explanations.
  *
  * NON-DESTRUCTIVE: a (date, game) that fails to fetch is reported and SKIPPED —
  * any existing row for that date/type is left untouched, so a flaky source can
@@ -12,16 +14,32 @@
  * failure and exits non-zero if any (date, game) failed.
  *
  * Usage:
- *   node --env-file=.env.local scripts/backfill-answers.mjs --last=8
- *   node --env-file=.env.local scripts/backfill-answers.mjs 2026-07-01 2026-07-02 ...
- *   node --env-file=.env.local scripts/backfill-answers.mjs --last=8 --games=wordle,connections
- *   node --env-file=.env.local scripts/backfill-answers.mjs --last=16 --games=nyt-mini --missing-only
+ *   node scripts/backfill-answers.mjs --last=8
+ *   node scripts/backfill-answers.mjs 2026-07-01 2026-07-02 ...
+ *   node scripts/backfill-answers.mjs --last=8 --games=wordle,connections
+ *   node scripts/backfill-answers.mjs --last=16 --games=nyt-mini --missing-only
+ * then refresh the pages: REVALIDATE_SECRET=… node scripts/revalidate-site.mjs --last=8
  *
- * Env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE (required),
- *      DEEPSEEK_API_KEY (optional, for explanations).
+ * Auth: CLOUDFLARE_API_TOKEN (D1 Edit) or a local `wrangler login`.
  */
-import { createClient } from "@supabase/supabase-js";
-import { GAMES, upsertAnswer } from "./generate-daily-content.mjs";
+import { d1 } from "./lib/d1-rest.mjs";
+import { fetchConnections, fetchMini, fetchWordle } from "./fetch-public-answers.mjs";
+
+const GAMES = [
+  { key: "wordle", label: "Wordle", fetch: fetchWordle },
+  { key: "connections", label: "Connections", fetch: fetchConnections },
+  { key: "nyt-mini", label: "NYT Mini", fetch: fetchMini },
+];
+
+/** Replace the answers for (date, type), keeping the row's created_at. */
+async function upsertAnswer(row) {
+  await d1(
+    `INSERT INTO answers (publish_date, type, answer_data, summary) VALUES (?, ?, ?, NULL)
+     ON CONFLICT(publish_date, type) DO UPDATE SET answer_data = excluded.answer_data, summary = NULL,
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`,
+    [row.publish_date, row.type, JSON.stringify(row.answer_data)]
+  );
+}
 
 function shiftISO(dateISO, days) {
   const dt = new Date(`${dateISO}T00:00:00Z`);
@@ -59,15 +77,8 @@ if (unknown.length || games.length === 0) {
 
 let existing = new Set();
 if (missingOnly) {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE, {
-    auth: { persistSession: false },
-  });
-  const { data, error } = await supabase.from("answers").select("publish_date, type").in("publish_date", dates);
-  if (error) {
-    console.error(`Reading existing rows failed: ${error.message}`);
-    process.exit(1);
-  }
-  existing = new Set(data.map((r) => `${r.publish_date}|${r.type}`));
+  const rows = await d1(`SELECT publish_date, type FROM answers WHERE publish_date IN (${dates.map(() => "?").join(", ")})`, dates);
+  existing = new Set(rows.map((r) => `${r.publish_date}|${r.type}`));
 }
 
 console.log(
@@ -83,7 +94,8 @@ for (const date of dates) {
       continue;
     }
     try {
-      const { row, source } = await game.build(date);
+      const { answer_data, source } = await game.fetch(date);
+      const row = { publish_date: date, type: game.key, answer_data };
       await upsertAnswer(row);
       const detail =
         game.key === "wordle"

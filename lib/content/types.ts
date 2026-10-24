@@ -1,7 +1,7 @@
 /**
  * Local content types. These files are the source of truth for seeded content:
- * pages read them as a fallback when Supabase has no row (or is unreachable),
- * and scripts/seed generate the matching Supabase rows from them.
+ * pages read them as a fallback when the database has no row,
+ * and were the seed for the matching database rows.
  */
 
 export interface MiniClueEntry {

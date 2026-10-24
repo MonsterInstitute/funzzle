@@ -3,8 +3,7 @@
  *
  * OpenNext copies every key from the project's .env* files into
  * .open-next/cloudflare/next-env.mjs, which ships inside the Worker. Locally
- * that includes .env.local's SUPABASE_SERVICE_ROLE (the build needs it to
- * prerender pages from Supabase). Keep only NEXT_PUBLIC_* keys — public, and
+ * that includes everything in .env.local (local tokens and keys). Keep only NEXT_PUBLIC_* keys — public, and
  * already inlined into the pages — so runtime secrets come only from Wrangler
  * secrets (wrangler secret put).
  */

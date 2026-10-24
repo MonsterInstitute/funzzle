@@ -1,4 +1,4 @@
-import { createServiceSupabase, hasServiceSupabase } from "./supabase";
+import { all, first, parseJson } from "./db";
 import { DAILY_CONTENT } from "./content/dailyAnswers";
 import { getLocalWordle } from "./content/wordleAnswers";
 import { todayISO } from "./dates";
@@ -48,7 +48,7 @@ export interface AnswerRow<T = unknown> {
 
 /**
  * Build an answer row from bundled local content, used as a fallback when
- * Supabase has no row (or is unreachable). This keeps every seeded answer page
+ * the database has no row. This keeps every seeded answer page
  * rendering — and building statically — regardless of DB state.
  */
 export function localAnswer(
@@ -100,27 +100,29 @@ export function localAnswer(
 }
 
 /**
- * The answers table couldn't be read (Supabase error, timeout, network) —
- * distinct from a date that genuinely has no row yet. It is thrown, not
- * turned into "coming soon": a render that throws is never cached, so ISR
- * keeps serving the last good page (or returns an uncached 500 on a first
- * render) and retries on a later request, instead of freezing a page that
- * has data on its placeholder until the next revalidation.
+ * The answers table couldn't be read (D1 error, timeout) — distinct from a
+ * date that genuinely has no row yet. It is thrown, not turned into "coming
+ * soon": a render that throws is never cached, so ISR keeps serving the last
+ * good page (or returns an uncached 500 on a first render) and retries on a
+ * later request, instead of freezing a page that has data on its placeholder
+ * until the next revalidation.
  */
 export class AnswersUnavailableError extends Error {
   constructor(what: string, cause: unknown) {
-    const detail = cause instanceof Error ? cause.message : String((cause as { message?: string })?.message ?? cause);
+    const detail = cause instanceof Error ? cause.message : String(cause);
     super(`${what}: answers table unavailable — ${detail}`, { cause });
     this.name = "AnswersUnavailableError";
   }
 }
 
+type StoredAnswer = Omit<AnswerRow, "answer_data"> & { answer_data: string };
+const toRow = <T>(r: StoredAnswer): AnswerRow<T> => ({ ...r, answer_data: parseJson<T>(r.answer_data) as T });
+
 /**
  * Fetch a single answer row by publish date (YYYY-MM-DD) and type.
- * Supabase first; a date with no row falls back to bundled local content,
- * then to null ("coming soon"). A database failure throws
- * AnswersUnavailableError instead — see there. Deployments without Supabase
- * configured (e.g. previews) serve local content only.
+ * D1 first; a date with no row falls back to bundled local content, then to
+ * null ("coming soon"). A database failure throws AnswersUnavailableError
+ * instead — see there.
  *
  * A date's answers are stored ahead of time (the answers cron fetches
  * tomorrow's before midnight UTC) but stay hidden until that UTC day begins;
@@ -131,26 +133,17 @@ export async function getAnswer<T = unknown>(
   type: AnswerType
 ): Promise<AnswerRow<T> | null> {
   if (publishDate > todayISO()) return null;
-  const local = () => (localAnswer(publishDate, type) as AnswerRow<T> | null) ?? null;
-  if (!hasServiceSupabase) return local();
-
-  let result;
+  let row: StoredAnswer | null;
   try {
-    // Newest row wins, so a transient duplicate (two writers racing) can't
-    // turn the page into an error.
-    result = await createServiceSupabase()
-      .from("answers")
-      .select("*")
-      .eq("publish_date", publishDate)
-      .eq("type", type)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    row = await first<StoredAnswer>(
+      "SELECT id, puzzle_id, publish_date, type, answer_data, summary, created_at FROM answers WHERE publish_date = ? AND type = ?",
+      publishDate,
+      type
+    );
   } catch (err) {
     throw new AnswersUnavailableError(`getAnswer(${publishDate}, ${type})`, err);
   }
-  if (result.error) throw new AnswersUnavailableError(`getAnswer(${publishDate}, ${type})`, result.error);
-  return (result.data as AnswerRow<T> | null) ?? local();
+  return row ? toRow<T>(row) : ((localAnswer(publishDate, type) as AnswerRow<T> | null) ?? null);
 }
 
 /**
@@ -160,17 +153,14 @@ export async function getAnswer<T = unknown>(
 export async function getAnswersByDate(
   publishDate: string
 ): Promise<AnswerRow[]> {
-  if (publishDate > todayISO() || !hasServiceSupabase) return [];
-  let result;
+  if (publishDate > todayISO()) return [];
   try {
-    result = await createServiceSupabase()
-      .from("answers")
-      .select("*")
-      .eq("publish_date", publishDate)
-      .order("type", { ascending: true });
+    const rows = await all<StoredAnswer>(
+      "SELECT id, puzzle_id, publish_date, type, answer_data, summary, created_at FROM answers WHERE publish_date = ? ORDER BY type",
+      publishDate
+    );
+    return rows.map((r) => toRow(r));
   } catch (err) {
     throw new AnswersUnavailableError(`getAnswersByDate(${publishDate})`, err);
   }
-  if (result.error) throw new AnswersUnavailableError(`getAnswersByDate(${publishDate})`, result.error);
-  return (result.data as AnswerRow[]) ?? [];
 }

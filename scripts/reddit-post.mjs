@@ -3,25 +3,17 @@
  * HINT (never the answer), linking back to funzzle.com. Prints to console for
  * manual posting.
  *
- * Run:  node --env-file=.env.local scripts/reddit-post.mjs
+ * Run:  node scripts/reddit-post.mjs
  */
-import { createClient } from "@supabase/supabase-js";
+import { d1 } from "./lib/d1-rest.mjs";
 
 const SITE = "https://www.funzzle.com";
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRole = process.env.SUPABASE_SERVICE_ROLE;
 const today = new Date().toISOString().slice(0, 10);
 
 async function getWordleHint() {
-  if (!url || !serviceRole) return null;
   try {
-    const supabase = createClient(url, serviceRole, { auth: { persistSession: false } });
-    const { data } = await supabase
-      .from("answers")
-      .select("answer_data, summary")
-      .eq("publish_date", today)
-      .eq("type", "wordle")
-      .maybeSingle();
+    const [row] = await d1("SELECT answer_data, summary FROM answers WHERE publish_date = ? AND type = 'wordle'", [today]);
+    const data = row ? { ...row, answer_data: JSON.parse(row.answer_data) } : null;
     if (!data) return null;
     return {
       first: data.answer_data?.hint_first_letter ?? "?",
@@ -70,5 +62,5 @@ console.log("r/crossword POST");
 console.log("=".repeat(60));
 console.log(rCrossword);
 if (!hint) {
-  console.log("\n[note] No Supabase hint available; used placeholders. Set env or run after daily content generation.");
+  console.log("\n[note] No stored hint available; used placeholders. Set env or run after daily content generation.");
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServiceSupabase } from "@/lib/supabase";
+import { exec } from "@/lib/db";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -17,29 +17,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const supabase = createServiceSupabase();
-    const { error } = await supabase.from("email_subscribers").insert({ email });
-
-    if (error) {
-      // Unique violation → already subscribed (treat as success).
-      if (error.code === "23505") {
-        return NextResponse.json({ ok: true, message: "You're already subscribed!" });
-      }
-      // Table missing (Postgres 42P01 or PostgREST schema-cache PGRST205).
-      if (error.code === "42P01" || error.code === "PGRST205") {
-        console.error("email_subscribers table missing — run supabase/email-subscribers.sql");
-        return NextResponse.json(
-          { ok: false, error: "Subscriptions aren't set up yet. Try again soon." },
-          { status: 503 }
-        );
-      }
-      console.error("subscribe insert failed:", error.message);
-      return NextResponse.json({ ok: false, error: "Something went wrong." }, { status: 500 });
-    }
-
+    const added = await exec(
+      "INSERT INTO email_subscribers (id, email, unsubscribe_token) VALUES (?, ?, ?) ON CONFLICT(email) DO NOTHING",
+      crypto.randomUUID(),
+      email,
+      crypto.randomUUID()
+    );
+    if (!added) return NextResponse.json({ ok: true, message: "You're already subscribed!" });
     return NextResponse.json({ ok: true, message: "You're subscribed! Check your inbox daily." });
   } catch (err) {
-    console.error("subscribe threw:", err);
+    console.error("subscribe failed:", (err as Error).message);
     return NextResponse.json({ ok: false, error: "Something went wrong." }, { status: 500 });
   }
 }
