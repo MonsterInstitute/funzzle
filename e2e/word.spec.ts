@@ -50,7 +50,7 @@ test("daily word: invalid guess, coach ladder, solve, recap and share", async ({
   await expect(page.getByText("Daily Set · 1 of 4")).toBeVisible();
   await expect(page.getByText(/Your key move:/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Share card" })).toBeVisible();
-  const img = await page.request.get(`/api/share-card?g=word&d=${today()}&t=95000&s=1&h=2&lv=Classic&sc=2/6&map=01020-22222`);
+  const img = await page.request.get(`/api/share-card?g=word&d=${today()}&t=95000&s=1&h=2&lv=Classic&gs=2/6&map=01020-22222`);
   expect(img.headers()["content-type"]).toBe("image/png");
 
   // The homepage Daily Set card counts it, and a reload brings the recap back.

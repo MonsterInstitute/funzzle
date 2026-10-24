@@ -25,7 +25,7 @@ export interface RecapProps {
   title: string;
   timeMs: number;
   /**
-   * Score games (resultConfig kind "score"): the points, shown instead of the
+   * Score games (resultConfig order "score"): the points, shown instead of the
    * time and placed on the histogram (whose lo/hi are then points).
    */
   score?: number;
@@ -86,7 +86,7 @@ export default function Recap(props: RecapProps) {
     (percentile === null
       ? "First to finish today. Nice."
       : percentile !== undefined
-        ? `${props.beatText ?? `${props.rankWord ?? "Faster"} than`} ${percentile}% of today’s players`
+        ? `${props.beatText ?? (scored ? "Higher score than" : `${props.rankWord ?? "Faster"} than`)} ${percentile}% of today’s players`
         : loadingStats
           ? "Comparing with today’s players…"
           : "Practice puzzle");
