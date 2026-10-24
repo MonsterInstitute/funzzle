@@ -23,6 +23,7 @@ const CRON_ROUTES: Record<string, string> = {
   "1 0 * * *": "/api/revalidate",
   "5 2,3,6,14,22,23 * * *": "/api/cron/answers",
   "20 3,7,15,23 * * *": "/api/cron/explain",
+  "0 13 * * *": "/api/cron/reminders",
 };
 
 type Env = {

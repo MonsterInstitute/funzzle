@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import GameRails from "@/components/ads/GameRails";
+import PassportStamp from "@/components/kit/PassportStamp";
 import Footer from "@/components/Footer";
 import WorldleGame from "@/components/WorldleGame";
 import { countryForDate } from "@/lib/worldle";
@@ -32,6 +33,7 @@ export default function WorldlePlayPage() {
     <>
       <Header />
       <div className="relative flex flex-1 flex-col">
+        <PassportStamp game="word" />
         <GameRails board={512} />
         <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
           <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">

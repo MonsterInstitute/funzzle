@@ -80,43 +80,73 @@ function playedSetOn(days: DaysRecord, date: string): boolean {
   return !!day && DAILY_SET.some((g) => day[g]?.state === "done");
 }
 
+export type WeekDay = "done" | "frozen" | "today" | "open" | "future";
+
 export interface StreakInfo {
   current: number;
   best: number;
-  /** Mon..Sun of the current UTC week: "done" | "today" | "open" | "future". */
-  week: ("done" | "today" | "open" | "future")[];
+  /** Streak freezes banked: one is earned every 7 streak days (max MAX_FREEZES). */
+  freezes: number;
+  /** Missed days a freeze covered, so the streak carried on. */
+  frozen: string[];
+  /** Mon..Sun of the current UTC week. */
+  week: WeekDay[];
 }
 
+export const FREEZE_EVERY = 7;
+export const MAX_FREEZES = 2;
+
+/**
+ * Streak with freezes. Replays every day from the first played day: each
+ * played day extends the run, and every FREEZE_EVERY-th day of a run banks a
+ * freeze. A missed day spends a banked freeze automatically (the run carries
+ * on, but the day doesn't add to it); with none banked the run resets.
+ * Today, not played yet, never breaks anything. Pure function of the stored
+ * days, so it needs no state of its own.
+ */
 export function getStreak(today = utcToday()): StreakInfo {
   const days = readDays();
-  // Today not played yet keeps yesterday's streak alive.
-  let cursor = playedSetOn(days, today) ? today : shiftDay(today, -1);
-  let current = 0;
-  while (playedSetOn(days, cursor)) {
-    current++;
-    cursor = shiftDay(cursor, -1);
-  }
-  let best = 0;
+  const played = Object.keys(days).filter((d) => d <= today && playedSetOn(days, d)).sort();
   let run = 0;
-  let prev: string | null = null;
-  for (const date of Object.keys(days).sort()) {
-    if (!playedSetOn(days, date)) continue;
-    run = prev && shiftDay(prev, 1) === date ? run + 1 : 1;
-    best = Math.max(best, run);
-    prev = date;
+  let best = 0;
+  let freezes = 0;
+  const frozen: string[] = [];
+  if (played.length) {
+    for (let date = played[0]; date <= today; date = shiftDay(date, 1)) {
+      if (playedSetOn(days, date)) {
+        run++;
+        best = Math.max(best, run);
+        if (run % FREEZE_EVERY === 0) freezes = Math.min(MAX_FREEZES, freezes + 1);
+      } else if (date === today) {
+        break;
+      } else if (run > 0 && freezes > 0) {
+        freezes--;
+        frozen.push(date);
+      } else {
+        run = 0;
+      }
+    }
   }
+  const frozenSet = new Set(frozen);
   const weekday = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7; // Mon = 0
   const monday = shiftDay(today, -weekday);
-  const week = Array.from({ length: 7 }, (_, i) => {
+  const week = Array.from({ length: 7 }, (_, i): WeekDay => {
     const date = shiftDay(monday, i);
-    if (playedSetOn(days, date)) return "done" as const;
-    if (date === today) return "today" as const;
-    return date < today ? ("open" as const) : ("future" as const);
+    if (playedSetOn(days, date)) return "done";
+    if (frozenSet.has(date)) return "frozen";
+    if (date === today) return "today";
+    return date < today ? "open" : "future";
   });
-  return { current, best: Math.max(best, current), week };
+  return { current: run, best, freezes, frozen, week };
 }
 
 export function dailySetProgress(date = utcToday()): number {
   const day = getDayStatus(date);
   return DAILY_SET.filter((g) => day[g]?.state === "done").length;
+}
+
+/** Days on which all four Daily Set puzzles were finished. */
+export function fullSetDays(): number {
+  const days = readDays();
+  return Object.values(days).filter((day) => DAILY_SET.every((g) => day[g]?.state === "done")).length;
 }

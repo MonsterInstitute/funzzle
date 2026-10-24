@@ -19,6 +19,7 @@ import { connectionsHints, miniAnswer, miniHints, wordleHints } from "@/lib/nytH
 import { todayISO } from "@/lib/dates";
 import { organizationJsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
 import QandA from "@/components/seo/QandA";
+import ReminderOptIn from "@/components/kit/ReminderOptIn";
 import { HOME_QA } from "@/lib/aeo";
 import { SITE_DESCRIPTION } from "@/lib/site";
 
@@ -114,6 +115,9 @@ export default async function HomePage() {
 
         <AdSlot slot="rectangle" className="mx-auto my-12 px-4" />
         <ProfileSection />
+        <div className="mx-auto max-w-[1280px] px-4 pb-6 sm:px-8">
+          <ReminderOptIn />
+        </div>
 
         <div className="mx-auto max-w-[880px] px-4 pb-16 sm:px-8">
           <QandA items={HOME_QA} title="Questions about Funzzle" className="[&_h2]:font-display [&_h2]:text-[28px] [&_h2]:font-extrabold" />

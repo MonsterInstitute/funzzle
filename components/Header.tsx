@@ -42,11 +42,18 @@ export default function Header() {
         </nav>
         <div className="flex items-center gap-2.5">
           {streak > 0 && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-violet-tint px-3.5 py-2 text-sm font-semibold text-violet-deep">
+            <Link href="/me" className="inline-flex items-center gap-2 rounded-full bg-violet-tint px-3.5 py-2 text-sm font-semibold text-violet-deep no-underline">
               <Icon name="flame" size={16} />
               {streak}-day streak
-            </span>
+            </Link>
           )}
+          <Link
+            href="/me"
+            aria-label="Your profile"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-ground text-ink no-underline"
+          >
+            <Icon name="user" />
+          </Link>
           <button
             type="button"
             aria-label="Search games"

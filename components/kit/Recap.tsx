@@ -8,6 +8,7 @@ import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { DAILY_SET, getDayStatus, getStreak, utcToday } from "@/lib/games/kit/daily";
 import { formatTime, type DayStats } from "@/lib/games/kit/results";
 import { snapshot, useLocal } from "@/lib/games/kit/useLocal";
+import ChallengePanel, { type ChallengeInfo } from "./ChallengePanel";
 import { Icon } from "./Icons";
 
 export interface RecapTile {
@@ -32,6 +33,8 @@ export interface RecapProps {
   share: { imageUrl: string; text: string };
   onClose: () => void;
   extraActions?: ReactNode;
+  /** Friend challenge for this puzzle (omit for games without comparable results). */
+  challenge?: ChallengeInfo;
 }
 
 const SET_LABEL: Record<string, string> = { sudoku: "Sudoku", solitaire: "Solitaire", word: "Word", "mini-crossword": "Mini" };
@@ -231,6 +234,7 @@ export default function Recap(props: RecapProps) {
             {copied ? "Copied" : "Copy result"}
           </button>
         </div>
+        {props.challenge && <ChallengePanel game={game} info={props.challenge} />}
         {props.extraActions && <div className="mx-4 flex flex-col gap-2">{props.extraActions}</div>}
 
         <AdSlot slot="rectangle" className="mx-4 mt-1" note="Ads appear between games, never while you play." />

@@ -72,7 +72,7 @@ Rules that keep it cheap:
 "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "<site>_events" }],
 "send_email": [{ "name": "ALERT_EMAIL" }],
 "vars": { "ALERT_EMAIL_TO": "hello@<site>", "ALERT_EMAIL_FROM": "alerts@<site>" },
-"limits": { "cpu_ms": 300000 },
+"limits": { "cpu_ms": 60000 },
 "triggers": { "crons": ["1 0 * * *", "5 2,3,6,14,22,23 * * *", "20 3,7,15,23 * * *"] }
 ```
 

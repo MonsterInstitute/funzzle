@@ -14,6 +14,8 @@ import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { getStreak, markDone, setStatus } from "@/lib/games/kit/daily";
 import { getRating, recordMatch } from "@/lib/games/kit/rating";
 import { formatClock, formatTime, submitResult, type DayStats } from "@/lib/games/kit/results";
+import { recordFinish } from "@/lib/games/kit/achievements";
+import { challengeFromUrl, fetchChallenge } from "@/lib/games/kit/challenge";
 import { countPractice } from "@/lib/games/kit/practiceQuota";
 import { readJson, writeJson } from "@/lib/games/kit/storage";
 import { useTimer } from "@/lib/games/kit/useTimer";
@@ -22,7 +24,12 @@ import { currentGrid, initialState, isComplete, MAX_HINTS, MAX_MISTAKES, peers, 
 
 interface Saved {
   key: string;
-  mode: "daily" | "practice";
+  /** archive = a past day's daily puzzle (/archive): unranked, no streak. */
+  mode: "daily" | "practice" | "archive";
+  /** The archive puzzle's date. */
+  date?: string;
+  /** Opened from a friend's challenge link (lib/games/kit/challenge.ts). */
+  challengeId?: string;
   difficulty: Difficulty;
   seed: string;
   state: Omit<PlayState, "past" | "future">;
@@ -42,6 +49,7 @@ interface Finish {
 const GAME = GAME_BY_SLUG.sudoku;
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "expert"];
 const DAILY_KEY = (date: string) => `fz:sudoku:daily:${date}`;
+const ARCHIVE_KEY = (date: string) => `fz:sudoku:archive:${date}`;
 const PRACTICE_KEY = "fz:sudoku:practice";
 const R = (c: number) => Math.floor(c / 9);
 const C = (c: number) => c % 9;
@@ -69,19 +77,69 @@ export default function SudokuGame({
 
   // Restore today's saved progress after hydration (local storage isn't on the server).
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
     // "Play a practice puzzle" on the recap loads /play/sudoku?practice=<level>
     // as a new page view (components/kit/PracticeAction).
-    const want = new URLSearchParams(location.search).get("practice");
+    const want = params.get("practice");
+    const archiveDate = params.get("date");
+    const challengeId = challengeFromUrl();
     if (want && (DIFFICULTIES as string[]).includes(want)) {
       history.replaceState(null, "", location.pathname);
       startPractice(want as Difficulty);
+    } else if (challengeId) {
+      // A friend's challenge: the same puzzle they played.
+      fetchChallenge(challengeId)
+        .then((c) => {
+          if (c.game !== "sudoku") throw new Error("not a sudoku challenge");
+          const p = c.puzzle;
+          if (p.kind === "practice") return openPractice(p.seed, p.level as Difficulty, challengeId);
+          if (p.date === date) return openDaily(challengeId);
+          return openArchive(p.date, challengeId);
+        })
+        .catch(() => openDaily())
+        .finally(() => setLoaded(true));
+      return;
+    } else if (archiveDate && /^\d{4}-\d{2}-\d{2}$/.test(archiveDate) && archiveDate < date) {
+      openArchive(archiveDate).finally(() => setLoaded(true));
+      return;
     } else {
-      const saved = readJson<Saved | null>(DAILY_KEY(date), null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
-      if (saved && saved.key === dailyKey) setGame(saved);
+      openDaily();
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage / URL
     setLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per page view
   }, [date, dailyKey]);
+
+  function openDaily(challengeId?: string) {
+    const saved = readJson<Saved | null>(DAILY_KEY(date), null);
+    // Already finished today's grid? The recap adds that result to the challenge.
+    if (saved && saved.key === dailyKey) setGame(challengeId ? { ...saved, challengeId } : saved);
+    else if (challengeId) setGame((g) => ({ ...g, challengeId }));
+  }
+
+  /** A past day's daily puzzle (the stored one, or regenerated from its seed). */
+  async function openArchive(day: string, challengeId?: string) {
+    const saved = readJson<Saved | null>(ARCHIVE_KEY(day), null);
+    if (saved && !challengeId) return setGame(saved);
+    const res = await fetch(`/api/daily-puzzle?game=sudoku&date=${day}`, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return openDaily();
+    const p = (await res.json()) as { difficulty: Difficulty; puzzle: Grid; solution: Grid };
+    setGame({
+      key: `archive:${day}`,
+      mode: "archive",
+      date: day,
+      challengeId,
+      difficulty: p.difficulty,
+      seed: `sudoku:${day}`,
+      state: initialState(p.puzzle, p.solution),
+      elapsed: 0,
+    });
+  }
+
+  function openPractice(seed: string, difficulty: Difficulty, challengeId: string) {
+    const p = generateSudoku(seed, (DIFFICULTIES as string[]).includes(difficulty) ? difficulty : "medium");
+    setGame({ key: `${seed}:${challengeId}`, mode: "practice", difficulty: p.difficulty, seed, challengeId, state: initialState(p.puzzle, p.solution), elapsed: 0 });
+  }
 
   function startPractice(difficulty: Difficulty) {
     countPractice("sudoku");
@@ -106,7 +164,7 @@ export default function SudokuGame({
   };
 
   if (!loaded) return <Board game={game} date={date} key={`pre-${game.key}`} inert />;
-  return <Board key={game.key} game={game} date={date} onPractice={startPractice} onResumePractice={resumePractice} onDaily={backToDaily} />;
+  return <Board key={game.key} game={game} date={game.date ?? date} onPractice={startPractice} onResumePractice={resumePractice} onDaily={backToDaily} />;
 }
 
 function Board({
@@ -124,7 +182,7 @@ function Board({
   onResumePractice?: () => void;
   onDaily?: () => void;
 }) {
-  const storageKey = game.mode === "daily" ? DAILY_KEY(date) : PRACTICE_KEY;
+  const storageKey = game.mode === "daily" ? DAILY_KEY(date) : game.mode === "archive" ? ARCHIVE_KEY(date) : PRACTICE_KEY;
   const [state, dispatch] = useReducer(reducer, game.state, (s) => ({ ...s, past: [], future: [] }));
   const [selected, setSelected] = useState<number>(() => game.state.puzzle.findIndex((v) => !v));
   const [notesMode, setNotesMode] = useState(false);
@@ -148,9 +206,9 @@ function Board({
   const label = DIFFICULTY_LABEL[game.difficulty];
   const day = new Date(`${date}T00:00:00Z`);
   const subtitle =
-    game.mode === "daily"
-      ? `${day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} · ${label}`
-      : `Practice · ${label}`;
+    game.mode === "practice"
+      ? `Practice · ${label}`
+      : `${game.mode === "archive" ? "Archive · " : ""}${day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} · ${label}`;
 
   // Save progress (and the homepage's "In play" line) on every change.
   useEffect(() => {
@@ -182,11 +240,22 @@ function Board({
     track("game_complete", "sudoku", { mode: game.mode, difficulty: game.difficulty, timeMs, ...base });
     const finalize = (percentile?: number | null, stats?: DayStats | null) => {
       const key = game.mode === "daily" ? date : `practice:${game.seed}`;
-      const { rating: r, delta } = recordMatch("sudoku", key, {
-        puzzleRating: SUDOKU_PUZZLE_RATING[game.difficulty],
+      // Archive puzzles are unrated: the day's field has moved on.
+      const { rating: r, delta } =
+        game.mode === "archive"
+          ? { rating: getRating("sudoku").rating, delta: 0 }
+          : recordMatch("sudoku", key, {
+              puzzleRating: SUDOKU_PUZZLE_RATING[game.difficulty],
+              won: true,
+              percentile: percentile ?? undefined,
+              ...base,
+            });
+      recordFinish("sudoku", {
         won: true,
-        percentile: percentile ?? undefined,
-        ...base,
+        timeMs,
+        hints: base.hints,
+        level: game.difficulty,
+        skills: [...new Set(solveLogically(state.puzzle).steps.map((st) => st.technique))],
       });
       if (game.mode === "daily") {
         markDone("sudoku", date, { timeMs, ...base, percentile: percentile ?? undefined, ratingDelta: delta, label });
@@ -249,7 +318,7 @@ function Board({
     setCoach({ ...coach, teach: null });
     let text: string | null = null;
     const p = ladder.answerPlacement;
-    if (game.mode === "daily" && p && ladder.mistakeCell === undefined) {
+    if (game.mode !== "practice" && p && ladder.mistakeCell === undefined) {
       try {
         const res = await fetch(`/api/coach?game=sudoku&date=${date}&key=${ladder.technique}:${p.cell}:${p.digit}`, { signal: AbortSignal.timeout(4000) });
         if (res.ok) text = ((await res.json()) as { text: string | null }).text;
@@ -340,7 +409,7 @@ function Board({
   return (
     <GameShell
       tint={GAME.tint}
-      title={game.mode === "daily" ? "Daily Sudoku" : "Sudoku"}
+      title={game.mode === "practice" ? "Sudoku" : "Daily Sudoku"}
       subtitle={subtitle}
       timer={formatClock(timer.elapsed)}
       onTimerClick={() => setPaused(true)}
@@ -651,12 +720,12 @@ function SudokuRecap({
     s: String(finish.streak),
     m: String(state.mistakes),
     h: String(state.hints),
-    lv: game.mode === "daily" ? label : `Practice ${label}`,
+    lv: game.mode === "practice" ? `Practice ${label}` : label,
     map: solveOrderMap(state),
   });
   if (top !== null && game.mode === "daily") imageParams.set("top", String(top));
   const text = [
-    `Funzzle ${game.mode === "daily" ? "Daily Sudoku" : "Sudoku practice"} · ${short} · ${label}`,
+    `Funzzle ${game.mode === "practice" ? "Sudoku practice" : "Daily Sudoku"} · ${short} · ${label}`,
     `${formatTime(finish.timeMs)}${top !== null && game.mode === "daily" ? ` · Top ${Math.max(1, top)}% today` : ""}`,
     `${state.mistakes} mistake${state.mistakes === 1 ? "" : "s"} · ${state.hints} hint${state.hints === 1 ? "" : "s"}`,
     "funzzle.com/play/sudoku",
@@ -665,7 +734,7 @@ function SudokuRecap({
   return (
     <Recap
       game="sudoku"
-      heading={game.mode === "daily" ? `Daily Sudoku · ${short}` : `Sudoku practice · ${label}`}
+      heading={game.mode === "practice" ? `Sudoku practice · ${label}` : `Daily Sudoku · ${short}${game.mode === "archive" ? " · archive" : ""}`}
       title="Solved."
       timeMs={finish.timeMs}
       percentile={game.mode === "daily" ? finish.percentile : undefined}
@@ -676,10 +745,16 @@ function SudokuRecap({
         {
           label: "Rating",
           value: finish.rating.toLocaleString("en-US"),
-          note: `${finish.ratingDelta >= 0 ? "+" : ""}${finish.ratingDelta} ${game.mode === "daily" ? "today" : "this game"}`,
+          note: game.mode === "archive" ? "Archive puzzles are unrated" : `${finish.ratingDelta >= 0 ? "+" : ""}${finish.ratingDelta} ${game.mode === "daily" ? "today" : "this game"}`,
           good: finish.ratingDelta >= 0,
         },
       ]}
+      challenge={{
+        puzzle: game.mode === "practice" ? { kind: "practice", seed: game.seed, level: game.difficulty } : { kind: "daily", date },
+        label: game.mode === "practice" ? `Sudoku practice · ${label}` : `Daily Sudoku · ${short} · ${label}`,
+        result: { timeMs: finish.timeMs, mistakes: state.mistakes, hints: state.hints },
+        activeId: game.challengeId,
+      }}
       coach={coach}
       share={{ imageUrl: `/api/share-card?${imageParams}`, text }}
       onClose={onClose}

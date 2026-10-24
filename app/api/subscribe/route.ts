@@ -18,13 +18,14 @@ export async function POST(request: Request) {
 
   try {
     const added = await exec(
-      "INSERT INTO email_subscribers (id, email, unsubscribe_token) VALUES (?, ?, ?) ON CONFLICT(email) DO NOTHING",
+      // Re-subscribing after an unsubscribe turns the reminder back on.
+      "INSERT INTO email_subscribers (id, email, unsubscribe_token) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET unsubscribed = 0 WHERE unsubscribed = 1",
       crypto.randomUUID(),
       email,
       crypto.randomUUID()
     );
     if (!added) return NextResponse.json({ ok: true, message: "You're already subscribed!" });
-    return NextResponse.json({ ok: true, message: "You're subscribed! Check your inbox daily." });
+    return NextResponse.json({ ok: true, message: "You're subscribed! One email a day when the new puzzles are ready." });
   } catch (err) {
     console.error("subscribe failed:", (err as Error).message);
     return NextResponse.json({ ok: false, error: "Something went wrong." }, { status: 500 });

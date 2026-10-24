@@ -2,6 +2,7 @@
  * Product analytics. Sent with sendBeacon to /api/events (Workers Analytics
  * Engine), so a page unload never waits on it and failures are silent.
  */
+import { stampPassport } from "./passport";
 import { clientId, readString, writeString } from "./storage";
 
 export type AnalyticsEvent =
@@ -19,6 +20,7 @@ export type AnalyticsEvent =
   | "rewarded_ad";
 
 export function track(event: AnalyticsEvent, game?: string, props: Record<string, string | number | boolean> = {}, ref?: string): void {
+  if (game && (event === "game_start" || event === "game_complete")) stampPassport(game);
   try {
     const body = JSON.stringify({ event, game, clientId: clientId(), props, ref });
     const blob = new Blob([body], { type: "application/json" });

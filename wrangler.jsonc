@@ -28,13 +28,17 @@
   //   00:01           rollover: revalidate today's pages
   //   02:05 … 23:05   answers: fetch missing NYT answers + store daily puzzles
   //   03:20 … 23:20   explain: DeepSeek answer explanations + Sudoku coach text
+  //   13:00           reminders: daily email + web push (9 a.m. Eastern in summer)
   "triggers": {
-    "crons": ["1 0 * * *", "5 2,3,6,14,22,23 * * *", "20 3,7,15,23 * * *"]
+    "crons": ["1 0 * * *", "5 2,3,6,14,22,23 * * *", "20 3,7,15,23 * * *", "0 13 * * *"]
   },
-  // Cron invocations may use up to 5 min of CPU (the coach cron walks the
-  // Sudoku solver); requests keep the 30 s default via their own work size.
-  "limits": { "cpu_ms": 300000 },
-  // Secrets (wrangler secret put): CRON_SECRET, REVALIDATE_SECRET, DEEPSEEK_API_KEY.
+  // CPU cap per invocation (requests and crons alike): 60 s covers the coach
+  // cron's Sudoku solver walk and archive Solitaire deals with room to spare,
+  // while a runaway request still stops long before the 5-minute maximum.
+  "limits": { "cpu_ms": 60000 },
+  // Secrets (wrangler secret put): CRON_SECRET, REVALIDATE_SECRET, DEEPSEEK_API_KEY,
+  // ALERT_EMAIL_FALLBACK, VAPID_PRIVATE_JWK (web push; the public key is
+  // NEXT_PUBLIC_VAPID_PUBLIC_KEY in .env.production).
   // NEXT_PUBLIC_* values are inlined by `next build` (from .env.production and
   // the build environment), not read from here.
   "vars": {
@@ -42,7 +46,12 @@
     "ALERT_EMAIL_FROM": "alerts@funzzle.com"
   },
   // Failure alerts from cron jobs (worker.ts), sent through Email Routing.
-  "send_email": [{ "name": "ALERT_EMAIL" }],
+  "send_email": [
+    { "name": "ALERT_EMAIL" },
+    // Daily reminder emails (Email Sending, funzzle.com onboarded): any recipient,
+    // only from this sender.
+    { "name": "MAILER", "allowed_sender_addresses": ["puzzles@funzzle.com"] }
+  ],
   // Gameplay analytics events (app/api/events): Analytics Engine, not D1, so
   // they never touch the D1 write quota.
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "funzzle_events" }],

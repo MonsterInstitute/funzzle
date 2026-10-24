@@ -29,7 +29,9 @@ import type { DailySolitaire } from "@/lib/games/dailyPuzzles";
 import { track } from "@/lib/games/kit/analytics";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { getStreak, markDone, setStatus } from "@/lib/games/kit/daily";
-import { recordMatch } from "@/lib/games/kit/rating";
+import { recordFinish } from "@/lib/games/kit/achievements";
+import { challengeFromUrl, fetchChallenge } from "@/lib/games/kit/challenge";
+import { getRating, recordMatch } from "@/lib/games/kit/rating";
 import { formatClock, formatTime, submitResult, type DayStats } from "@/lib/games/kit/results";
 import { countPractice } from "@/lib/games/kit/practiceQuota";
 import { readJson, writeJson } from "@/lib/games/kit/storage";
@@ -42,6 +44,12 @@ type Mode = "daily1" | "daily3" | "practice";
 interface Saved {
   key: string;
   mode: Mode;
+  /** A past day's daily deal (/archive): unranked, no streak. */
+  archive?: boolean;
+  /** The puzzle's date when it isn't today's (archive). */
+  date?: string;
+  /** Opened from a friend's challenge link (lib/games/kit/challenge.ts). */
+  challengeId?: string;
   seed: string;
   /** Solver-verified winnable (always true for daily deals). */
   verified: boolean;
@@ -63,7 +71,8 @@ interface Finish {
 }
 
 const GAME = GAME_BY_SLUG.solitaire;
-const KEY = (mode: Mode, date: string) => (mode === "practice" ? "fz:solitaire:practice" : `fz:solitaire:${mode}:${date}`);
+const KEY = (mode: Mode, date: string, archive = false) =>
+  mode === "practice" ? "fz:solitaire:practice" : archive ? `fz:solitaire:archive:${mode}:${date}` : `fz:solitaire:${mode}:${date}`;
 
 function freshDaily(d: DailySolitaire, mode: Mode): Saved {
   return { key: `${d.date}:${d.seed}`, mode, seed: d.seed, verified: true, state: d.state, elapsed: 0, hints: 0 };
@@ -91,7 +100,35 @@ export default function SolitaireGame({ date, daily1, daily3 }: { date: string; 
     const last = readJson<Mode | null>("fz:solitaire:mode", null);
     // "Deal a practice game" on the recap loads /play/solitaire?practice=<draw>
     // as a new page view (components/kit/PracticeAction).
-    const want = new URLSearchParams(location.search).get("practice");
+    const params = new URLSearchParams(location.search);
+    const want = params.get("practice");
+    const archiveDate = params.get("date");
+    const archiveDraw = params.get("draw") === "3" ? 3 : 1;
+    const challengeId = challengeFromUrl();
+    if (challengeId) {
+      // A friend's challenge: the same deal they played.
+      fetchChallenge(challengeId)
+        .then(async (c) => {
+          if (c.game !== "solitaire") throw new Error("not a solitaire challenge");
+          const p = c.puzzle;
+          const d = (p.kind === "practice" ? p.level : p.variant) === "draw3" ? 3 : 1;
+          if (p.kind === "practice") return openPracticeSeed(p.seed, d, challengeId);
+          if (p.date === date) {
+            const mode = d === 3 ? "daily3" : "daily1";
+            const saved = readJson<Saved | null>(KEY(mode, date), null);
+            const fresh = freshDaily(d === 3 ? daily3 : daily1, mode);
+            return setGame({ ...(saved && saved.key === fresh.key ? saved : fresh), challengeId });
+          }
+          return openArchive(p.date, d, challengeId);
+        })
+        .catch(() => openDaily("daily1"))
+        .finally(() => setLoaded(true));
+      return;
+    }
+    if (archiveDate && /^\d{4}-\d{2}-\d{2}$/.test(archiveDate) && archiveDate < date) {
+      openArchive(archiveDate, archiveDraw).finally(() => setLoaded(true));
+      return;
+    }
     if (want === "1" || want === "3") {
       history.replaceState(null, "", location.pathname);
       newPractice(want === "3" ? 3 : 1);
@@ -106,6 +143,24 @@ export default function SolitaireGame({ date, daily1, daily3 }: { date: string; 
     setLoaded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per page view
   }, [daily1, daily3, date, openDaily]);
+
+  /** A past day's daily deal: the stored one, or regenerated from its seed. */
+  async function openArchive(day: string, draw: 1 | 3, challengeId?: string) {
+    const mode = draw === 3 ? "daily3" : "daily1";
+    const saved = readJson<Saved | null>(KEY(mode, day, true), null);
+    if (saved && !challengeId) return setGame(saved);
+    const res = await fetch(`/api/daily-puzzle?game=solitaire&date=${day}&draw=${draw}`, { signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) return openDaily("daily1");
+    const d = (await res.json()) as DailySolitaire;
+    rememberWinningLine(d.state, d.solution);
+    setGame({ ...freshDaily(d, mode), key: `archive:${day}:${d.seed}`, archive: true, date: day, challengeId });
+  }
+
+  function openPracticeSeed(seed: string, draw: 1 | 3, challengeId: string) {
+    const state = deal(seed, draw);
+    const verified = solve(state, { maxNodes: 60_000 }).result === "win";
+    setGame({ key: `${seed}:${challengeId}`, mode: "practice", seed, verified, state, elapsed: 0, hints: 0, challengeId });
+  }
 
   function newPractice(draw: 1 | 3) {
     countPractice("solitaire");
@@ -144,7 +199,7 @@ export default function SolitaireGame({ date, daily1, daily3 }: { date: string; 
       </div>
     );
   }
-  return <Table key={`${loaded}:${game.key}`} game={game} date={date} inert={!loaded} onMode={switchMode} onNewPractice={newPractice} />;
+  return <Table key={`${loaded}:${game.key}`} game={game} date={game.date ?? date} inert={!loaded} onMode={switchMode} onNewPractice={newPractice} />;
 }
 
 function Table({
@@ -160,7 +215,7 @@ function Table({
   onMode: (m: Mode) => void;
   onNewPractice: (draw: 1 | 3) => void;
 }) {
-  const storageKey = KEY(game.mode, date);
+  const storageKey = KEY(game.mode, date, game.archive);
   const [state, setState] = useState<State>(game.state);
   const [past, setPast] = useState<State[]>([]);
   const [future, setFuture] = useState<State[]>([]);
@@ -179,6 +234,8 @@ function Table({
   const started = useRef(false);
   const draw = state.draw;
   const isDaily = game.mode !== "practice";
+  // Today's daily deals are ranked and count for the streak; archive deals don't.
+  const ranked = isDaily && !game.archive;
 
   // Board size follows the container width.
   const boardRef = useRef<HTMLDivElement>(null);
@@ -242,7 +299,7 @@ function Table({
   useEffect(() => {
     if (inert) return;
     writeJson(storageKey, { ...game, state, hints, revealedAllAt, elapsed: timer.now(), done: finish ?? undefined } satisfies Saved);
-    if (isDaily && !finish && state.moves > 0) {
+    if (ranked && !finish && state.moves > 0) {
       setStatus("solitaire", date, { state: "playing", meta: `Draw ${draw} · ${cardsHome(state)} of 52 cards home · ${formatClock(timer.now())}` });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,20 +318,36 @@ function Table({
     track("game_complete", "solitaire", { mode: game.mode, draw, timeMs, moves: state.moves, hints });
     const finalize = (percentile?: number | null, stats?: DayStats | null) => {
       const key = isDaily ? `${date}:draw${draw}` : `practice:${game.seed}`;
-      const { rating, delta } = recordMatch("solitaire", key, {
-        puzzleRating: SOLITAIRE_PUZZLE_RATING[draw],
+      // Archive deals are unrated: the day's field has moved on.
+      const { rating, delta } = game.archive
+        ? { rating: getRating("solitaire").rating, delta: 0 }
+        : recordMatch("solitaire", key, {
+            puzzleRating: SOLITAIRE_PUZZLE_RATING[draw],
+            won: true,
+            percentile: percentile ?? undefined,
+            hints,
+            mistakes: 0,
+          });
+      recordFinish("solitaire", {
         won: true,
-        percentile: percentile ?? undefined,
+        timeMs,
         hints,
-        mistakes: 0,
+        level: `draw-${draw}`,
+        skills: [
+          `win-draw-${draw}`,
+          ...(hints ? [] : ["no-hint"]),
+          ...(timeMs < 300_000 ? ["fast"] : []),
+          ...(state.moves < 120 ? ["efficient"] : []),
+          ...(draw === 3 && !hints ? ["draw-3-unaided"] : []),
+        ],
       });
-      if (isDaily) markDone("solitaire", date, { timeMs, hints, percentile: percentile ?? undefined, ratingDelta: delta, label: `Draw ${draw}` });
+      if (ranked) markDone("solitaire", date, { timeMs, hints, percentile: percentile ?? undefined, ratingDelta: delta, label: `Draw ${draw}` });
       setFinish({ timeMs, percentile, stats, ratingDelta: delta, rating, streak: getStreak().current });
     };
     // The win is detected from state, so the recap opens from this effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowRecap(true);
-    if (isDaily) {
+    if (ranked) {
       submitResult({ game: "solitaire", date, variant: `draw${draw}`, timeMs, mistakes: 0, hints, moves: state.moves }).then((res) =>
         finalize(res ? res.percentile : undefined, res)
       );
@@ -775,10 +848,10 @@ function SolitaireRecap({
   return (
     <Recap
       game="solitaire"
-      heading={isDaily ? `Daily Solitaire · ${short}` : "Solitaire practice"}
+      heading={isDaily ? `Daily Solitaire · ${short}${game.archive ? " · archive" : ""}` : "Solitaire practice"}
       title="Won."
       timeMs={finish.timeMs}
-      percentile={isDaily ? finish.percentile : undefined}
+      percentile={isDaily && !game.archive ? finish.percentile : undefined}
       stats={finish.stats}
       tiles={[
         { label: "Moves", value: String(state.moves), note: `Score ${state.score}` },
@@ -786,10 +859,16 @@ function SolitaireRecap({
         {
           label: "Rating",
           value: finish.rating.toLocaleString("en-US"),
-          note: `${finish.ratingDelta >= 0 ? "+" : ""}${finish.ratingDelta} ${isDaily ? "today" : "this game"}`,
+          note: game.archive ? "Archive deals are unrated" : `${finish.ratingDelta >= 0 ? "+" : ""}${finish.ratingDelta} ${isDaily ? "today" : "this game"}`,
           good: finish.ratingDelta >= 0,
         },
       ]}
+      challenge={{
+        puzzle: isDaily ? { kind: "daily", date, variant: `draw${state.draw}` } : { kind: "practice", seed: game.seed, level: `draw${state.draw}` },
+        label: isDaily ? `Daily Solitaire · ${short} · Draw ${state.draw}` : `Solitaire practice · Draw ${state.draw}`,
+        result: { timeMs: finish.timeMs, mistakes: 0, hints, moves: state.moves },
+        activeId: game.challengeId,
+      }}
       coach={{
         keyMove,
         nextSkill,

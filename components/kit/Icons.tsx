@@ -23,6 +23,11 @@ function Stroke({ d, size = 18, className, strokeWidth = 2 }: IconProps & { d: s
 
 export const ICONS = {
   flame: "M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5 1-8.5z",
+  user: "M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM4 21c1-4 4.5-6 8-6s7 2 8 6",
+  trophy: "M8 4h8v5a4 4 0 0 1-8 0zM8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M8 20h8",
+  calendar: "M5 6h14v14H5zM5 10h14M9 3v4M15 3v4",
+  bell: "M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0",
+  snow: "M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9",
   search: "M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4",
   arrowRight: "M5 12h14M13 6l6 6-6 6",
   back: "M15 6l-6 6 6 6",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import Header from "@/components/Header";
 import GameRails from "@/components/ads/GameRails";
+import PassportStamp from "@/components/kit/PassportStamp";
 import Footer from "@/components/Footer";
 import MiniCrossword from "@/components/MiniCrossword";
 import { SAMPLE_MINI } from "@/lib/miniCrossword";
@@ -31,6 +32,7 @@ export default async function MiniPlayPage() {
       <Header />
 
       <div className="relative flex flex-1 flex-col">
+        <PassportStamp game="mini-crossword" />
         <GameRails board={672} />
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
           <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
