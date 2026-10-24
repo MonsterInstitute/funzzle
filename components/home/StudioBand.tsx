@@ -15,7 +15,7 @@ export default function StudioBand() {
 
   return (
     <section id="studio" className="mx-auto max-w-[1280px] scroll-mt-4 px-4 pb-[72px] sm:px-8">
-      <div className="flex flex-wrap items-center gap-9 rounded-[34px] bg-[#111111] p-7 text-white sm:p-11">
+      <div className="flex flex-wrap items-center gap-9 rounded-[34px] border border-[color-mix(in_srgb,var(--ink)_12%,transparent)] bg-[#111111] p-7 text-white sm:p-11">
         <div className="flex min-w-0 flex-[1_1_340px] flex-col gap-3.5">
           <p className="m-0 font-mono text-[13px] uppercase tracking-[0.08em] text-[#C9C2FF]">Coming soon · Puzzle Studio</p>
           <h2 className="m-0 font-display text-[40px] font-extrabold leading-[0.98] tracking-[-0.03em] sm:text-[50px]">
