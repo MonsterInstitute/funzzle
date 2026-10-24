@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "cf:build": "opennextjs-cloudflare build && node scripts/strip-bundled-env.mjs",
+    "cf:build": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && node scripts/strip-bundled-env.mjs",
     "cf:preview": "npm run cf:build && opennextjs-cloudflare preview",
     "cf:deploy": "npm run cf:build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
