@@ -126,6 +126,78 @@ async function sitemapPaths() {
   return [...(await res.text()).matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => pathOf(m[1]));
 }
 
+// URL Inspection: quota is 2,000 calls/day and 600/minute per property.
+// Inspect a random sample of each pattern's sitemap URLs (--inspect-sample=N),
+// or every URL for the patterns in --inspect-all=answers,clue.
+async function inspect(token, site, url) {
+  const res = await fetchJson("https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ inspectionUrl: url, siteUrl: site }),
+  });
+  return res.inspectionResult?.indexStatusResult || {};
+}
+
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: limit }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]);
+    }
+  }));
+  return results;
+}
+
+function sample(items, n) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, n);
+}
+
+async function indexCoverage(token, site, listed, groupNames) {
+  const sampleSize = Number(arg("inspect-sample") ?? 30);
+  const all = new Set((arg("inspect-all") || "").split(",").filter(Boolean));
+  const picked = groupNames.flatMap((g) => {
+    const paths = listed.filter((p) => groupOf(p) === g);
+    return (all.has(g) ? paths : sample(paths, sampleSize)).map((path) => ({ path, group: g, of: paths.length }));
+  });
+  const results = await mapLimit(picked, 5, async (p) => {
+    try {
+      return { ...p, ...(await inspect(token, site, `https://${CANONICAL_HOST}${p.path}`)) };
+    } catch (err) {
+      return { ...p, coverageState: `Inspection failed: ${err.message.slice(0, 80)}` };
+    }
+  });
+
+  const states = [...new Set(results.map((r) => r.coverageState || "Unknown"))]
+    .sort((a, b) => results.filter((r) => r.coverageState === b).length - results.filter((r) => r.coverageState === a).length);
+  const lines = [
+    `Google's index status for ${fmtInt(results.length)} sitemap URLs: ${all.size ? `every URL for ${[...all].join(", ")}, ` : ""}a random ${sampleSize} for each other pattern.`,
+    "",
+  ];
+  const rows = groupNames.map((g) => {
+    const rs = results.filter((r) => r.group === g);
+    if (!rs.length) return null;
+    const indexed = rs.filter((r) => r.verdict === "PASS").length;
+    return [g, `${fmtInt(rs.length)} / ${fmtInt(rs[0].of)}`, fmtCtr(indexed / rs.length), ...states.map((st) => fmtInt(rs.filter((r) => (r.coverageState || "Unknown") === st).length))];
+  }).filter(Boolean);
+  lines.push(table(["Pattern", "Inspected / in sitemap", "Indexed", ...states], rows), "");
+  lines.push(
+    "<details><summary>Every inspected URL</summary>",
+    "",
+    table(["Page", "Pattern", "Coverage", "Last crawl", "Google canonical"],
+      results.map((r) => [r.path, r.group, r.coverageState || "Unknown", r.lastCrawlTime?.slice(0, 10) || "–", r.googleCanonical && r.googleCanonical !== `https://${CANONICAL_HOST}${r.path}` ? r.googleCanonical : ""]), 5),
+    "",
+    "</details>",
+  );
+  return lines;
+}
+
 const isoDay = (d) => d.toISOString().slice(0, 10);
 const daysAgo = (n) => new Date(Date.now() - n * 86_400_000);
 const pathOf = (url) => decodeURI(new URL(url).pathname).replace(/(.)\/$/, "$1");
@@ -220,10 +292,16 @@ async function main() {
   out.push(`${fmtInt(zeroClick.length)} of ${fmtInt(w28.pages.length)} pages with impressions got no clicks. Highest-impression ${Math.min(TOP_N, zeroClick.length)}:`, "");
   out.push(table(["Page", "Pattern", "Impressions", "Position"], zeroClick.slice(0, TOP_N).map((r) => [r.path, r.group, fmtInt(r.impressions), fmtPos(r.position)]), 2), "");
 
-  out.push("## Sitemap pages with no impressions — 90 days", "");
+  let listed = null;
   try {
+    listed = [...new Set(await sitemapPaths())];
+  } catch (err) {
+    console.error(`Couldn't read the sitemap: ${err.message}`);
+  }
+
+  out.push("## Sitemap pages with no impressions — 90 days", "");
+  if (listed) {
     const seen = new Set(windows.find((w) => w.days === 90).pages.map((p) => p.path));
-    const listed = [...new Set(await sitemapPaths())];
     const unseen = listed.filter((p) => !seen.has(p));
     out.push(`${fmtInt(unseen.length)} of ${fmtInt(listed.length)} sitemap URLs had no impressions in 90 days.`, "");
     const counts = groupNames.map((g) => [g, listed.filter((p) => groupOf(p) === g).length, unseen.filter((p) => groupOf(p) === g).length]).filter(([, n]) => n);
@@ -231,8 +309,15 @@ async function main() {
     if (unseen.length) {
       out.push("<details><summary>All pages with no impressions</summary>", "", ...unseen.map((p) => `- ${p}`), "", "</details>", "");
     }
-  } catch (err) {
-    out.push(`Couldn't read the sitemap: ${err.message}`, "");
+  } else {
+    out.push("Couldn't read the sitemap.", "");
+  }
+
+  out.push("## Index coverage (URL Inspection)", "");
+  if (listed) {
+    out.push(...(await indexCoverage(token, site, listed, groupNames)), "");
+  } else {
+    out.push("Couldn't read the sitemap.", "");
   }
 
   const md = out.join("\n");
