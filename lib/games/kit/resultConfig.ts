@@ -22,6 +22,8 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   // Daily Mahjong is always the 144-tile Turtle (variant = layout id): 72
   // matches take a quick player about 4 minutes, most players 6–20.
   mahjong: { variants: ["turtle"], lo: 120_000, hi: 1_500_000, minMs: 45_000 },
+  // A Spider win takes 100+ moves even with one suit; four suits can take an hour.
+  "spider-solitaire": { variants: ["suits1", "suits2", "suits4"], lo: 120_000, hi: 2_400_000, minMs: 40_000 },
 };
 
 export const HISTOGRAM_BUCKETS = 14;

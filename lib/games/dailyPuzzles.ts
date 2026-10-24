@@ -13,6 +13,7 @@ import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
 import { dailyDeal as dailyFreeCellDeal, type Move as FreeCellMove, type State as FreeCellState } from "@/lib/games/freecell";
 import { dailyBoard, type Board } from "@/lib/games/minesweeper";
 import { dailyDeal as mahjongDailyDeal, type LayoutId, type Pair, type State as MahjongState } from "@/lib/games/mahjong";
+import { dailyDeal as spiderDailyDeal, type Move as SpiderMove, type State as SpiderState, type SuitCount } from "@/lib/games/spider";
 import { MINESWEEPER_DAILY_LEVEL, sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -54,6 +55,15 @@ export interface DailyMahjong {
   solution: Pair[];
 }
 
+export interface DailySpider {
+  date: string;
+  suits: SuitCount;
+  seed: string;
+  state: SpiderState;
+  /** Winning line found by the solver: proof the deal is winnable. */
+  solution: SpiderMove[];
+}
+
 /** Daily Mahjong is always the 144-tile Turtle. */
 export const MAHJONG_DAILY_LAYOUT: LayoutId = "turtle";
 
@@ -92,6 +102,37 @@ export function generateDailyMahjong(date: string): DailyMahjong {
   return { date, layout: MAHJONG_DAILY_LAYOUT, seed: d.seed, state: d.state, solution: d.solution };
 }
 
+/**
+ * Spider deals take ~60 ms to find and prove with 1 suit, but ~0.4–2 s and up
+ * to ~250 MB with 2 suits, and ~5–16 s and ~0.4–1 GB with 4 suits. A Worker
+ * has 128 MB, so only 1-suit deals are generated here; 2- and 4-suit dailies
+ * are generated offline by scripts/pregenerate-spider.ts and stored ahead in
+ * daily_puzzles (the answers cron alerts when fewer than 30 days remain).
+ */
+export function generateDailySpider(date: string, suits: SuitCount): DailySpider {
+  const d = spiderDailyDeal(date, suits);
+  return { date, suits, seed: d.seed, state: d.state, solution: d.solution };
+}
+
+/** 1 suit: the stored row, or the same deal regenerated from its seed. */
+export async function getDailySpider(date: string): Promise<DailySpider> {
+  return (await readRow<DailySpider>("spider-solitaire", date, "suits1")) ?? generateDailySpider(date, 1);
+}
+
+/** The stored row only (null if not pre-generated). The only way pages get a 2- or 4-suit deal. */
+export async function getStoredDailySpider(date: string, suits: SuitCount): Promise<DailySpider | null> {
+  return readRow<DailySpider>("spider-solitaire", date, `suits${suits}`);
+}
+
+/** Days ahead (from today) with stored 2- and 4-suit Spider dailies; the answers cron alerts below 30. */
+export async function spiderDaysStored(today: string): Promise<number> {
+  const row = await first<{ n: number }>(
+    "SELECT count(DISTINCT puzzle_date) AS n FROM daily_puzzles WHERE game = 'spider-solitaire' AND variant = 'suits4' AND puzzle_date >= ?",
+    today
+  );
+  return row?.n ?? 0;
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
@@ -117,6 +158,7 @@ function generateRow(game: string, date: string, variant: string): object {
   if (game === "minesweeper") return generateDailyMinesweeper(date);
   if (game === "freecell") return generateDailyFreeCell(date);
   if (game === "mahjong") return generateDailyMahjong(date);
+  if (game === "spider-solitaire") return generateDailySpider(date, 1);
   return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
 }
 
@@ -132,6 +174,8 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "freecell", date, variant: "" },
     { game: "minesweeper", date, variant: MINESWEEPER_DAILY_LEVEL },
     { game: "mahjong", date, variant: MAHJONG_DAILY_LAYOUT },
+    // 2- and 4-suit Spider rows come from scripts/pregenerate-spider.ts.
+    { game: "spider-solitaire", date, variant: "suits1" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,

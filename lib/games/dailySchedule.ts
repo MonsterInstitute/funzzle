@@ -63,3 +63,5 @@ export const MAHJONG_PUZZLE_RATING = {
   pyramid: 1300,
   turtle: 1400,
 } as const;
+/** Spider by suit count: one suit is gentle, four is one of the hardest card games. */
+export const SPIDER_PUZZLE_RATING = { 1: 1150, 2: 1500, 4: 1900 } as const;

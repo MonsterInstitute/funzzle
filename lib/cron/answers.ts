@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { all, exec } from "@/lib/db";
 import { shiftISODate, todayISO } from "@/lib/dates";
-import { ensureDailyPuzzles } from "@/lib/games/dailyPuzzles";
+import { ensureDailyPuzzles, spiderDaysStored } from "@/lib/games/dailyPuzzles";
 import { changedUrls, submitIndexNow } from "@/lib/indexnow";
 import { pathsToRevalidate } from "@/lib/revalidation";
 import { fetchConnections, fetchMini, fetchWordle } from "@/scripts/fetch-public-answers.mjs";
@@ -40,6 +40,8 @@ export interface AnswersRun {
   revalidated: boolean;
   results: Result[];
   puzzles: string[] | { error: string };
+  spiderDays: number | null;
+  action?: string;
 }
 
 export async function runAnswersCron(): Promise<AnswersRun> {
@@ -96,8 +98,26 @@ export async function runAnswersCron(): Promise<AnswersRun> {
     puzzles = { error: (err as Error).message };
   }
 
+  // 2- and 4-suit Spider dailies are generated offline (too heavy for a
+  // Worker): fail the run, so the alert email goes out, when < 30 days remain.
+  let spiderDays: number | null = null;
+  try {
+    spiderDays = await spiderDaysStored(today);
+  } catch {
+    // Reported as null; the page simply hides modes without a stored deal.
+  }
+  const spiderLow = spiderDays !== null && spiderDays < 30;
+
   // Today's answers should always exist by now; a gap is a failure (alert).
   // Tomorrow's Mini is routinely unreleased until 22:00 ET, so tomorrow's gaps aren't.
   const todayMissing = results.some((r) => r.status === "missing" && r.date === today);
-  return { ok: !todayMissing && !("error" in puzzles), today, revalidated: wroteToday, results, puzzles };
+  return {
+    ok: !todayMissing && !("error" in puzzles) && !spiderLow,
+    today,
+    revalidated: wroteToday,
+    results,
+    puzzles,
+    spiderDays,
+    ...(spiderLow ? { action: "Run: npx tsx scripts/pregenerate-spider.ts --days=365 (2- and 4-suit Spider dailies are running out)" } : {}),
+  };
 }

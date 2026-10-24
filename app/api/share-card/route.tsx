@@ -27,6 +27,7 @@ const GAMES: Record<string, string> = {
   minesweeper: "Daily Minesweeper",
   freecell: "Daily FreeCell",
   mahjong: "Daily Mahjong",
+  "spider-solitaire": "Daily Spider",
 };
 
 /**

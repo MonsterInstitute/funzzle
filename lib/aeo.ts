@@ -183,6 +183,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  "spider-solitaire": {
+    name: "Spider Solitaire",
+    genre: "Card game",
+    summary:
+      "Spider Solitaire is a two-deck patience game: build King-to-Ace runs of one suit in ten columns until all eight are cleared. Funzzle has a free daily deal in 1, 2 or 4 suits, each checked by a solver to be winnable, with unlimited undo and a coach that suggests the best move.",
+    description: "Free daily Spider Solitaire in 1, 2 or 4 suits, verified winnable, with unlimited undo and a best-move coach.",
+    qa: [
+      {
+        q: "How do you play Spider Solitaire?",
+        a: "104 cards are dealt into ten columns, with only the top card of each face up. Put any card on a card one rank higher, whatever the suit; a run of one suit in order moves together. A complete run from King down to Ace of one suit is cleared from the table, and you win when all eight runs are gone. When you're stuck, deal a new row of ten cards from the stock.",
+      },
+      {
+        q: "What is the difference between 1, 2 and 4 suits?",
+        a: "The cards are the same 104, but with one suit every card is a spade, so any run you build can move and be cleared. With two suits (spades and hearts) and especially four, cards of different suits get mixed in your columns and can't move together, which makes the game much harder. One suit is a good start; four suits is a real challenge.",
+      },
+      {
+        q: "Is every Spider Solitaire game winnable?",
+        a: "No. Most one-suit deals can be won, but many four-suit deals can't be. Every Funzzle daily deal is played through by a solver before it goes live, so today's deal always has a winning line. Random practice deals with one or two suits are checked the same way; four-suit practice deals are random and marked not verified.",
+      },
+      {
+        q: "When can you deal new cards in Spider Solitaire?",
+        a: "You can deal from the stock whenever you like, as long as no column is empty: every column gets one new face-up card. Fill any empty column with a card or run first. There are five deals in a game.",
+      },
+      {
+        q: "What's the best Spider Solitaire strategy?",
+        a: "Turn over face-down cards first, especially in the shortest columns. Build on the same suit whenever you can, because only same-suit runs move together and get cleared. Empty a column and keep it free until it lets you rearrange a run or free a hidden card, and before you deal, tidy up as many runs as possible. The coach follows these priorities when it has no winning line to follow.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

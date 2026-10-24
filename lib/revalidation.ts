@@ -20,6 +20,7 @@ export const TODAY_PATHS = [
   "/play/freecell",
   "/play/minesweeper",
   "/play/mahjong",
+  "/play/spider-solitaire",
   "/play/wordle",
   "/play/mini",
   "/play/connections",
