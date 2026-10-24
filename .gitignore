@@ -61,3 +61,6 @@ scripts/trending-opportunities.json
 # Supabase CLI state
 /supabase/.temp/
 .claude/worktrees/
+
+# raw word-list downloads (scripts/build-wordlists.mjs)
+scripts/.wordlists-cache/
