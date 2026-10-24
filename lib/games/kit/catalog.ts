@@ -65,7 +65,7 @@ const ROWS: Row[] = [
   ["nonogram", "Nonogram", "Logic", "Paint by numbers to reveal the picture.", "#D8B4FE", "#F6EEFF", "nonogram", null],
   ["kakuro", "Kakuro", "Logic", "A crossword made of sums.", "#FFB8DA", "#FFEEF6", "kakuro", null],
   ["jigsaw", "Jigsaw", "Casual", "A daily photo, from 24 to 500 pieces.", "#A9CBFF", "#ECF3FF", "jigsaw", null],
-  ["chess", "Chess", "Strategy", "Beginner to master, plus a daily puzzle.", "#DCCDB2", "#F7F3EC", "chess", null],
+  ["chess", "Chess", "Strategy", "Beginner to master, plus a daily puzzle.", "#DCCDB2", "#F7F3EC", "chess", "/play/chess"],
 ];
 
 export const GAMES: GameInfo[] = ROWS.map(([slug, name, category, description, color, tint, glyph, href]) => ({

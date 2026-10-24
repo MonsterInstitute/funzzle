@@ -15,6 +15,7 @@ export interface ResultGame {
 export const RESULT_GAMES: Record<string, ResultGame> = {
   sudoku: { variants: [""], lo: 60_000, hi: 1_500_000, minMs: 15_000 },
   solitaire: { variants: ["draw1", "draw3"], lo: 60_000, hi: 900_000, minMs: 20_000 },
+  chess: { variants: [""], lo: 5_000, hi: 420_000, minMs: 2_000 },
 };
 
 export const HISTOGRAM_BUCKETS = 14;

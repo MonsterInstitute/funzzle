@@ -35,6 +35,8 @@ export interface RecapProps {
   extraActions?: ReactNode;
   /** Friend challenge for this puzzle (omit for games without comparable results). */
   challenge?: ChallengeInfo;
+  /** Replaces the rank line for results that aren't ranked (e.g. a game against the computer). */
+  rankLine?: string;
 }
 
 const SET_LABEL: Record<string, string> = { sudoku: "Sudoku", solitaire: "Solitaire", word: "Word", "mini-crossword": "Mini" };
@@ -66,13 +68,14 @@ export default function Recap(props: RecapProps) {
   const you = stats ? bucketOf(timeMs, stats) : -1;
 
   const rankLine =
-    percentile === null
+    props.rankLine ??
+    (percentile === null
       ? "First to finish today. Nice."
       : percentile !== undefined
         ? `Faster than ${percentile}% of today’s players`
         : loadingStats
           ? "Comparing with today’s players…"
-          : "Practice puzzle";
+          : "Practice puzzle");
 
   async function shareCard() {
     track("share", game, { via: "card" });

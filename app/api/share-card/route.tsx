@@ -16,7 +16,9 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", chess: "Chess Puzzle" };
+/** Chess vs the computer (?g=chess&r=win|draw|loss): a game result, not a daily rank. */
+const CHESS_RESULT: Record<string, string> = { win: "Won", draw: "Drew", loss: "Lost" };
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -51,7 +53,9 @@ export async function GET(request: Request) {
   const moves = q.get("mv") === null ? null : int(q.get("mv"), 100_000);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
+  const chessResult = q.get("r");
   if (
+    (chessResult !== null && (game !== "chess" || !CHESS_RESULT[chessResult])) ||
     !GAMES[game] ||
     !DATE_RE.test(date) ||
     time === null ||
@@ -69,16 +73,28 @@ export async function GET(request: Request) {
   const accent = GAME_BY_SLUG[game].color;
   const day = new Date(`${date}T00:00:00Z`);
   const dateLabel = `${day.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })} · ${day.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
-  const lines = [
-    top !== null ? `Top ${Math.max(1, top)}% today` : "First to finish today",
-    streak > 0 ? `${streak}-day streak` : null,
-    game === "sudoku"
-      ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
-  ].filter(Boolean) as string[];
+  const lines = (
+    chessResult
+      ? [CHESS_RESULT[chessResult], `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`]
+      : [
+          top !== null ? `Top ${Math.max(1, top)}% today` : "First to finish today",
+          streak > 0 ? `${streak}-day streak` : null,
+          game === "sudoku" || game === "chess"
+            ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+            : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+        ]
+  ).filter(Boolean) as string[];
+  const title = chessResult ? "Chess" : GAMES[game];
 
   const board =
-    game === "sudoku" && map ? (
+    game === "chess" ? (
+      // A plain board: nothing about the position or the solution.
+      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {Array.from({ length: 64 }, (_, i) => (
+          <div key={i} style={{ width: 50, height: 50, background: ((i >> 3) + i) % 2 ? "rgba(17,17,17,0.55)" : "#FFFFFF" }} />
+        ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />
@@ -113,7 +129,7 @@ export async function GET(request: Request) {
           <span style={{ fontFamily: "Geist Mono", fontSize: 28 }}>{dateLabel}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <span style={{ fontFamily: "Bricolage", fontSize: 92, lineHeight: 1, letterSpacing: "-0.035em" }}>{GAMES[game]}</span>
+          <span style={{ fontFamily: "Bricolage", fontSize: 92, lineHeight: 1, letterSpacing: "-0.035em" }}>{title}</span>
           {label && (
             <span style={{ padding: "10px 20px", borderRadius: 999, background: "#111111", color: "#FFFFFF", fontSize: 26, fontWeight: 700 }}>{label}</span>
           )}

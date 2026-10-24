@@ -34,3 +34,9 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Daily/practice chess puzzles by difficulty (graded by solution length). */
+export const CHESS_PUZZLE_RATING = { easy: 1100, medium: 1450, hard: 1800 } as const;
+
+/** Chess vs the computer: each level's rating as the "opponent". */
+export const CHESS_LEVEL_RATING = { 1: 700, 2: 1000, 3: 1300, 4: 1600, 5: 1900, 6: 2200 } as const;

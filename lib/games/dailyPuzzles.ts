@@ -10,6 +10,7 @@
  */
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
+import { generatePuzzle, type ChessPuzzle } from "@/lib/games/chess/puzzle";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -27,6 +28,12 @@ export interface DailySolitaire {
   state: State;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: Move[];
+}
+
+export interface DailyChess {
+  date: string;
+  /** Found by seeded self-play and checked unique by an exact search. */
+  puzzle: ChessPuzzle;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -50,12 +57,20 @@ export function generateDailySolitaire(date: string, draw: 1 | 3): DailySolitair
   return { date, draw, seed: d.seed, state: d.state, solution: d.solution };
 }
 
+export function generateDailyChess(date: string): DailyChess {
+  return { date, puzzle: generatePuzzle(`chess:${date}`) };
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
 
 export async function getDailySolitaire(date: string, draw: 1 | 3): Promise<DailySolitaire> {
   return (await readRow<DailySolitaire>("solitaire", date, `draw${draw}`)) ?? generateDailySolitaire(date, draw);
+}
+
+export async function getDailyChess(date: string): Promise<DailyChess> {
+  return (await readRow<DailyChess>("chess", date, "")) ?? generateDailyChess(date);
 }
 
 /**
@@ -67,6 +82,7 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "sudoku", date, variant: "" },
     { game: "solitaire", date, variant: "draw1" },
     { game: "solitaire", date, variant: "draw3" },
+    { game: "chess", date, variant: "" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,
@@ -77,7 +93,12 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     .filter((w) => !have.has(`${w.game}|${w.date}|${w.variant}`))
     .map((w) => ({
       ...w,
-      data: w.game === "sudoku" ? generateDailySudoku(w.date) : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
+      data:
+        w.game === "sudoku"
+          ? generateDailySudoku(w.date)
+          : w.game === "chess"
+            ? generateDailyChess(w.date)
+            : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
     }));
   if (!rows.length) return [];
   await batch(
