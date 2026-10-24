@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { formatTime } from "@/lib/games/kit/results";
+import { LEVEL_COLOR, type Level } from "@/lib/games/groups/puzzle";
 import { SUIT_PATHS } from "@/components/kit/SuitIcon";
 import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/shareFonts";
 
@@ -10,13 +11,15 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
  * cells (lighter = later), never digits.
  *
  * GET ?g=sudoku&d=2026-10-24&t=408000&top=27&s=12&m=0&h=1&lv=Hard&map=<81 chars 0-4>
+ * Groups: map = the level (1-4) of every word of every guess, 4 per guess
+ * (colors only, never words), and f = groups found (0-4).
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", groups: "Groups" };
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -51,6 +54,7 @@ export async function GET(request: Request) {
   const moves = q.get("mv") === null ? null : int(q.get("mv"), 100_000);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
+  const found = int(q.get("f") ?? "4", 4);
   if (
     !GAMES[game] ||
     !DATE_RE.test(date) ||
@@ -61,7 +65,8 @@ export async function GET(request: Request) {
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
-    (map && !/^[0-4]{81}$/.test(map))
+    (map && game !== "groups" && !/^[0-4]{81}$/.test(map)) ||
+    (game === "groups" && (!/^[1-4]{4,32}$/.test(map) || map.length % 4 !== 0 || found === null))
   ) {
     return new Response("bad request", { status: 400 });
   }
@@ -70,15 +75,31 @@ export async function GET(request: Request) {
   const day = new Date(`${date}T00:00:00Z`);
   const dateLabel = `${day.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })} · ${day.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
   const lines = [
-    top !== null ? `Top ${Math.max(1, top)}% today` : "First to finish today",
+    game === "groups" && found !== null && found < 4
+      ? `Found ${found} of 4 groups`
+      : top !== null
+        ? `Top ${Math.max(1, top)}% today`
+        : "First to finish today",
     streak > 0 ? `${streak}-day streak` : null,
-    game === "sudoku"
+    game === "sudoku" || game === "groups"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
       : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
+  const rows = game === "groups" ? map.match(/.{4}/g) ?? [] : [];
+  const cell = Math.min(72, Math.floor((400 - (rows.length - 1) * 10) / Math.max(1, rows.length)));
   const board =
-    game === "sudoku" && map ? (
+    game === "groups" ? (
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", width: 432, height: 432, padding: 16, gap: 10, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {rows.map((row, r) => (
+          <div key={r} style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+            {row.split("").map((c, i) => (
+              <div key={i} style={{ width: cell * 1.2, height: cell, borderRadius: 12, background: LEVEL_COLOR[Number(c) as Level], border: "3px solid #111111" }} />
+            ))}
+          </div>
+        ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />

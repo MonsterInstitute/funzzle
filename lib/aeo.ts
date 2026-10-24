@@ -96,6 +96,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  groups: {
+    name: "Groups",
+    genre: "Word game",
+    summary:
+      "Groups is a free daily word puzzle: sort 16 words into four groups of four that share a hidden link, from a straightforward level 1 group to a tricky level 4. You can make four mistakes, the game tells you when you're one word away, and your result is ranked against today's players by mistakes, then time.",
+    description: "Free daily word-grouping puzzle: find four groups of four, with a coach and unlimited practice.",
+    qa: [
+      {
+        q: "How do you play Groups?",
+        a: "Select four words you think share a link and press Submit. If all four belong together, the group is revealed with its title. Find all four groups before you make four mistakes. Shuffle rearranges the board and Deselect clears your picks.",
+      },
+      {
+        q: "What does \"one away\" mean?",
+        a: "Three of the four words you submitted belong to the same group; one of them is wrong. It still counts as a mistake, so swap one word before you try again.",
+      },
+      {
+        q: "What are the difficulty levels in Groups?",
+        a: "Every board has one group at each level: level 1 is the most direct category, levels 2 and 3 need a second thought, and level 4 is usually wordplay, such as hidden words, sound-alikes or a missing word that completes a phrase.",
+      },
+      {
+        q: "Is there a hint in Groups?",
+        a: "Yes. The coach gives up to three hints per puzzle, each in steps: first it points to a word in the easiest group left, then it gives a clue to that group's theme, then it can reveal the group. Hints are counted in your result.",
+      },
+      {
+        q: "Can I play more than one Groups puzzle a day?",
+        a: "Yes. After the daily puzzle, Practice gives you more boards from Funzzle's own puzzle collection.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

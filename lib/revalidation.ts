@@ -20,6 +20,7 @@ export const TODAY_PATHS = [
   "/play/wordle",
   "/play/mini",
   "/play/connections",
+  "/play/groups",
   "/play/spelling-bee",
   "/play/strands",
   "/play/letter-boxed",

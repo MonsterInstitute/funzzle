@@ -105,6 +105,20 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
     ],
   },
+  // Earned in lib/games/groups/coach.ts earnedSkills().
+  groups: {
+    title: "Groups skills",
+    skills: [
+      { id: "solve", name: "Grouped", tier: 0, what: "Find all four groups" },
+      { id: "no-hint", name: "Unaided", tier: 1, what: "Solve without the coach" },
+      { id: "perfect", name: "Perfect solve", tier: 1, what: "Solve with no mistakes" },
+      { id: "comeback", name: "Comeback", tier: 1, what: "Solve on your last life" },
+      { id: "trickiest-first", name: "Trickiest first", tier: 2, what: "Find the level 4 group first" },
+      { id: "fast", name: "Quick eye", tier: 2, what: "Solve in under 2 minutes" },
+      { id: "flawless", name: "Flawless", tier: 3, what: "No mistakes and no hints" },
+      { id: "reverse", name: "Upside down", tier: 3, what: "Solve levels 4, 3, 2, 1 in order" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

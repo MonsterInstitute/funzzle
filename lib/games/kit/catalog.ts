@@ -56,7 +56,7 @@ const ROWS: Row[] = [
   ["crossword", "Crossword", "Words", "A fresh full-size crossword every day.", "#D9DCE6", "#F3F4F8", "cross", null],
   ["mini-crossword", "Mini Crossword", "Words", "Five by five. About a minute.", "#FFD6A5", "#FFF4E6", "mini", "/play/mini"],
   ["word", "Funzzle Word", "Words", "Guess the word in six. Quad, Geo and Math modes.", "#B5E48C", "#F0F9E6", "word", "/play/wordle"],
-  ["groups", "Groups", "Words", "Find four groups of four.", "#C9B8E8", "#F3EFFA", "groups", "/play/connections"],
+  ["groups", "Groups", "Words", "Find four groups of four.", "#C9B8E8", "#F3EFFA", "groups", "/play/groups"],
   ["spelling-hive", "Spelling Hive", "Words", "Seven letters. How many words can you make?", "#FFD23F", "#FFF6D6", "hive", "/play/spelling-bee"],
   ["word-hunt", "Word Hunt", "Words", "A themed hunt with one word that spans the board.", "#9EE6E0", "#E9F8F7", "hunt", "/play/strands"],
   ["letter-box", "Letter Box", "Words", "Chain words around the square to use every letter.", "#FF9E9E", "#FFECEC", "box", "/play/letter-boxed"],

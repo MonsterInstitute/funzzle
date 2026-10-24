@@ -10,6 +10,7 @@
  */
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
+import { bankPuzzleFor, type GroupsPuzzle } from "@/lib/games/groups";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -27,6 +28,13 @@ export interface DailySolitaire {
   state: State;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: Move[];
+}
+
+export interface DailyGroups {
+  date: string;
+  /** "ai": generated and validated by lib/cron/content/groups.ts; "bank": the fallback bank. */
+  source: "ai" | "bank";
+  puzzle: GroupsPuzzle;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -48,6 +56,20 @@ export function generateDailySudoku(date: string): DailySudoku {
 export function generateDailySolitaire(date: string, draw: 1 | 3): DailySolitaire {
   const d = dailyDeal(date, draw);
   return { date, draw, seed: d.seed, state: d.state, solution: d.solution };
+}
+
+/**
+ * The fallback Groups daily: a bank puzzle picked by date. Groups rows are
+ * written by lib/cron/content/groups.ts (not ensureDailyPuzzles), which
+ * stores exactly this fallback for any day that is already live without a
+ * row, so a page that served it never changes puzzle mid-day.
+ */
+export function generateDailyGroups(date: string): DailyGroups {
+  return { date, source: "bank", puzzle: bankPuzzleFor(date) };
+}
+
+export async function getDailyGroups(date: string): Promise<DailyGroups> {
+  return (await readRow<DailyGroups>("groups", date, "")) ?? generateDailyGroups(date);
 }
 
 export async function getDailySudoku(date: string): Promise<DailySudoku> {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { COMPETITIVE_GAMES, name, puzzle, randomCode, result, UUID_RE } from "@/lib/apiValidate";
 import { all, batch, exec, first } from "@/lib/db";
+import { RESULT_GAMES } from "@/lib/games/kit/resultConfig";
 
 /**
  * Friend challenges (lib/games/kit/challenge.ts). No login: entries are keyed
@@ -20,7 +21,10 @@ async function load(id: string) {
   );
   if (!c) return null;
   const entries = await all<{ client_id: string; name: string; time_ms: number; mistakes: number; hints: number; moves: number | null }>(
-    "SELECT client_id, name, time_ms, mistakes, hints, moves FROM challenge_entries WHERE challenge_id = ? ORDER BY time_ms LIMIT 50",
+    // Same order as the daily ranking: time, or mistakes → hints → time (Groups).
+    `SELECT client_id, name, time_ms, mistakes, hints, moves FROM challenge_entries WHERE challenge_id = ? ORDER BY ${
+      RESULT_GAMES[c.game]?.rank === "mistakes" ? "mistakes, hints, time_ms" : "time_ms"
+    } LIMIT 50`,
     id
   );
   return {

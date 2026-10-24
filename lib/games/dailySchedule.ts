@@ -34,3 +34,6 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Groups puzzles all aim for the same spread (levels 1–4 on every board). */
+export const GROUPS_PUZZLE_RATING = 1400;

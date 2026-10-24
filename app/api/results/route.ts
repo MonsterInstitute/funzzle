@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { shiftISODate, todayISO } from "@/lib/dates";
-import { HISTOGRAM_BUCKETS, RESULT_GAMES } from "@/lib/games/kit/resultConfig";
+import { belowSql, HISTOGRAM_BUCKETS, RESULT_GAMES } from "@/lib/games/kit/resultConfig";
 import { exec, first } from "@/lib/db";
 
 /**
@@ -127,11 +127,10 @@ export async function POST(request: Request) {
       hints,
       moves,
     );
-    // Percentile against everyone else, using the stored (first) time.
+    // Percentile against everyone else, using the stored (first) result;
+    // ranked by time, or by mistakes → hints → time (RESULT_GAMES[game].rank).
     const mine = await first<{ slower: number }>(
-      `SELECT count(*) AS slower FROM game_results
-       WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3
-         AND time_ms > (SELECT time_ms FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4)`,
+      belowSql(config.rank),
       game,
       date,
       variant,
