@@ -1,13 +1,106 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/*
+ * Funzzle design tokens (design/DESIGN.md). Colors are CSS variables so the
+ * Game Kit can switch them for dark mode; Tailwind utilities (bg-ink,
+ * text-muted, border-line, …) read the variables.
+ */
+:root {
+  --ink: #111111;
+  --ground: #ffffff;
+  --muted: #4a4a55;
+  --muted-2: #55555f;
+  --line: #e6e6ec;
+  --line-strong: #d9d9e0;
+  --soft: #f4f5fa;
+  --soft-2: #f3f3f7;
+  --violet: #5b3df5;
+  --violet-deep: #3a22c9;
+  --violet-tint: #f1eeff;
+  --coach: #f26b1d;
+  --coach-tint: #fff4ec;
+  --coach-line: #ffd6b8;
+  --coach-ink: #8a3605;
+  --success: #1f7a4d;
+  --card-red: #c8102e;
+  /* Ink on signature-color tiles never changes with the theme. */
+  --tile-ink: #111111;
+  color-scheme: light;
+}
+
+/*
+ * Dark mode only applies inside [data-kit] (homepage, games, recap): older
+ * content pages hardcode light colors and stay light. data-theme on <html> is
+ * "light" | "dark" or absent (follow the system).
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-kit] {
+    --ink: #f4f4f7;
+    --ground: #101014;
+    --muted: #b4b4c0;
+    --muted-2: #a6a6b4;
+    --line: #2a2a33;
+    --line-strong: #3a3a45;
+    --soft: #1b1b22;
+    --soft-2: #22222b;
+    --violet: #7a62ff;
+    --violet-deep: #b9adff;
+    --violet-tint: #241d4d;
+    --coach-tint: #2a1a0f;
+    --coach-line: #5c3416;
+    --coach-ink: #ffb27f;
+    --success: #5fd398;
+    --card-red: #ff5a6e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] [data-kit] {
+  --ink: #f4f4f7;
+  --ground: #101014;
+  --muted: #b4b4c0;
+  --muted-2: #a6a6b4;
+  --line: #2a2a33;
+  --line-strong: #3a3a45;
+  --soft: #1b1b22;
+  --soft-2: #22222b;
+  --violet: #7a62ff;
+  --violet-deep: #b9adff;
+  --violet-tint: #241d4d;
+  --coach-tint: #2a1a0f;
+  --coach-line: #5c3416;
+  --coach-ink: #ffb27f;
+  --success: #5fd398;
+  --card-red: #ff5a6e;
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #111827;
   --color-brand: #16a34a;
   --color-brand-hover: #15803d;
-  --color-line: #e5e7eb;
-  --font-sans: var(--font-inter);
+  --color-ink: var(--ink);
+  --color-ground: var(--ground);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-soft: var(--soft);
+  --color-soft-2: var(--soft-2);
+  --color-violet: var(--violet);
+  --color-violet-deep: var(--violet-deep);
+  --color-violet-tint: var(--violet-tint);
+  --color-coach: var(--coach);
+  --color-coach-tint: var(--coach-tint);
+  --color-coach-line: var(--coach-line);
+  --color-coach-ink: var(--coach-ink);
+  --color-success: var(--success);
+  --color-card-red: var(--card-red);
+  --color-tile-ink: var(--tile-ink);
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-xl: 0.75rem;
 }
 
@@ -18,7 +111,40 @@ html {
 body {
   background: #ffffff;
   color: #111827;
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-geist), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+[data-kit] {
+  background: var(--ground);
+  color: var(--ink);
+}
+
+[data-kit] a:hover {
+  color: var(--violet-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Card suit colors. Color-blind mode (<html data-cb="1">) uses a four-color
+ * deck so suits never rely on red vs black alone.
+ */
+:root {
+  --suit-S: #111111;
+  --suit-C: #111111;
+  --suit-H: #c8102e;
+  --suit-D: #c8102e;
+}
+:root[data-cb="1"] {
+  --suit-C: #12703f;
+  --suit-D: #1d4fd8;
 }

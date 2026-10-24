@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import Script from "next/script";
+import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_TAGLINE } from "@/lib/site";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
+// design/DESIGN.md: Bricolage Grotesque for display, Geist for UI, Geist Mono
+// for numbers, times and labels.
+const geist = Geist({ variable: "--font-geist", subsets: ["latin"], display: "swap" });
+// Mono is only used for small labels: not worth a preload competing with the main fonts.
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap", preload: false });
+// One variable file covers both display weights (700 and 800).
+const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], display: "swap" });
 
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "";
+// Runs before first paint so a saved theme / color-blind setting never flashes
+// the wrong colors. Values are written by lib/games/kit/settings.ts.
+const SETTINGS_SCRIPT = `try{var t=localStorage.getItem("fz:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;if(localStorage.getItem("fz:cb")==="1")document.documentElement.dataset.cb="1"}catch(e){}`;
+
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Free NYT Games, No Paywall`,
+    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -29,8 +33,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${geist.variable} ${geistMono.variable} ${bricolage.variable} h-full`}
+      suppressHydrationWarning
+    >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: SETTINGS_SCRIPT }} />
         <meta
           name="google-adsense-account"
           content="ca-pub-1219788687006562"
@@ -38,15 +47,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-white text-[#111827]">
         {children}
-        {ADSENSE_CLIENT && (
-          <Script
-            id="adsbygoogle-init"
-            async
-            strategy="afterInteractive"
-            crossOrigin="anonymous"
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-          />
-        )}
       </body>
     </html>
   );

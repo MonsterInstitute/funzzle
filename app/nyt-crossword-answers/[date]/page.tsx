@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
+import HintLadder from "@/components/kit/HintLadder";
+import { miniAnswer, miniHints } from "@/lib/nytHints";
 import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
 import JsonLd from "@/components/JsonLd";
@@ -89,11 +91,10 @@ export default async function CrosswordAnswersPage({
       <Header />
       <AdSlot slot="leaderboard" className="py-4" />
       <AdSlot slot="mobile-banner" className="py-3" />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
-          NYT Crossword Answers — {long}
+          NYT Mini Crossword Answers — {long}
         </h1>
 
         {/* Breadcrumb */}
@@ -109,10 +110,20 @@ export default async function CrosswordAnswersPage({
           <span className="text-[#111827]">{long}</span>
         </nav>
 
-        {intro && (
-          <p className="mt-4 leading-relaxed text-gray-700">{intro}</p>
+
+        {mini && (mini.answer_data?.across?.length ?? 0) > 0 && (
+          <div className="mt-6">
+            <HintLadder headingLevel={2} title="NYT Mini hints" tag={long} hints={miniHints(mini.answer_data)} answer={miniAnswer(mini.answer_data)} />
+          </div>
         )}
 
+        {/* Every answer, behind one tap: in the HTML for search, never spoiled by scrolling. */}
+        <details className="group mt-8 rounded-[22px] border border-[#e6e6ec] p-4 open:pb-6">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#111111] [&::-webkit-details-marker]:hidden">
+            Show every answer and explanation
+            <span aria-hidden="true" className="rounded-full bg-[#111111] px-3 py-1 text-sm text-white group-open:hidden">Spoilers</span>
+          </summary>
+          {intro && <p className="mt-4 leading-relaxed text-gray-700">{intro}</p>}
         <AnswerSection
           title="NYT Mini Crossword Answers"
           row={mini}
@@ -140,7 +151,6 @@ export default async function CrosswordAnswersPage({
           </section>
         )}
 
-        <AdSlot slot="rectangle" className="my-10" />
 
         {/* Explore individual clues */}
         {clues.length > 0 && (
@@ -162,6 +172,10 @@ export default async function CrosswordAnswersPage({
             </ul>
           </section>
         )}
+
+        </details>
+
+        <AdSlot slot="rectangle" className="my-10" />
 
         {/* Tips for solving */}
         <section className="mt-10">

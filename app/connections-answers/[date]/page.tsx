@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
+import HintLadder from "@/components/kit/HintLadder";
+import { connectionsHints } from "@/lib/nytHints";
 import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
 import JsonLd from "@/components/JsonLd";
@@ -98,7 +100,28 @@ export default async function ConnectionsAnswersPage({
           <span className="text-[#111827]">{long}</span>
         </nav>
 
-        {row?.summary && <p className="mt-4 leading-relaxed text-gray-700">{row.summary}</p>}
+        {groups.length >= 4 && (
+          <div className="mt-6">
+            <HintLadder
+              headingLevel={2}
+              title="Connections hints"
+              tag={long}
+              hints={connectionsHints({ groups })}
+              answer={
+                <>
+                  <ul className="m-0 list-none space-y-1 p-0">
+                    {[...groups].sort((a, b) => a.level - b.level).map((g) => (
+                      <li key={g.title}>
+                        <strong>{g.title}:</strong> {g.words.join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+                  {row?.summary && <span className="mt-2 block text-gray-700">{row.summary}</span>}
+                </>
+              }
+            />
+          </div>
+        )}
 
         {groups.length > 0 ? (
           <section className="mt-6">

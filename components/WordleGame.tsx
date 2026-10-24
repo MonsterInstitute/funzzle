@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { gameColor } from "@/lib/gameColors";
+import { track } from "@/lib/games/kit/analytics";
+import { markDone } from "@/lib/games/kit/daily";
 
 const ROWS = 6;
 const COLS = 5;
@@ -74,6 +76,15 @@ export default function WordleGame({
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
   const [toast, setToast] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // A finished daily (win or loss) counts toward the Daily Set and streak.
+  useEffect(() => {
+    if (status === "playing") return;
+    markDone("word", date, { label: status === "won" ? `${guesses.length}/6` : "X/6" });
+    track("game_complete", "word", { won: status === "won", guesses: guesses.length });
+    // Only when the game ends.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const scored = useMemo(
     () => guesses.map((g) => scoreGuess(g, solution)),

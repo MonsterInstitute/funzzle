@@ -1,443 +1,115 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
-import GameCard from "@/components/GameCard";
 import JsonLd from "@/components/JsonLd";
-import EmailCapture from "@/components/EmailCapture";
-import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
-import { todayISO, formatLongDate } from "@/lib/dates";
-import { pageMetadata, websiteJsonLd, faqJsonLd } from "@/lib/seo";
-import { gameColor, type GameKey } from "@/lib/gameColors";
+import DailySetHero, { type DailyCardInfo } from "@/components/home/DailySetHero";
+import GameGrid from "@/components/home/GameGrid";
+import ProfileSection from "@/components/home/ProfileSection";
+import StudioBand from "@/components/home/StudioBand";
+import HintLadder from "@/components/kit/HintLadder";
+import {
+  getAnswer,
+  type ConnectionsAnswerData,
+  type CrosswordAnswerData,
+  type WordleAnswerData,
+} from "@/lib/getAnswers";
+import { DIFFICULTY_LABEL, sudokuDifficultyFor } from "@/lib/games/dailySchedule";
+import { connectionsHints, miniAnswer, miniHints, wordleHints } from "@/lib/nytHints";
+import { todayISO } from "@/lib/dates";
+import { pageMetadata, websiteJsonLd } from "@/lib/seo";
+import { SITE_DESCRIPTION } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Funzzle — Free NYT Games, No Paywall",
-  description:
-    "Play free crossword puzzles, Wordle, Connections, and more. No subscription, no account. The free alternative to NYT Games.",
+  title: "Funzzle — The Daily Puzzle Playground",
+  description: SITE_DESCRIPTION,
   path: "/",
-  keywords: [
-    "free nyt games",
-    "free wordle",
-    "free mini crossword",
-    "free connections",
-    "nyt games alternative",
-    "no paywall puzzles",
-  ],
+  keywords: ["daily puzzles", "free sudoku", "free solitaire", "daily word game", "mini crossword", "free puzzle games"],
 });
 
 // Shows "today": refreshed on demand at the UTC day change and after the daily
 // content run (lib/revalidation.ts); the 6h window is only a fallback.
 export const revalidate = 21600;
 
-const FAQS = [
-  {
-    q: "Is Funzzle really free?",
-    a: "Yes — Funzzle is always free. Every game and answer page is supported by ads, so there is no subscription and no paywall.",
-  },
-  {
-    q: "Do I need an account?",
-    a: "No account is needed. Just open a game and start playing instantly — nothing to sign up for.",
-  },
-  {
-    q: "Is this the same as NYT Mini?",
-    a: "Funzzle uses a similar format to the NYT Mini and other NYT Games, but it is an independent, free alternative that is never behind a paywall.",
-  },
-  {
-    q: "How often are new puzzles added?",
-    a: "New puzzles are added every day, so there is always a fresh Mini Crossword, Wordle, and Connections to play.",
-  },
-  {
-    q: "Can I play old puzzles?",
-    a: "Yes — our answer archive covers the last 30 days for free, so you can catch up on puzzles and answers any time.",
-  },
-];
-
 export default async function HomePage() {
   const today = todayISO();
-  const [mini, wordle, connections] = await Promise.all([
-    getAnswer(today, "nyt-mini"),
+  const [wordle, connections, mini] = await Promise.all([
     getAnswer<WordleAnswerData>(today, "wordle"),
-    getAnswer(today, "connections"),
+    getAnswer<ConnectionsAnswerData>(today, "connections"),
+    getAnswer<CrosswordAnswerData>(today, "nyt-mini"),
   ]);
 
+  const day = new Date(`${today}T00:00:00Z`);
+  const dateLabel = day.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).replace(",", " ·");
+  const shortDate = day.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  const difficulty = DIFFICULTY_LABEL[sudokuDifficultyFor(today)];
+
+  const cards: DailyCardInfo[] = [
+    { slug: "sudoku", name: "Daily Sudoku", intro: `${difficulty} · one grid for everyone today, with a coach` },
+    { slug: "solitaire", name: "Daily Solitaire", intro: "Klondike, draw 1 · today’s deal is verified winnable" },
+    { slug: "word", name: "Daily Word", intro: "Six guesses, one five-letter word" },
+    { slug: "mini-crossword", name: "Mini Crossword", intro: "Five by five. About a minute" },
+  ];
+
+  const answers = [
+    wordle && {
+      title: "NYT Wordle",
+      hints: wordleHints(wordle.answer_data),
+      answer: <strong className="font-mono tracking-[0.2em]">{wordle.answer_data.answer.toUpperCase()}</strong>,
+      href: "/wordle-answer/today",
+    },
+    connections && connections.answer_data.groups?.length >= 4 && {
+      title: "NYT Connections",
+      hints: connectionsHints(connections.answer_data),
+      answer: (
+        <ul className="m-0 list-none space-y-1 p-0">
+          {[...connections.answer_data.groups].sort((a, b) => a.level - b.level).map((g) => (
+            <li key={g.title}>
+              <strong>{g.title}:</strong> {g.words.join(", ")}
+            </li>
+          ))}
+        </ul>
+      ),
+      href: `/connections-answers/${today}`,
+    },
+    mini && mini.answer_data.across?.length > 0 && {
+      title: "NYT Mini Crossword",
+      hints: miniHints(mini.answer_data),
+      answer: miniAnswer(mini.answer_data),
+      href: `/nyt-crossword-answers/${today}`,
+    },
+  ].filter(Boolean) as { title: string; hints: string[]; answer: React.ReactNode; href: string }[];
+
   return (
-    <>
-      <JsonLd data={[websiteJsonLd(), faqJsonLd(FAQS)]} />
+    <div data-kit className="flex min-h-full flex-col">
+      <JsonLd data={websiteJsonLd()} />
       <Header />
-
-      <AdSlot slot="leaderboard" className="py-4" />
-      <AdSlot slot="mobile-banner" className="py-3" />
-
       <main className="flex-1">
-        {/* Hero */}
-        <section className="mx-auto max-w-5xl px-4 py-16 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-[#111827] sm:text-5xl">
-            Free NYT Games — No Paywall Ever
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-gray-600">
-            The crossword, Wordle, Connections, and more. Always free.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/play/mini"
-              className="w-full rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d] sm:w-auto"
-            >
-              Play Mini Crossword
-            </Link>
-            <Link
-              href={`/nyt-crossword-answers/${today}`}
-              className="w-full rounded-lg border border-[#e5e7eb] px-6 py-3 font-semibold text-[#111827] transition-colors hover:border-[#16a34a] hover:text-[#16a34a] sm:w-auto"
-            >
-              See Today&apos;s Answers
-            </Link>
-          </div>
-        </section>
+        <DailySetHero dateLabel={dateLabel} cards={cards} />
+        <StudioBand />
+        <GameGrid />
 
-        {/* Today's Answers strip */}
-        <section className="mx-auto max-w-5xl px-4 pb-12">
-          <h2 className="mb-4 text-xl font-bold text-[#111827]">
-            Today&apos;s Answers
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <AnswerStripCard
-              title="NYT Mini Answers"
-              href={`/nyt-crossword-answers/${today}`}
-              gameKey="mini"
-              available={!!mini}
-              detail={
-                mini
-                  ? `Solved · ${formatLongDate(today)}`
-                  : "Coming soon — check back today"
-              }
-            />
-            <AnswerStripCard
-              title="Wordle Answer"
-              href="/wordle-answer/today"
-              gameKey="wordle"
-              available={!!wordle}
-              detail={
-                wordle
-                  ? `Revealed · ${formatLongDate(today)}`
-                  : "Coming soon — check back today"
-              }
-            />
-            <AnswerStripCard
-              title="Connections Answer"
-              href={`/connections-answers/${today}`}
-              gameKey="connections"
-              available={!!connections}
-              detail={
-                connections
-                  ? `Solved · ${formatLongDate(today)}`
-                  : "Coming soon — check back today"
-              }
-            />
-          </div>
-        </section>
-
-        {/* Games */}
-        <section id="games" className="mx-auto max-w-5xl px-4 pb-8">
-          <h2 className="mb-4 text-xl font-bold text-[#111827]">Games</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <GameCard
-              title="Mini Crossword"
-              description="Free daily 5×5 crossword puzzle — no subscription, no account needed."
-              emoji="🧩"
-              href="/play/mini"
-              gameKey="mini"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Wordle"
-              description="Free unlimited Wordle — guess the 5-letter word in six tries, play as often as you like."
-              emoji="🟩"
-              href="/play/wordle"
-              gameKey="wordle"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Connections"
-              description="Free daily Connections — sort 16 words into 4 hidden groups before you run out of tries."
-              emoji="🔗"
-              href="/play/connections"
-              gameKey="connections"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Spelling Bee"
-              description="Free Spelling Bee — build words from seven letters and climb the ranks to Genius."
-              emoji="🐝"
-              href="/play/spelling-bee"
-              gameKey="spelling-bee"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Strands"
-              description="Free daily Strands — a themed word search with a hidden spangram and three hints."
-              emoji="🔤"
-              href="/play/strands"
-              gameKey="strands"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Letter Boxed"
-              description="Free Letter Boxed — chain words around the square using all 12 letters to win."
-              emoji="🔲"
-              href="/play/letter-boxed"
-              gameKey="letter-boxed"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Quordle"
-              description="Free Quordle — solve four Wordle puzzles at the same time in nine guesses."
-              emoji="🟦"
-              href="/play/quordle"
-              gameKey="quordle"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Worldle"
-              description="Free Worldle — guess the country from its silhouette using distance and direction hints."
-              emoji="🌍"
-              href="/play/worldle"
-              gameKey="worldle"
-              badgeText="FREE FOREVER"
-            />
-            <GameCard
-              title="Nerdle"
-              description="Free daily Nerdle — crack the hidden 8-character math equation in six tries."
-              emoji="🔢"
-              href="/play/nerdle"
-              gameKey="nerdle"
-              badgeText="FREE FOREVER"
-            />
-          </div>
-        </section>
-
-        {/* Stats bar */}
-        <section className="mx-auto max-w-5xl px-4 pb-12">
-          <div className="grid gap-2 rounded-xl border border-[#e5e7eb] bg-gray-50 p-4 text-center text-sm font-semibold text-[#111827] sm:grid-cols-3">
-            <span>🎮 Playing daily</span>
-            <span>💯 100% free</span>
-            <span>🚫 No account needed</span>
-          </div>
-        </section>
-
-        {/* How to play */}
-        <section className="border-y border-[#e5e7eb] bg-white">
-          <div className="mx-auto max-w-5xl px-4 py-14">
-            <h2 className="mb-8 text-center text-2xl font-bold text-[#111827]">
-              How to Play
-            </h2>
-            <div className="grid gap-10 md:grid-cols-2">
-              <HowTo
-                emoji="🧩"
-                title="Mini Crossword"
-                steps={[
-                  "Tap a square and read the highlighted clue.",
-                  "Type your answer — it auto-advances across or down.",
-                  "Fill every square correctly to beat the clock.",
-                ]}
-              />
-              <HowTo
-                emoji="🟩"
-                title="Wordle"
-                steps={[
-                  "Guess any 5-letter word to start.",
-                  "Green = right spot, yellow = wrong spot, gray = not in word.",
-                  "Use the clues to solve it within six tries.",
-                ]}
-              />
+        <section id="answers" className="scroll-mt-4 border-y border-line bg-soft">
+          <div className="mx-auto flex max-w-[1280px] flex-col gap-7 px-4 py-16 sm:px-8">
+            <div className="flex max-w-[720px] flex-col gap-2">
+              <h2 className="m-0 font-display text-[34px] font-extrabold tracking-[-0.03em] sm:text-[42px]">Stuck on today’s NYT puzzles?</h2>
+              <p className="m-0 text-[17px] leading-[1.55] text-muted">Hints first, answer only when you ask. Nothing is spoiled by scrolling.</p>
             </div>
+            {answers.length ? (
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
+                {answers.map((a) => (
+                  <HintLadder key={a.title} title={a.title} tag={shortDate} hints={a.hints} answer={a.answer} moreHref={a.href} />
+                ))}
+              </div>
+            ) : (
+              <p className="m-0 text-muted">Today’s hints go up just after midnight UTC.</p>
+            )}
+            <p className="m-0 text-[13px] text-muted-2">Funzzle is independent and not affiliated with The New York Times.</p>
           </div>
         </section>
 
-        {/* Why Funzzle */}
-        <section className="bg-gray-50">
-          <div className="mx-auto grid max-w-5xl gap-8 px-4 py-14 sm:grid-cols-3">
-            <Feature emoji="🔓" title="Always Free" body="No paywall, no account needed" />
-            <Feature emoji="🎯" title="Daily Puzzles" body="New challenges every day" />
-            <Feature emoji="🏆" title="Play with Friends" body="Free leaderboard for everyone" />
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="mx-auto max-w-3xl px-4 py-14">
-          <h2 className="mb-6 text-center text-2xl font-bold text-[#111827]">
-            Frequently Asked Questions
-          </h2>
-          <div className="space-y-3">
-            {FAQS.map((f) => (
-              <details
-                key={f.q}
-                className="group rounded-xl border border-[#e5e7eb] p-4"
-              >
-                <summary className="cursor-pointer list-none font-semibold text-[#111827]">
-                  <span className="mr-2 text-[#16a34a] group-open:hidden">+</span>
-                  <span className="mr-2 hidden text-[#16a34a] group-open:inline">
-                    −
-                  </span>
-                  {f.q}
-                </summary>
-                <p className="mt-2 pl-5 text-gray-600">{f.a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        {/* Email capture */}
-        <section className="border-y border-[#e5e7eb] bg-gray-50">
-          <div className="mx-auto max-w-5xl px-4 py-12">
-            <EmailCapture />
-          </div>
-        </section>
-
-        {/* About Funzzle (SEO content) */}
-        <section className="mx-auto max-w-3xl px-4 py-14">
-          <h2 className="mb-4 text-2xl font-bold text-[#111827]">About Funzzle</h2>
-          <div className="prose prose-sm text-gray-700">
-            <p>
-              Funzzle is a free home for the daily brain games people love — with
-              no paywall, no subscription, and no account required. In 2025 many
-              of the most popular word and logic puzzles moved behind a login and
-              a monthly fee. Funzzle exists to keep that five-minute daily habit
-              free for everyone, supported by unobtrusive ads instead of
-              subscriptions.
-            </p>
-            <p>
-              Our <Link href="/play/mini" className="text-[#16a34a] hover:underline">Mini Crossword</Link>{" "}
-              is a quick 5×5 grid you can finish in about a minute, while{" "}
-              <Link href="/play/wordle" className="text-[#16a34a] hover:underline">Wordle</Link>{" "}
-              gives you six guesses — and unlimited replays — to find a hidden
-              five-letter word.{" "}
-              <Link href="/play/connections" className="text-[#16a34a] hover:underline">Connections</Link>{" "}
-              asks you to sort sixteen words into four hidden groups, and{" "}
-              <Link href="/play/spelling-bee" className="text-[#16a34a] hover:underline">Spelling Bee</Link>{" "}
-              challenges you to build as many words as possible from seven
-              letters. For word-search fans there&apos;s{" "}
-              <Link href="/play/strands" className="text-[#16a34a] hover:underline">Strands</Link>{" "}
-              with its daily theme and spangram, plus{" "}
-              <Link href="/play/letter-boxed" className="text-[#16a34a] hover:underline">Letter Boxed</Link>{" "}
-              for chaining words around a square.
-            </p>
-            <p>
-              We also built the games that go beyond words:{" "}
-              <Link href="/play/quordle" className="text-[#16a34a] hover:underline">Quordle</Link>{" "}
-              (four Wordles at once),{" "}
-              <Link href="/play/worldle" className="text-[#16a34a] hover:underline">Worldle</Link>{" "}
-              (guess the country from its shape), and{" "}
-              <Link href="/play/nerdle" className="text-[#16a34a] hover:underline">Nerdle</Link>{" "}
-              (a daily math-equation puzzle). Every game is designed to be fast,
-              mobile-friendly, and genuinely free.
-            </p>
-            <p>
-              Funzzle is for anyone who wants their morning puzzle without a
-              paywall — commuters, coffee-break solvers, classrooms, and families
-              alike. If you get stuck, we publish free daily{" "}
-              <Link href="/wordle-answer/today" className="text-[#16a34a] hover:underline">answers and hints</Link>{" "}
-              and a growing library of{" "}
-              <Link href="/clue" className="text-[#16a34a] hover:underline">crossword clue explanations</Link>.
-              New to a game? Our{" "}
-              <Link href="/how-to-play" className="text-[#16a34a] hover:underline">how-to-play guide</Link>{" "}
-              covers the rules and strategy for every puzzle on the site. Funzzle
-              is not affiliated with The New York Times; it&apos;s an independent,
-              free alternative built by puzzle fans.
-            </p>
-          </div>
-        </section>
-
-        <AdSlot slot="rectangle" className="pb-14" />
+        <ProfileSection />
       </main>
-
       <Footer />
-    </>
-  );
-}
-
-function AnswerStripCard({
-  title,
-  href,
-  detail,
-  available,
-  gameKey,
-}: {
-  title: string;
-  href: string;
-  detail: string;
-  available: boolean;
-  gameKey: GameKey;
-}) {
-  const c = gameColor(gameKey);
-  return (
-    <Link
-      href={href}
-      className="group flex items-center justify-between rounded-xl border bg-white p-5 transition-shadow hover:shadow-lg"
-      style={{ borderColor: c.tint, borderLeftWidth: 4, borderLeftColor: c.primary }}
-    >
-      <div>
-        <p className="font-bold text-[#111827]">{title}</p>
-        <p
-          className="mt-1 text-sm"
-          style={{ color: available ? c.text : "#9ca3af" }}
-        >
-          {detail}
-        </p>
-      </div>
-      <span
-        className="transition-transform group-hover:translate-x-1"
-        style={{ color: c.primary }}
-      >
-        →
-      </span>
-    </Link>
-  );
-}
-
-function Feature({
-  emoji,
-  title,
-  body,
-}: {
-  emoji: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="text-center sm:text-left">
-      <div className="text-3xl" aria-hidden>
-        {emoji}
-      </div>
-      <h3 className="mt-2 font-bold text-[#111827]">{title}</h3>
-      <p className="mt-1 text-sm text-gray-600">{body}</p>
-    </div>
-  );
-}
-
-function HowTo({
-  emoji,
-  title,
-  steps,
-}: {
-  emoji: string;
-  title: string;
-  steps: string[];
-}) {
-  return (
-    <div>
-      <h3 className="flex items-center gap-2 text-lg font-bold text-[#111827]">
-        <span aria-hidden>{emoji}</span> {title}
-      </h3>
-      <ol className="mt-3 space-y-3">
-        {steps.map((step, i) => (
-          <li key={i} className="flex gap-3">
-            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#16a34a] text-xs font-bold text-white">
-              {i + 1}
-            </span>
-            <span className="text-sm text-gray-700">{step}</span>
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

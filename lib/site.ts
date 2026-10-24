@@ -5,9 +5,9 @@
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.funzzle.com";
 export const SITE_NAME = "Funzzle";
-export const SITE_TAGLINE = "Free NYT Games, No Paywall";
+export const SITE_TAGLINE = "The Daily Puzzle Playground";
 export const SITE_DESCRIPTION =
-  "Play free crossword puzzles, Wordle, Connections, and more. No subscription, no account. The free alternative to NYT Games.";
+  "Free daily puzzles: Sudoku, Solitaire, word games, crosswords and more. A daily challenge everyone plays, a coach that explains every step, no account needed.";
 
 /** Affiliate / outbound links (replace with real tagged URLs). */
 export const AFFILIATE = {

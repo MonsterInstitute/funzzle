@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
+import HintLadder from "@/components/kit/HintLadder";
+import { wordleHints } from "@/lib/nytHints";
 import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
-import RevealBox from "@/components/RevealBox";
 import JsonLd from "@/components/JsonLd";
 import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
@@ -48,30 +49,20 @@ export default async function WordleAnswerPage() {
         </h1>
 
         {data ? (
-          <>
-            <div className="mt-6">
-              <RevealBox answer={data.answer} />
-            </div>
-
-            {row?.summary && (
-              <p className="mt-4 text-gray-600">{row.summary}</p>
-            )}
-
-            {/* Hints */}
-            <section className="mt-8">
-              <h2 className="text-xl font-bold text-[#111827]">Hints</h2>
-              <ul className="mt-3 space-y-2">
-                <li className="rounded-lg border border-[#e5e7eb] px-4 py-3 text-[#111827]">
-                  <span className="font-semibold">First letter:</span>{" "}
-                  {data.hint_first_letter}
-                </li>
-                <li className="rounded-lg border border-[#e5e7eb] px-4 py-3 text-[#111827]">
-                  <span className="font-semibold">Number of vowels:</span>{" "}
-                  {data.hint_vowels}
-                </li>
-              </ul>
-            </section>
-          </>
+          <div className="mt-6">
+            <HintLadder
+              headingLevel={2}
+              title="Today’s Wordle hints"
+              tag={long}
+              hints={wordleHints(data)}
+              answer={
+                <>
+                  <strong className="font-mono text-2xl tracking-[0.25em]">{data.answer.toUpperCase()}</strong>
+                  {row?.summary && <span className="mt-2 block text-gray-700">{row.summary}</span>}
+                </>
+              }
+            />
+          </div>
         ) : (
           <p className="mt-6 rounded-xl border border-dashed border-[#e5e7eb] bg-gray-50 p-6 text-center text-gray-500">
             Today&apos;s answer will be posted soon. Check back later!

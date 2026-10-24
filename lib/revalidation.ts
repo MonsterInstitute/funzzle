@@ -14,6 +14,8 @@ export const TODAY_PATHS = [
   "/free-nyt-games-alternative",
   "/nyt-mini-crossword-free",
   "/free-crossword-puzzle-daily",
+  "/play/sudoku",
+  "/play/solitaire",
   "/play/wordle",
   "/play/mini",
   "/play/connections",

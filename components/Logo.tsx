@@ -1,34 +1,16 @@
-/** Funzzle wordmark: a green crossword tile with an "F" plus the name. */
-export default function Logo() {
+/** Funzzle wordmark: four rounded tiles (violet, gold, green, coral) + the name. */
+export default function Logo({ size = 34, wordmark = true }: { size?: number; wordmark?: boolean }) {
   return (
-    <span className="flex items-center gap-2">
-      <svg
-        viewBox="0 0 32 32"
-        className="h-7 w-7"
-        role="img"
-        aria-label="Funzzle logo"
-      >
-        <rect width="32" height="32" rx="7" fill="#16a34a" />
-        <g stroke="#ffffff" strokeWidth="1" opacity="0.35">
-          <line x1="10.67" y1="4" x2="10.67" y2="28" />
-          <line x1="21.33" y1="4" x2="21.33" y2="28" />
-          <line x1="4" y1="10.67" x2="28" y2="10.67" />
-          <line x1="4" y1="21.33" x2="28" y2="21.33" />
-        </g>
-        <text
-          x="16"
-          y="17"
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontFamily="Arial, Helvetica, sans-serif"
-          fontSize="20"
-          fontWeight="700"
-          fill="#ffffff"
-        >
-          F
-        </text>
+    <span className="flex items-center gap-2.5">
+      <svg width={size} height={size} viewBox="0 0 34 34" role="img" aria-label="Funzzle">
+        <rect x="1" y="1" width="15" height="15" rx="4" fill="#5B3DF5" />
+        <rect x="18" y="1" width="15" height="15" rx="7.5" fill="#FFC857" />
+        <rect x="1" y="18" width="15" height="15" rx="7.5" fill="#7FD6A0" />
+        <rect x="18" y="18" width="15" height="15" rx="4" fill="#FF8C8C" />
       </svg>
-      <span className="text-xl font-bold tracking-tight text-black">funzzle</span>
+      {wordmark && (
+        <span className="font-display text-[27px] font-extrabold leading-none tracking-[-0.03em] text-ink">funzzle</span>
+      )}
     </span>
   );
 }

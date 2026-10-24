@@ -26,6 +26,8 @@ export function GET() {
     { path: "/nyt-mini-crossword-free", priority: 0.8, lastmod: today },
     { path: "/wordle-free", priority: 0.8, lastmod: today },
     { path: "/free-crossword-puzzle-daily", priority: 0.8, lastmod: today },
+    { path: "/play/sudoku", priority: 0.9, lastmod: today },
+    { path: "/play/solitaire", priority: 0.9, lastmod: today },
     { path: "/play/mini", priority: 0.8, lastmod: today },
     { path: "/play/wordle", priority: 0.8, lastmod: today },
     { path: "/play/connections", priority: 0.8, lastmod: today },

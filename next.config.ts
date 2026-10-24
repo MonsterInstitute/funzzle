@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_SITE_URL: "https://www.funzzle.com",
   },
+  // Share cards print "funzzle.com/daily": it lands on today's Daily Set.
+  async redirects() {
+    return [{ source: "/daily", destination: "/#today", permanent: false }];
+  },
 };
 
 export default nextConfig;

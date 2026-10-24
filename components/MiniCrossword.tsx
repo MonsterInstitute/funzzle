@@ -15,6 +15,8 @@ import {
   type WordEntry,
 } from "@/lib/miniCrossword";
 import { gameColor } from "@/lib/gameColors";
+import { track } from "@/lib/games/kit/analytics";
+import { markDone } from "@/lib/games/kit/daily";
 
 const c = gameColor("mini");
 
@@ -65,6 +67,15 @@ export default function MiniCrossword({
     const id = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [running, won]);
+
+  // A finished daily counts toward the Daily Set and streak.
+  useEffect(() => {
+    if (!won) return;
+    markDone("mini-crossword", date, { timeMs: seconds * 1000, label: revealed ? "Revealed" : undefined });
+    track("game_complete", "mini-crossword", { seconds, revealed });
+    // Only when the puzzle is finished.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [won]);
 
   const activeCell = cells[active.row][active.col];
 
