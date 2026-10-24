@@ -21,6 +21,7 @@ Key facts:
 - Everything is free; ads never show during play.
 - Daily Sudoku difficulty follows the week: Monday Easy, Tuesday/Wednesday/Sunday Medium, Thursday/Friday Hard, Saturday Expert.
 - Daily Solitaire deals (Klondike, draw 1 or 3) are verified winnable by a solver.
+- Daily FreeCell deals are verified winnable by a solver too, and practice deals are unlimited.
 - Answer pages show graded hints first and the answer only on request.
 
 ## Daily puzzles
@@ -28,6 +29,7 @@ Key facts:
 - [Today's Daily Set](${SITE_URL}/#today): Daily Sudoku, Daily Solitaire, Daily Word and the Mini Crossword
 - [Daily Sudoku](${SITE_URL}/play/sudoku): one 9×9 grid for everyone, with a step-by-step coach and unlimited practice
 - [Daily Solitaire](${SITE_URL}/play/solitaire): Klondike draw 1 or draw 3, a winnable deal every day, with a best-move coach
+- [Daily FreeCell](${SITE_URL}/play/freecell): one solver-verified FreeCell deal a day, with supermoves, safe auto-moves and a best-move coach
 
 ## Games
 

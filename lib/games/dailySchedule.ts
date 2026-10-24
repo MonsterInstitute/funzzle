@@ -34,3 +34,6 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Every daily FreeCell deal is solver-verified; most are a medium-hard think. */
+export const FREECELL_PUZZLE_RATING = 1450;

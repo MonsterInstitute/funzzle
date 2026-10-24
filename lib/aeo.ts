@@ -96,6 +96,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  freecell: {
+    name: "Daily FreeCell",
+    genre: "Card game",
+    summary:
+      "Daily FreeCell is free FreeCell with one deal for everyone today, checked by a solver to be winnable. All 52 cards are dealt face up into eight columns, with four free cells and four foundations. Runs move as supermoves, safe cards go home on their own, and the coach shows the best move and why. Your time and moves are ranked against today's players, and practice deals are unlimited.",
+    description: "Free daily FreeCell, solver-verified winnable, with supermoves, a best-move coach and unlimited practice deals.",
+    qa: [
+      {
+        q: "How do you play FreeCell?",
+        a: "Move all 52 cards to the four foundations, Ace to King in each suit. In the eight columns you can put a card on one rank higher of the opposite color, park any single card in one of the four free cells, and put any card or run in an empty column. Every card is face up from the start, so it's all planning and no luck.",
+      },
+      {
+        q: "Is every FreeCell game winnable?",
+        a: "Almost: all but one of the classic 32,000 numbered Microsoft deals (#11982) can be won, and estimates put unwinnable random deals at roughly 1 in 80,000. Funzzle doesn't rely on the odds: every daily deal is checked by a solver that finds a full winning line before the deal goes live.",
+      },
+      {
+        q: "What is a supermove in FreeCell?",
+        a: "A supermove carries a whole run of cards at once, as a shortcut for moving them one by one through free cells and empty columns. You can move (free cells + 1) × 2^(empty columns) cards, halved when the destination is itself an empty column. With two free cells and no empty column, that's three cards.",
+      },
+      {
+        q: "What's the best FreeCell strategy?",
+        a: "Free the Aces and twos early, keep free cells empty as long as you can, and treat an empty column as your most valuable space, worth more than a free cell. Before filling a cell, check whether the move frees a card that can go home. The coach's best move follows a solver's winning line when it has one.",
+      },
+      {
+        q: "Can I undo moves in Daily FreeCell?",
+        a: "Yes. Practice deals have unlimited undo. Today's daily deal is ranked, so it gives three free undos; you can watch an optional short ad for one more when one is available. Hints and undos are both shown in your result.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;
