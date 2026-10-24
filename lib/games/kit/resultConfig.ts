@@ -17,6 +17,8 @@ export interface ResultGame {
    * the `moves` value, lo/hi in points — for games where time doesn't matter.
    */
   histogram?: "time" | "score";
+  /** Unit of `moves` for "fewest" games, singular and plural (default word/words). */
+  unit?: [string, string];
 }
 
 /**
@@ -50,6 +52,7 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   // Daily chess puzzles rank like Groups: fewest wrong moves, then hints, then time.
   chess: { variants: [""], lo: 5_000, hi: 420_000, minMs: 2_000, order: "mistakes" },
   "mini-crossword": { variants: [""], lo: 20_000, hi: 600_000, minMs: 5_000 },
+  word: { variants: ["classic", "quad", "geo", "math"], lo: 15_000, hi: 600_000, minMs: 2_000, order: "fewest", unit: ["guess", "guesses"] },
 };
 
 export const HISTOGRAM_BUCKETS = 14;
@@ -106,7 +109,15 @@ export function resultHeadline(game: string, r: RankedResult, formatTime: (ms: n
   const order = resultOrder(game);
   const n = r.moves ?? 0;
   if (order === "score") return `${n} pt${n === 1 ? "" : "s"}`;
-  if (order === "fewest") return `${n} word${n === 1 ? "" : "s"} · ${formatTime(r.timeMs)}`;
+  if (order === "fewest") {
+    const [one, many] = RESULT_GAMES[game]?.unit ?? ["word", "words"];
+    return `${n} ${n === 1 ? one : many} · ${formatTime(r.timeMs)}`;
+  }
   if (order === "mistakes") return `${r.mistakes ?? 0} mistake${r.mistakes === 1 ? "" : "s"} · ${formatTime(r.timeMs)}`;
   return formatTime(r.timeMs);
+}
+
+/** Whether `a` ranks strictly above `b`. */
+export function beats(game: string, a: RankedResult, b: RankedResult): boolean {
+  return compareResults(game, a, b) < 0;
 }

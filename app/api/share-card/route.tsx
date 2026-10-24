@@ -21,6 +21,8 @@ import {
  * square shows the path, never the letters).
  * Groups: map = the level (1-4) of every word of every guess, 4 per guess
  * (colors only, never words), and f = groups found (0-4).
+ * Funzzle Word: ?g=word&…&lv=Classic&gs=3/6&map=<rows of tile marks 0-2,
+ * "-" between rows, "_" between Quad boards> (colors only, never letters).
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
@@ -39,7 +41,12 @@ const GAMES: Record<string, string> = {
   groups: "Groups",
   chess: "Chess Puzzle",
   "mini-crossword": "Mini Crossword",
+  word: "Funzzle Word",
 };
+const WORD_MAP_RE =
+  /^[0-2]{5,8}(-[0-2]{5,8}){0,8}(_[0-2]{5,8}(-[0-2]{5,8}){0,8}){0,3}$/;
+const WORD_TILE = ["#FFFFFF", "#F2C230", "#2E7D32"];
+
 /** Chess vs the computer (?g=chess&r=win|draw|loss): a game result, not a daily rank. */
 const CHESS_RESULT: Record<string, string> = {
   win: "Won",
@@ -124,6 +131,7 @@ export async function GET(request: Request) {
   const path = q.get("p") ?? "";
   const found = int(q.get("f") ?? "4", 4);
   const chessResult = q.get("r");
+  const gs = q.get("gs") ?? "";
   if (
     (chessResult !== null &&
       (game !== "chess" || !CHESS_RESULT[chessResult])) ||
@@ -141,6 +149,8 @@ export async function GET(request: Request) {
       !(
         game === "mini-crossword" ? /^(?:[0-5]{25}|[0-5]{49})$/ : /^[0-4]{81}$/
       ).test(map)) ||
+    (game === "word" &&
+      (!WORD_MAP_RE.test(map) || !/^([1-9]|X)\/[69]$/.test(gs))) ||
     (game === "groups" &&
       (!/^[1-4]{4,32}$/.test(map) || map.length % 4 !== 0 || found === null)) ||
     (q.get("sc") !== null && score === null) ||
@@ -168,17 +178,19 @@ export async function GET(request: Request) {
           streak > 0 ? `${streak}-day streak` : null,
           game === "sudoku" || game === "groups" || game === "chess"
             ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-            : game === "mini-crossword"
-              ? hints
-                ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
-                : "No checks, no hints"
-              : game === "minesweeper"
-                ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                : game === "mahjong"
-                  ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
-                  : game === "spelling-hive" || game === "letter-box"
-                    ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                    : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+            : game === "word"
+              ? `${formatTime(time)} · ${hints} hint${hints === 1 ? "" : "s"}`
+              : game === "mini-crossword"
+                ? hints
+                  ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
+                  : "No checks, no hints"
+                : game === "minesweeper"
+                  ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                  : game === "mahjong"
+                    ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
+                    : game === "spelling-hive" || game === "letter-box"
+                      ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
         ]
   ).filter(Boolean) as string[];
   const title = chessResult ? "Chess" : GAMES[game];
@@ -193,8 +205,60 @@ export async function GET(request: Request) {
   // Mini Crossword map: black squares, then solve order (lighter = later); "5" = revealed.
   const miniSide = map.length === 49 ? 7 : 5;
   const miniCell = Math.floor((400 - (miniSide - 1) * 8) / miniSide);
+  const wordBoards =
+    game === "word" ? map.split("_").map((b) => b.split("-")) : [];
+  const cols = wordBoards[0]?.[0]?.length ?? 5;
+  const quad = wordBoards.length > 1;
+  // Fit the grid in the 400px board area: Quad shows four small grids.
+  const wordCell = quad
+    ? 17
+    : Math.min(60, Math.floor((400 - (cols - 1) * 10) / cols));
+  const gap = quad ? 3 : 10;
+  const grid = (rows: string[], b: number) => (
+    <div key={b} style={{ display: "flex", flexDirection: "column", gap }}>
+      {rows.map((row, r) => (
+        <div key={r} style={{ display: "flex", gap }}>
+          {row.split("").map((m, i) => (
+            <div
+              key={i}
+              style={{
+                width: wordCell,
+                height: wordCell,
+                borderRadius: quad ? 4 : 10,
+                background: WORD_TILE[Number(m)],
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
   const board =
-    game === "chess" ? (
+    game === "word" ? (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 432,
+          height: 432,
+          padding: 16,
+          gap: 24,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        {(quad
+          ? [wordBoards.slice(0, 2), wordBoards.slice(2, 4)]
+          : [wordBoards]
+        ).map((pair, p) => (
+          <div key={p} style={{ display: "flex", gap: 32 }}>
+            {pair.map((rows, b) => grid(rows, p * 2 + b))}
+          </div>
+        ))}
+      </div>
+    ) : game === "chess" ? (
       // A plain board: nothing about the position or the solution.
       <div
         style={{
@@ -519,7 +583,7 @@ export async function GET(request: Request) {
               letterSpacing: "-0.04em",
             }}
           >
-            {headline}
+            {game === "word" ? gs : headline}
           </span>
           {lines.map((line, i) => (
             <span

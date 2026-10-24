@@ -25,6 +25,7 @@ const ARCHIVE_GAMES: { slug: string; keys: (date: string) => string[] }[] = [
   { slug: "spelling-hive", keys: (d) => [`fz:spelling-hive:archive:${d}`, `fz:spelling-hive:daily:${d}`] },
   { slug: "chess", keys: (d) => [`fz:chess:archive:${d}`, `fz:chess:daily:${d}`] },
   { slug: "mini-crossword", keys: (d) => [`fz:mini-crossword:archive:${d}`, `fz:mini-crossword:daily:${d}`] },
+  { slug: "word", keys: (d) => [`fz:word:classic:archive:${d}`, `fz:word:classic:daily:${d}`] },
   { slug: "groups", keys: (d) => [`fz:groups:archive:${d}`, `fz:groups:daily:${d}`] },
   { slug: "letter-box", keys: (d) => [`fz:letter-box:archive:${d}`, `fz:letter-box:daily:${d}`] },
 ];

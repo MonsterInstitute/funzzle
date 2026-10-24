@@ -9,6 +9,8 @@ import { exec, first } from "@/lib/db";
  *   POST {game, date, variant, clientId, timeMs, mistakes, hints, moves?}
  *        → {percentile, count, buckets, lo, hi}. A browser's first result for
  *        a puzzle is the one that counts; resubmits return the same stats.
+ *        Games ranked by moves (RESULT_GAMES rank "moves": Funzzle Word's
+ *        guesses) must send moves; fewer moves rank first, then time.
  *   GET  ?game=&date=&variant= → {count, buckets, lo, hi} (CDN-cached 60 s).
  */
 
@@ -113,7 +115,9 @@ export async function POST(request: Request) {
     hints === null ||
     (body.moves !== undefined && moves === null) ||
     // Score/count-ranked games need their number.
-    ((config.order ?? "time") !== "time" && (config.order ?? "time") !== "mistakes" && moves === null)
+    ((config.order ?? "time") !== "time" && (config.order ?? "time") !== "mistakes" && moves === null) ||
+    // A count ("fewest": guesses, words) is at least 1.
+    (config.order === "fewest" && moves !== null && moves < 1)
   ) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }

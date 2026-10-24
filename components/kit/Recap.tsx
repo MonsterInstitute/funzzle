@@ -43,6 +43,8 @@ export interface RecapProps {
   rankLine?: string;
   /** Game-specific block under the stat tiles (Groups: the four groups in solve order). */
   details?: ReactNode;
+  /** Rank wording: "Faster" (default) or "Better" for games ranked by moves first (Funzzle Word). */
+  rankWord?: string;
 }
 
 const SET_LABEL: Record<string, string> = { sudoku: "Sudoku", solitaire: "Solitaire", word: "Word", "mini-crossword": "Mini" };
@@ -78,7 +80,7 @@ export default function Recap(props: RecapProps) {
     (percentile === null
       ? "First to finish today. Nice."
       : percentile !== undefined
-        ? `${props.beatText ?? "Faster than"} ${percentile}% of today’s players`
+        ? `${props.beatText ?? `${props.rankWord ?? "Faster"} than`} ${percentile}% of today’s players`
         : loadingStats
           ? "Comparing with today’s players…"
           : "Practice puzzle");

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { isValidISODate, todayISO } from "@/lib/dates";
-import { getDailyChess, getDailyFreeCell, getDailyGroups, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMini, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
+import { getDailyChess, getDailyFreeCell, getDailyGroups, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMini, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getDailyWord, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
 import { generateHive } from "@/lib/games/hive/generate";
 import { generateLetterBox } from "@/lib/games/letterbox/generate";
+import { WORD_MODES, type WordMode } from "@/lib/games/word";
 
 /**
  * A past day's daily puzzle for the archive (/archive) and challenges:
  * GET ?game=<game>&date=YYYY-MM-DD[&draw=1|3]. The stored row, or the
+import { WORD_MODES, type WordMode } from "@/lib/games/word";
  * same puzzle regenerated from its seed. Past puzzles never change, so the
  * CDN keeps them for a day; today's only for a minute (it's on the page).
  *
@@ -19,7 +21,7 @@ const WORD_GAMES = new Set(["spelling-hive", "letter-box"]);
 const PRACTICE_SEED_RE = /^[a-z0-9-]{8,64}$/;
 
 /** Games with an archive: each loads a date's stored (or regenerated) daily puzzle. */
-const LOADERS: Record<string, (date: string, draw: 1 | 3, suits: 1 | 2 | 4) => Promise<unknown>> = {
+const LOADERS: Record<string, (date: string, draw: 1 | 3, suits: 1 | 2 | 4, mode: WordMode) => Promise<unknown>> = {
   sudoku: (date) => getDailySudoku(date),
   solitaire: (date, draw) => getDailySolitaire(date, draw),
   freecell: (date) => getDailyFreeCell(date),
@@ -33,6 +35,7 @@ const LOADERS: Record<string, (date: string, draw: 1 | 3, suits: 1 | 2 | 4) => P
   groups: (date) => getDailyGroups(date),
   chess: (date) => getDailyChess(date),
   "mini-crossword": (date) => getDailyMini(date),
+  word: (date, _draw, _suits, mode) => getDailyWord(date, mode),
 };
 
 export async function GET(request: Request) {
@@ -41,6 +44,7 @@ export async function GET(request: Request) {
   const date = url.searchParams.get("date") ?? "";
   const draw = url.searchParams.get("draw") === "3" ? 3 : 1;
   const suits = url.searchParams.get("suits") === "4" ? 4 : url.searchParams.get("suits") === "2" ? 2 : 1;
+  const mode = (url.searchParams.get("mode") ?? "classic") as WordMode;
   const layout = url.searchParams.get("layout") ?? MAHJONG_DAILY_LAYOUT;
   const today = todayISO();
   const wordGame = !!game && WORD_GAMES.has(game);
@@ -59,11 +63,11 @@ export async function GET(request: Request) {
     }
   }
 
-  if (!game || !Object.hasOwn(LOADERS, game) || (game === "mahjong" && layout !== MAHJONG_DAILY_LAYOUT) || !isValidISODate(date) || date < FIRST || date > today) {
+  if (!game || !Object.hasOwn(LOADERS, game) || (game === "mahjong" && layout !== MAHJONG_DAILY_LAYOUT) || (game === "word" && !WORD_MODES.includes(mode)) || !isValidISODate(date) || date < FIRST || date > today) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
   try {
-    const data = await LOADERS[game](date, draw, suits);
+    const data = await LOADERS[game](date, draw, suits, mode);
     if (!data) return NextResponse.json({ error: "not stored" }, { status: 404, headers: { "Cache-Control": "public, s-maxage=300" } });
     const maxAge = date < today ? 86_400 : 60;
     return NextResponse.json(data, { headers: { "Cache-Control": `public, s-maxage=${maxAge}, stale-while-revalidate=${maxAge}` } });
