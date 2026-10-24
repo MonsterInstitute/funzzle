@@ -21,6 +21,8 @@ concurrency:
 jobs:
   report:
     runs-on: ubuntu-latest
+    # URL Inspection (30 sampled URLs per pattern) is the slow part.
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
