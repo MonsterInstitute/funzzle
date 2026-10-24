@@ -7,6 +7,7 @@ const LINKS = [
   { label: "About", href: "/about" },
   { label: "Privacy", href: "/privacy" },
   { label: "Terms", href: "/terms" },
+  { label: "Credits", href: "/credits" },
   { label: "Contact", href: "mailto:hello@funzzle.com" },
 ];
 
