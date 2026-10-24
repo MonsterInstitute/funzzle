@@ -105,6 +105,18 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
     ],
   },
+  freecell: {
+    title: "FreeCell skills",
+    skills: [
+      { id: "win", name: "First deal", tier: 0, what: "Win a FreeCell deal" },
+      { id: "no-hint", name: "Unaided", tier: 1, what: "Win without the coach" },
+      { id: "supermove", name: "Supermove", tier: 1, what: "Move a run of 2+ cards at once in a win" },
+      { id: "two-cells", name: "Light on cells", tier: 2, what: "Win with never more than 2 free cells in use" },
+      { id: "fast", name: "Quick hands", tier: 2, what: "Win in under 5 minutes" },
+      { id: "efficient", name: "Efficient", tier: 2, what: "Win in under 100 moves" },
+      { id: "clean", name: "Clean win", tier: 3, what: "Win without the coach or undo" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {
