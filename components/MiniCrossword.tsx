@@ -547,12 +547,12 @@ export default function MiniCrossword({
                 Play again
               </button>
               <a
-                href="/play/wordle"
+                href="/play/word"
                 className="flex-1 rounded-lg border border-[#e5e7eb] px-4 py-2 font-semibold text-[#111827] transition-colors"
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = c.primary)}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
               >
-                Play Wordle →
+                Play Funzzle Word →
               </a>
             </div>
           </div>

@@ -101,10 +101,10 @@ export default async function MiniFreePage() {
             when a single entry has you stumped. Prefer a word game instead? Try
             our{" "}
             <Link
-              href="/play/wordle"
+              href="/play/word"
               className="text-[#16a34a] hover:underline"
             >
-              free unlimited Wordle
+              Funzzle Word
             </Link>
             .
           </p>

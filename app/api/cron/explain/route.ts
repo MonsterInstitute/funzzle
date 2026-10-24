@@ -5,6 +5,10 @@ import { logRun } from "@/lib/cron/runLog";
 import { shiftISODate, todayISO } from "@/lib/dates";
 import { hasDeepSeek } from "@/lib/deepseek";
 import { isCronRequest } from "@/lib/secret";
+import { revalidatePath } from "next/cache";
+import { ensureGroupsPuzzles } from "@/lib/cron/content/groups";
+import { ensureMiniPuzzles } from "@/lib/cron/content/mini";
+import { ensureWordHuntPuzzles } from "@/lib/cron/content/wordhunt";
 
 /**
  * Explain cron ("20 3,7,15,23 * * *", worker.ts): DeepSeek explanations for
@@ -47,8 +51,26 @@ export async function GET(request: Request) {
     }
   }
 
+  // LLM-written daily content (clues, categories, themes), validated in code.
+  // Each job falls back to its hand-written bank, so a failure only alerts.
+  const content: Record<string, string[]> = {};
+  const jobs: [string, string, (dates: string[]) => Promise<string[]>][] = [
+    ["groups", "/play/groups", ensureGroupsPuzzles],
+    ["mini-crossword", "/play/mini", ensureMiniPuzzles],
+    ["word-hunt", "/play/word-hunt", ensureWordHuntPuzzles],
+  ];
+  for (const [game, path, ensure] of jobs) {
+    try {
+      content[game] = await ensure(dates);
+      // Today's row only changes a live page if it was written just now.
+      if (content[game].some((w) => w.includes(today))) revalidatePath(path);
+    } catch (err) {
+      errors.push(`${game}: ${(err as Error).message}`);
+    }
+  }
+
   const ok = errors.length === 0;
-  const detail = { ok, answers, coach, errors };
+  const detail = { ok, answers, coach, content, errors };
   await logRun("explain", startedAt, ok, detail);
   return NextResponse.json(detail, { status: ok ? 200 : 502 });
 }

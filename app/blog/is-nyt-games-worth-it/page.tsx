@@ -155,11 +155,11 @@ export default function Post() {
           </p>
           <p>
             That&apos;s exactly why Funzzle exists. You can play a free{" "}
-            <Link href="/play/wordle" className="text-[#16a34a] hover:underline">unlimited Wordle</Link>,
+            <Link href="/play/word" className="text-[#16a34a] hover:underline">Funzzle Word</Link>,
             a daily{" "}
             <Link href="/play/mini" className="text-[#16a34a] hover:underline">Mini Crossword</Link>,{" "}
-            <Link href="/play/connections" className="text-[#16a34a] hover:underline">Connections</Link>,{" "}
-            <Link href="/play/spelling-bee" className="text-[#16a34a] hover:underline">Spelling Bee</Link>,
+            <Link href="/play/groups" className="text-[#16a34a] hover:underline">Groups</Link>,{" "}
+            <Link href="/play/spelling-hive" className="text-[#16a34a] hover:underline">Spelling Hive</Link>,
             and more here with no paywall and no account. See the full free lineup on our{" "}
             <Link href="/free-nyt-games-alternative" className="text-[#16a34a] hover:underline">
               free NYT Games alternative

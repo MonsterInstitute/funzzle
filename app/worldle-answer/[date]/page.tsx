@@ -79,8 +79,8 @@ export default async function WorldleAnswerPage({ params }: { params: Promise<Pa
         )}
 
         <div className="mt-8 text-center">
-          <Link href="/play/worldle" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play free Worldle →
+          <Link href="/play/word/geo" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
+            Play Funzzle Word · Geo →
           </Link>
         </div>
         <AdSlot slot="in-content" className="mt-10" />

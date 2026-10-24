@@ -100,6 +100,20 @@ async function productAnalytics(end) {
   out.push("### Traffic sources", "", `**AI referral** (ChatGPT, Perplexity, Claude, Copilot, Gemini): ${fmt(aiTotal)} visits, ${pct(aiTotal, visits)} of all.`, "");
   out.push(...table(["Source", "Visits", "Share"], sources.map((s) => [s.source, fmt(s.n), pct(s.n, visits)])), "");
 
+  // Per-game funnel: which games people start and finish. The Daily Set's
+  // 4th slot (lib/games/kit/daily.ts) goes to the word game with the most
+  // completions: compare the "Daily Set candidates" rows.
+  const funnel = await aeSql(
+    `SELECT blob2 AS game, blob1 AS event, ${N} AS n FROM funzzle_events WHERE ${inWindow} AND blob1 IN ('game_start', 'game_complete') AND blob2 != '' GROUP BY game, event`
+  );
+  const games = [...new Set(funnel.map((r) => r.game))];
+  const per = (g, e) => funnel.find((r) => r.game === g && r.event === e)?.n ?? 0;
+  const rowsF = games
+    .map((g) => [g, per(g, "game_start"), per(g, "game_complete")])
+    .sort((a, b) => b[2] - a[2])
+    .map(([g, st, done]) => [`${g}${["word", "mini-crossword", "groups"].includes(g) ? " (Daily Set candidate)" : ""}`, fmt(st), fmt(done), pct(done, st)]);
+  out.push("### Games played", "", ...table(["Game", "Started", "Completed", "Completion rate"], rowsF), "");
+
   // Exact-day return rates: visitors seen for the first time k days before a
   // visit in the window, over the new visitors of the matching earlier window.
   out.push("### Return rate", "", "Share of new visitors who came back exactly 1, 7 or 30 days later (rolling 7-day cohorts).", "");

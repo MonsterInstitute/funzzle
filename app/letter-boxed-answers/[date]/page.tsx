@@ -66,8 +66,8 @@ export default async function LetterBoxedAnswersPage({ params }: { params: Promi
         </p>
 
         <div className="mt-8 text-center">
-          <Link href="/play/letter-boxed" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play today&apos;s Letter Boxed →
+          <Link href="/play/letter-box" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
+            Play Letter Box →
           </Link>
         </div>
         <AdSlot slot="in-content" className="mt-10" />

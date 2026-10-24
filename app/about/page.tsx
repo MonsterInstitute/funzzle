@@ -71,14 +71,14 @@ export default function AboutPage() {
               — a quick 5×5 grid, solvable in about a minute.
             </li>
             <li>
-              <Link href="/play/wordle" className="text-[#16a34a] hover:underline">
+              <Link href="/play/word" className="text-[#16a34a] hover:underline">
                 Wordle
               </Link>{" "}
               — six guesses to find the five-letter word, unlimited replays.
             </li>
             <li>
               <Link
-                href="/play/connections"
+                href="/play/groups"
                 className="text-[#16a34a] hover:underline"
               >
                 Connections
@@ -87,7 +87,7 @@ export default function AboutPage() {
             </li>
             <li>
               <Link
-                href="/play/spelling-bee"
+                href="/play/spelling-hive"
                 className="text-[#16a34a] hover:underline"
               >
                 Spelling Bee

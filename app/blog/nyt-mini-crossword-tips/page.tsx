@@ -156,7 +156,7 @@ export default function Post() {
             quickly, trust your crossings, and keep moving. If a square is wrong,
             the crossing clue will tell you. Play a fresh Mini every day, warm up
             with a{" "}
-            <Link href="/play/wordle" className="text-[#16a34a] hover:underline">
+            <Link href="/play/word" className="text-[#16a34a] hover:underline">
               round of Wordle
             </Link>
             , and watch your times fall week over week.

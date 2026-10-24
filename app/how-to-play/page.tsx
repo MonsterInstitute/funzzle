@@ -34,8 +34,8 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    title: "Wordle",
-    href: "/play/wordle",
+    title: "Funzzle Word",
+    href: "/play/word",
     how: "You have six guesses to find a hidden five-letter word. After each guess, tiles turn green (right letter, right spot), yellow (right letter, wrong spot), or gray (not in the word).",
     strategy: [
       "Open with a vowel-rich word like CRANE, SLATE, or AUDIO to map the board quickly.",
@@ -44,18 +44,18 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    title: "Connections",
-    href: "/play/connections",
-    how: "Sixteen words hide four groups of four. Select four words you think share a category and submit. You get four mistakes before the game ends; solved groups lock in, color-coded from yellow (easiest) to purple (hardest).",
+    title: "Groups",
+    href: "/play/groups",
+    how: "Sixteen words hide four groups of four. Select four words you think share a category and submit. You get four mistakes before the game ends; solved groups lock in, color-coded from level 1 (easiest) to level 4 (trickiest).",
     strategy: [
       "Look for the trickiest group first — the obvious grouping is often a trap with an overlapping word.",
       "If you're one away, swap a single word rather than rebuilding the whole guess.",
-      "Purple is usually wordplay (hidden words, ___ blanks), so save it for last.",
+      "Level 4 is usually wordplay (hidden words, ___ blanks), so save it for last.",
     ],
   },
   {
-    title: "Spelling Bee",
-    href: "/play/spelling-bee",
+    title: "Spelling Hive",
+    href: "/play/spelling-hive",
     how: "Build words of four or more letters using the seven letters shown, and every word must include the center letter. Letters can repeat. Using all seven letters in one word is a pangram and scores bonus points. Climb the ranks from Beginner to Genius.",
     strategy: [
       "Always test the center letter with common prefixes and suffixes (-ING, -ED, RE-, UN-).",
@@ -64,8 +64,8 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    title: "Strands",
-    href: "/play/strands",
+    title: "Word Hunt",
+    href: "/play/word-hunt",
     how: "Every word in the grid connects to a daily theme. Find all the theme words plus the spangram — a longer word that spans the board and captures the theme. Tap the first and last letter of a word to select it; theme words highlight blue and the spangram highlights yellow.",
     strategy: [
       "Read the theme first and brainstorm words that fit before touching the grid.",
@@ -74,8 +74,8 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    title: "Letter Boxed",
-    href: "/play/letter-boxed",
+    title: "Letter Box",
+    href: "/play/letter-box",
     how: "Twelve letters sit around a square, three per side. Spell words of three or more letters, but you can never use two letters from the same side in a row. Each new word must begin with the previous word's last letter. Use all twelve letters to win.",
     strategy: [
       "Aim to use rare letters (J, Q, X, Z) early so they don't strand you at the end.",
@@ -84,8 +84,8 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    title: "Quordle",
-    href: "/play/quordle",
+    title: "Funzzle Word · Quad",
+    href: "/play/word/quad",
     how: "It's four Wordles at once. Each guess is applied to all four boards simultaneously, and you have nine guesses to solve all four five-letter words. The shared keyboard shows the best-known status of each letter across every board.",
     strategy: [
       "Burn your first two or three guesses on fixed, letter-diverse words to gather information on all four boards.",
@@ -94,8 +94,8 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    title: "Worldle",
-    href: "/play/worldle",
+    title: "Funzzle Word · Geo",
+    href: "/play/word/geo",
     how: "Guess the mystery country from its silhouette in six tries. After each wrong guess you'll see the distance to the target, an arrow pointing toward it, and a proximity percentage.",
     strategy: [
       "Note the shape's size and orientation — coastlines and peninsulas are big giveaways.",
@@ -104,8 +104,8 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    title: "Nerdle",
-    href: "/play/nerdle",
+    title: "Funzzle Word · Math",
+    href: "/play/word/math",
     how: "Guess a hidden eight-character math equation in six tries — for example 3+5*2=13. Tiles turn green, purple, or gray for each digit and operator, just like Wordle. Your guess must be a valid equation, and standard order of operations applies (× and ÷ before + and −).",
     strategy: [
       "Open with a guess that uses a range of digits and at least two operators to test many characters at once.",

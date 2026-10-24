@@ -61,12 +61,12 @@ export default function FreeAlternativePage() {
               Mini Crossword
             </Link>
             , our{" "}
-            <Link href="/play/wordle" className="text-[#16a34a] hover:underline">
-              unlimited Wordle
+            <Link href="/play/word" className="text-[#16a34a] hover:underline">
+              Funzzle Word
             </Link>
             , and daily{" "}
             <Link
-              href="/play/connections"
+              href="/play/groups"
               className="text-[#16a34a] hover:underline"
             >
               Connections

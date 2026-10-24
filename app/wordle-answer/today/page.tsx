@@ -74,10 +74,10 @@ export default async function WordleAnswerPage() {
         {/* CTA */}
         <div className="mt-8 text-center">
           <Link
-            href="/play/wordle"
+            href="/play/word"
             className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]"
           >
-            Play Free Unlimited Wordle →
+            Play Funzzle Word, free →
           </Link>
         </div>
 

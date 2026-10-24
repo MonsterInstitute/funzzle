@@ -65,8 +65,8 @@ export default async function QuordleAnswersPage({ params }: { params: Promise<P
         </p>
 
         <div className="mt-8 text-center">
-          <Link href="/play/quordle" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play free Quordle →
+          <Link href="/play/word/quad" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
+            Play Funzzle Word · Quad →
           </Link>
         </div>
         <AdSlot slot="in-content" className="mt-10" />

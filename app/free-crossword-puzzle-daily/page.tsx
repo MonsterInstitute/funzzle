@@ -102,14 +102,14 @@ export default async function FreeCrosswordDailyPage() {
             </Link>{" "}
             pages, or switch things up with free{" "}
             <Link
-              href="/play/connections"
+              href="/play/groups"
               className="text-[#16a34a] hover:underline"
             >
               Connections
             </Link>{" "}
             and{" "}
             <Link
-              href="/play/wordle"
+              href="/play/word"
               className="text-[#16a34a] hover:underline"
             >
               Wordle

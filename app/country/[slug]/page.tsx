@@ -82,7 +82,7 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
         {isWorldle && (
           <p className="rounded-xl bg-green-50 p-4 text-sm text-[#111827]">
             🌍 {c.name} is one of the countries featured in{" "}
-            <Link href="/play/worldle" className="font-semibold text-[#16a34a] hover:underline">
+            <Link href="/play/word/geo" className="font-semibold text-[#16a34a] hover:underline">
               Funzzle Worldle
             </Link>{" "}
             — guess it from its silhouette!
@@ -90,8 +90,8 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
         )}
 
         <div className="mt-8 text-center">
-          <Link href="/play/worldle" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play Worldle →
+          <Link href="/play/word/geo" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
+            Play Funzzle Word · Geo →
           </Link>
         </div>
       </main>

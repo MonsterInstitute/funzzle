@@ -68,8 +68,8 @@ export default async function StrandsAnswersPage({ params }: { params: Promise<P
         </p>
 
         <div className="mt-8 text-center">
-          <Link href="/play/strands" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play today&apos;s Strands →
+          <Link href="/play/word-hunt" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
+            Play Word Hunt →
           </Link>
         </div>
         <AdSlot slot="in-content" className="mt-10" />

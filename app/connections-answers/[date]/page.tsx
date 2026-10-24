@@ -145,11 +145,11 @@ export default async function ConnectionsAnswersPage({
         {/* Play CTA */}
         <div className="mt-6 text-center">
           <Link
-            href="/play/connections"
+            href="/play/groups"
             className="inline-flex rounded-lg px-6 py-3 font-semibold transition-opacity hover:opacity-90"
             style={{ backgroundColor: C.primary, color: C.onPrimary }}
           >
-            Play Free Connections →
+            Play Groups, free →
           </Link>
         </div>
 

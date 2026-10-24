@@ -144,8 +144,8 @@ export default function Post() {
                 <p className="mt-1 text-sm">
                   Play now:{" "}
                   <Link href="/play/mini" className="text-[#16a34a] hover:underline">Mini</Link>,{" "}
-                  <Link href="/play/wordle" className="text-[#16a34a] hover:underline">Wordle</Link>,{" "}
-                  <Link href="/play/connections" className="text-[#16a34a] hover:underline">Connections</Link>.
+                  <Link href="/play/word" className="text-[#16a34a] hover:underline">Funzzle Word</Link>,{" "}
+                  <Link href="/play/groups" className="text-[#16a34a] hover:underline">Groups</Link>.
                 </p>
               )}
               {app.affiliate && (

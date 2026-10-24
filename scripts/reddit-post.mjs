@@ -40,7 +40,7 @@ Stuck on today's Wordle but don't want the answer spoiled? Here are gentle hints
 • No proper nouns today.
 
 Full hints (and the answer, blurred until you tap) are here: ${SITE}/wordle-answer/today
-Want unlimited practice? Free Wordle: ${SITE}/play/wordle
+Want unlimited practice? Free Wordle: ${SITE}/play/word
 
 (Not affiliated with the NYT — just a free place to play and check answers.)`;
 

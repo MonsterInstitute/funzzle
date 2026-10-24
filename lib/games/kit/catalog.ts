@@ -1,7 +1,7 @@
 /**
  * The 20 Funzzle games (design/Main.dc.html). Names are Funzzle's own, never
- * NYT game names. `href` is null until the game ships; games that exist today
- * keep their current URLs until the Phase 4 renames (/play/wordle → /play/word …).
+ * NYT game names. `href` is null until the game ships; the old clone URLs
+ * (/play/wordle …) 301 to these (next.config.ts).
  */
 
 export type GameCategory = "Cards" | "Logic" | "Words" | "Casual" | "Strategy";

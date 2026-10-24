@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { HeadToHead, resultText } from "@/components/kit/ChallengePanel";
+import { HeadToHead } from "@/components/kit/ChallengePanel";
 import { challengePlayHref, fetchChallenge, myEntry, type Challenge } from "@/lib/games/kit/challenge";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { resultHeadline, resultOrder } from "@/lib/games/kit/resultConfig";

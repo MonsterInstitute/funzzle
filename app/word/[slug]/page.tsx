@@ -72,8 +72,8 @@ export default async function WordPage({ params }: { params: Promise<Params> }) 
         <AdSlot slot="in-content" className="my-8" />
 
         <div className="mt-4 text-center">
-          <Link href="/play/strands" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play free Strands →
+          <Link href="/play/word-hunt" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
+            Play Word Hunt →
           </Link>
         </div>
       </main>
