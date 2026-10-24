@@ -10,6 +10,8 @@
  */
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
+import { generateNonogram, type Clues } from "@/lib/games/nonogram";
+import { generateKakuro, type Difficulty as KakuroDifficulty } from "@/lib/games/kakuro";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -27,6 +29,25 @@ export interface DailySolitaire {
   state: State;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: Move[];
+}
+
+export interface DailyNonogram {
+  date: string;
+  size: 10;
+  solution: number[];
+  clues: Clues;
+  /** Hand-drawn picture's name, or null for a generated pattern. */
+  name: string | null;
+}
+
+export interface DailyKakuro {
+  date: string;
+  difficulty: KakuroDifficulty;
+  size: number;
+  layout: string;
+  solution: number[];
+  across: number[];
+  down: number[];
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -50,6 +71,24 @@ export function generateDailySolitaire(date: string, draw: 1 | 3): DailySolitair
   return { date, draw, seed: d.seed, state: d.state, solution: d.solution };
 }
 
+export function generateDailyNonogram(date: string): DailyNonogram {
+  const p = generateNonogram(`nonogram:${date}`, 10);
+  return { date, size: 10, solution: p.solution, clues: p.clues, name: p.name };
+}
+
+export function generateDailyKakuro(date: string): DailyKakuro {
+  const p = generateKakuro(`kakuro:${date}`, "medium");
+  return { date, difficulty: p.difficulty, size: p.size, layout: p.layout, solution: p.solution, across: p.across, down: p.down };
+}
+
+export async function getDailyNonogram(date: string): Promise<DailyNonogram> {
+  return (await readRow<DailyNonogram>("nonogram", date, "")) ?? generateDailyNonogram(date);
+}
+
+export async function getDailyKakuro(date: string): Promise<DailyKakuro> {
+  return (await readRow<DailyKakuro>("kakuro", date, "")) ?? generateDailyKakuro(date);
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
@@ -67,6 +106,8 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "sudoku", date, variant: "" },
     { game: "solitaire", date, variant: "draw1" },
     { game: "solitaire", date, variant: "draw3" },
+    { game: "nonogram", date, variant: "" },
+    { game: "kakuro", date, variant: "" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,
@@ -77,7 +118,14 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     .filter((w) => !have.has(`${w.game}|${w.date}|${w.variant}`))
     .map((w) => ({
       ...w,
-      data: w.game === "sudoku" ? generateDailySudoku(w.date) : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
+      data:
+        w.game === "sudoku"
+          ? generateDailySudoku(w.date)
+          : w.game === "nonogram"
+            ? generateDailyNonogram(w.date)
+            : w.game === "kakuro"
+              ? generateDailyKakuro(w.date)
+              : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
     }));
   if (!rows.length) return [];
   await batch(

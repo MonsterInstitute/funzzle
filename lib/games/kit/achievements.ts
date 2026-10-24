@@ -105,6 +105,25 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
     ],
   },
+  nonogram: {
+    title: "Nonogram techniques",
+    skills: [
+      { id: "simple-boxes", name: "Simple boxes", tier: 0, what: "A block's overlap with itself is filled" },
+      { id: "simple-spaces", name: "Simple spaces", tier: 0, what: "Cells no block can reach are empty" },
+      { id: "edge-logic", name: "Edge logic", tier: 1, what: "Edges and crosses pin a block down" },
+      { id: "forcing", name: "Forcing", tier: 2, what: "Every placement that fits agrees" },
+    ],
+  },
+  kakuro: {
+    title: "Kakuro techniques",
+    skills: [
+      { id: "last-cell", name: "Last cell", tier: 0, what: "One empty cell takes what's left" },
+      { id: "unique-sum", name: "Unique sum", tier: 0, what: "Sums with one way to make them" },
+      { id: "intersection", name: "Intersection", tier: 1, what: "The digit both crossing runs allow" },
+      { id: "sum-combos", name: "Sum combinations", tier: 1, what: "Digits no combination uses are out" },
+      { id: "crossing-elimination", name: "Crossing elimination", tier: 2, what: "Crossing runs rule out combinations" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

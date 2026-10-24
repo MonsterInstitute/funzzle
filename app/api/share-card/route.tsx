@@ -16,7 +16,9 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", nonogram: "Daily Nonogram", kakuro: "Daily Kakuro" };
+/** Games whose card shows mistakes and hints, with the game glyph as a spoiler-free board. */
+const GLYPH_BOARD = new Set(["nonogram", "kakuro"]);
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -72,7 +74,7 @@ export async function GET(request: Request) {
   const lines = [
     top !== null ? `Top ${Math.max(1, top)}% today` : "First to finish today",
     streak > 0 ? `${streak}-day streak` : null,
-    game === "sudoku"
+    game === "sudoku" || GLYPH_BOARD.has(game)
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
       : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
@@ -83,6 +85,12 @@ export async function GET(request: Request) {
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />
         ))}
+      </div>
+    ) : GLYPH_BOARD.has(game) ? (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 432, height: 432, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        <svg width="340" height="340" viewBox="0 0 48 48">
+          <path d={GAME_BY_SLUG[game].glyph} fill="none" stroke="#111111" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     ) : (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 28, gap: 24, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
