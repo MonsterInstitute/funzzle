@@ -31,8 +31,8 @@ export async function GET(request: Request) {
     if (!league) return NextResponse.json({ error: "not found" }, { status: 404 });
     const [members, results] = await Promise.all([
       all<{ name: string }>("SELECT name FROM league_members WHERE league_id = ? ORDER BY joined_at", league.id),
-      all<{ name: string; game: string; date: string; variant: string; time_ms: number }>(
-        `SELECT m.name, r.game, r.puzzle_date AS date, r.variant, r.time_ms
+      all<{ name: string; game: string; date: string; variant: string; time_ms: number; moves: number | null }>(
+        `SELECT m.name, r.game, r.puzzle_date AS date, r.variant, r.time_ms, r.moves
          FROM league_members m JOIN game_results r ON r.client_id = m.client_id
          WHERE m.league_id = ? AND r.puzzle_date BETWEEN ? AND ?`,
         league.id,
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     ]);
     const boards = leagueBoards(
       members.map((m) => m.name),
-      results.map((r) => ({ name: r.name, game: r.game, date: r.date, variant: r.variant, timeMs: r.time_ms }))
+      results.map((r) => ({ name: r.name, game: r.game, date: r.date, variant: r.variant, timeMs: r.time_ms, moves: r.moves }))
     );
     return NextResponse.json(
       { code, name: league.name, week, members: members.map((m) => m.name), boards },

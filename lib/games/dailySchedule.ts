@@ -34,3 +34,7 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Spelling Hive and Letter Box use one daily difficulty. */
+export const SPELLING_HIVE_PUZZLE_RATING = 1300;
+export const LETTER_BOX_PUZZLE_RATING = 1450;

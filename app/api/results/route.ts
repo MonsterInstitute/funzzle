@@ -109,7 +109,9 @@ export async function POST(request: Request) {
     timeMs === null ||
     mistakes === null ||
     hints === null ||
-    (body.moves !== undefined && moves === null)
+    (body.moves !== undefined && moves === null) ||
+    // Score-ranked games need their score.
+    ((config.order ?? "time") !== "time" && moves === null)
   ) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
@@ -127,16 +129,30 @@ export async function POST(request: Request) {
       hints,
       moves,
     );
-    // Percentile against everyone else, using the stored (first) time.
-    const mine = await first<{ slower: number }>(
-      `SELECT count(*) AS slower FROM game_results
+    // Percentile against everyone else, using the stored (first) result.
+    const order = config.order ?? "time";
+    const mine =
+      order === "time"
+        ? await first<{ slower: number }>(
+            `SELECT count(*) AS slower FROM game_results
        WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3
          AND time_ms > (SELECT time_ms FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4)`,
-      game,
-      date,
-      variant,
-      clientId,
-    );
+            game,
+            date,
+            variant,
+            clientId,
+          )
+        : // Score games: a better score wins, an equal score goes to the faster time.
+          await first<{ slower: number }>(
+            `SELECT count(*) AS slower FROM game_results r,
+         (SELECT time_ms AS t, moves AS m FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4) me
+       WHERE r.game = ?1 AND r.puzzle_date = ?2 AND r.variant = ?3
+         AND (r.moves ${order === "score" ? "<" : ">"} me.m OR (r.moves = me.m AND r.time_ms > me.t))`,
+            game,
+            date,
+            variant,
+            clientId,
+          );
     const slower = mine?.slower ?? 0;
 
     const stats = await dayStats(game, date, variant);

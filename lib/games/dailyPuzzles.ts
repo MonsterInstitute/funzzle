@@ -10,6 +10,10 @@
  */
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
+import { generateHive } from "@/lib/games/hive/generate";
+import type { HivePuzzle } from "@/lib/games/hive";
+import { generateLetterBox } from "@/lib/games/letterbox/generate";
+import type { LetterBoxPuzzle } from "@/lib/games/letterbox";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -27,6 +31,16 @@ export interface DailySolitaire {
   state: State;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: Move[];
+}
+
+/** Spelling Hive: the row ships its own answer and bonus lists (lib/games/hive). */
+export interface DailyHive extends HivePuzzle {
+  date: string;
+}
+
+/** Letter Box: the row ships its playable word list (lib/games/letterbox). */
+export interface DailyLetterBox extends LetterBoxPuzzle {
+  date: string;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -50,6 +64,22 @@ export function generateDailySolitaire(date: string, draw: 1 | 3): DailySolitair
   return { date, draw, seed: d.seed, state: d.state, solution: d.solution };
 }
 
+export function generateDailyHive(date: string): DailyHive {
+  return { date, ...generateHive(`spelling-hive:${date}`) };
+}
+
+export function generateDailyLetterBox(date: string): DailyLetterBox {
+  return { date, ...generateLetterBox(`letter-box:${date}`) };
+}
+
+export async function getDailyHive(date: string): Promise<DailyHive> {
+  return (await readRow<DailyHive>("spelling-hive", date, "")) ?? generateDailyHive(date);
+}
+
+export async function getDailyLetterBox(date: string): Promise<DailyLetterBox> {
+  return (await readRow<DailyLetterBox>("letter-box", date, "")) ?? generateDailyLetterBox(date);
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
@@ -67,7 +97,17 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "sudoku", date, variant: "" },
     { game: "solitaire", date, variant: "draw1" },
     { game: "solitaire", date, variant: "draw3" },
+    { game: "spelling-hive", date, variant: "" },
+    { game: "letter-box", date, variant: "" },
   ]);
+  const generate = (w: { game: string; date: string; variant: string }) =>
+    w.game === "sudoku"
+      ? generateDailySudoku(w.date)
+      : w.game === "spelling-hive"
+        ? generateDailyHive(w.date)
+        : w.game === "letter-box"
+          ? generateDailyLetterBox(w.date)
+          : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,
     ...dates
@@ -77,7 +117,7 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     .filter((w) => !have.has(`${w.game}|${w.date}|${w.variant}`))
     .map((w) => ({
       ...w,
-      data: w.game === "sudoku" ? generateDailySudoku(w.date) : generateDailySolitaire(w.date, w.variant === "draw3" ? 3 : 1),
+      data: generate(w),
     }));
   if (!rows.length) return [];
   await batch(

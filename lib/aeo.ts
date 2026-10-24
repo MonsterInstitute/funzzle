@@ -96,6 +96,64 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  "spelling-hive": {
+    name: "Spelling Hive",
+    genre: "Word game",
+    summary:
+      "Spelling Hive is a free daily word game: make as many words as you can from seven letters in a honeycomb, always using the center letter. Ranks climb from Beginner to Genius and Hive Master, a hints grid shows how many words are left, and your score is ranked against today's players.",
+    description: "Free daily seven-letter word puzzle with ranks, a hints grid, a coach and unlimited practice hives.",
+    qa: [
+      {
+        q: "How do you play Spelling Hive?",
+        a: "Make words of four or more letters using only the seven letters in the hive. Every word must include the center letter, and letters can be used more than once. Four-letter words score 1 point, longer words score 1 point per letter.",
+      },
+      {
+        q: "What is a pangram?",
+        a: "A pangram is a word that uses all seven letters at least once. Every hive has at least one, and it scores 7 bonus points on top of its length.",
+      },
+      {
+        q: "What are the ranks in Spelling Hive?",
+        a: "Ranks are a share of the hive's maximum score: Beginner, Good Start, Moving Up, Good, Solid, Nice, Great (40%), Amazing (50%), Genius (70%) and Hive Master, which takes every word in the list.",
+      },
+      {
+        q: "Why doesn't a real word count?",
+        a: "The scoring list sticks to everyday words. Rarer dictionary words are still accepted and shown as bonus words, but they score no points, so every rank can be reached with common vocabulary.",
+      },
+      {
+        q: "How do hints work in Spelling Hive?",
+        a: "The hints grid (words left by first letter and length) and the two-letter starts list are free. The coach gives up to three hints: first a two-letter start, then the word's pattern like T _ _ _ N, then the word itself. Coach hints are counted in your result.",
+      },
+    ],
+  },
+  "letter-box": {
+    name: "Letter Box",
+    genre: "Word game",
+    summary:
+      "Letter Box is a free daily word puzzle: twelve letters sit three to a side of a square, and you chain words that use every letter, each word starting with the last letter of the one before. Today's box always has a two-word solution, and your word count and time are ranked against today's players.",
+    description: "Free daily word-chain puzzle around a square of twelve letters, with a coach and unlimited practice boxes.",
+    qa: [
+      {
+        q: "How do you play Letter Box?",
+        a: "Spell words of three or more letters by tapping letters around the square. Consecutive letters must come from different sides, and each new word starts with the last letter of the previous word. You win when every one of the twelve letters has been used.",
+      },
+      {
+        q: "Can letters be used more than once?",
+        a: "Yes. Letters can be reused as often as you like; the goal is to use every letter at least once in as few words as possible.",
+      },
+      {
+        q: "What does par mean in Letter Box?",
+        a: "Par is the fewest words the puzzle can be solved in. Every daily box is generated around a two-word solution, so par is two words, and there are three-word solutions as well.",
+      },
+      {
+        q: "How do you find a two-word solution?",
+        a: "Look for a long word that uses many letters and ends on a letter that starts words easily, then a second word that picks up every letter still unused. Rare letters such as J, Q, X or Z are best placed in the middle of a long word.",
+      },
+      {
+        q: "Is there a hint in Letter Box?",
+        a: "Yes. The coach gives up to three hints, each in steps: a good letter to start from, then the next word's length and how many new letters it uses, then the word from a shortest solution. Hints are counted in your result.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;
