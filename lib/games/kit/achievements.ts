@@ -191,6 +191,21 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "reverse", name: "Upside down", tier: 3, what: "Solve levels 4, 3, 2, 1 in order" },
     ],
   },
+  // Ids match lib/games/chess/themes.ts: every solved puzzle records its themes.
+  chess: {
+    title: "Chess tactics",
+    skills: [
+      { id: "mate-in-1", name: "Mate in 1", tier: 0, what: "Find the one move that ends it" },
+      { id: "win-material", name: "Win material", tier: 0, what: "Win a piece or more by force" },
+      { id: "fork", name: "Fork", tier: 1, what: "One piece attacks two at once" },
+      { id: "pin", name: "Pin", tier: 1, what: "A piece that can’t move without losing a bigger one" },
+      { id: "skewer", name: "Skewer", tier: 2, what: "Attack a big piece, win the one behind it" },
+      { id: "discovered-attack", name: "Discovered attack", tier: 2, what: "Move one piece to unmask another" },
+      { id: "back-rank", name: "Back-rank mate", tier: 2, what: "Mate a king trapped behind its pawns" },
+      { id: "mate-in-2", name: "Mate in 2", tier: 3, what: "A forcing two-move mate" },
+      { id: "mate-in-3", name: "Mate in 3", tier: 4, what: "A three-move mating attack" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

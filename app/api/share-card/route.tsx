@@ -37,6 +37,13 @@ const GAMES: Record<string, string> = {
   "spelling-hive": "Spelling Hive",
   "letter-box": "Letter Box",
   groups: "Groups",
+  chess: "Chess Puzzle",
+};
+/** Chess vs the computer (?g=chess&r=win|draw|loss): a game result, not a daily rank. */
+const CHESS_RESULT: Record<string, string> = {
+  win: "Won",
+  draw: "Drew",
+  loss: "Lost",
 };
 
 /**
@@ -115,7 +122,10 @@ export async function GET(request: Request) {
   const words = q.get("w") === null ? null : int(q.get("w"), 999);
   const path = q.get("p") ?? "";
   const found = int(q.get("f") ?? "4", 4);
+  const chessResult = q.get("r");
   if (
+    (chessResult !== null &&
+      (game !== "chess" || !CHESS_RESULT[chessResult])) ||
     !GAMES[game] ||
     !DATE_RE.test(date) ||
     time === null ||
@@ -126,7 +136,8 @@ export async function GET(request: Request) {
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
     (map && game !== "groups" && !/^[0-4]{81}$/.test(map)) ||
-    (game === "groups" && (!/^[1-4]{4,32}$/.test(map) || map.length % 4 !== 0 || found === null)) ||
+    (game === "groups" &&
+      (!/^[1-4]{4,32}$/.test(map) || map.length % 4 !== 0 || found === null)) ||
     (q.get("sc") !== null && score === null) ||
     (q.get("w") !== null && words === null) ||
     (path && !/^[0-9ab]{2,80}$/.test(path))
@@ -137,34 +148,95 @@ export async function GET(request: Request) {
   const accent = GAME_BY_SLUG[game].color;
   const day = new Date(`${date}T00:00:00Z`);
   const dateLabel = `${day.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })} · ${day.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
-  const lines = [
-    game === "groups" && found !== null && found < 4
-      ? `Found ${found} of 4 groups`
-      : top !== null
-        ? `Top ${Math.max(1, top)}% today`
-        : "First to finish today",
-    streak > 0 ? `${streak}-day streak` : null,
-    game === "sudoku" || game === "groups"
-      ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : game === "minesweeper"
-        ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
-        : game === "mahjong"
-          ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
-          : game === "spelling-hive" || game === "letter-box"
-            ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-            : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
-  ].filter(Boolean) as string[];
-  const headline = game === "spelling-hive" ? `${score ?? 0} pts` : formatTime(time);
+  const lines = (
+    chessResult
+      ? [
+          CHESS_RESULT[chessResult],
+          `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+        ]
+      : [
+          game === "groups" && found !== null && found < 4
+            ? `Found ${found} of 4 groups`
+            : top !== null
+              ? `Top ${Math.max(1, top)}% today`
+              : "First to finish today",
+          streak > 0 ? `${streak}-day streak` : null,
+          game === "sudoku" || game === "groups" || game === "chess"
+            ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+            : game === "minesweeper"
+              ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
+              : game === "mahjong"
+                ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
+                : game === "spelling-hive" || game === "letter-box"
+                  ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                  : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+        ]
+  ).filter(Boolean) as string[];
+  const title = chessResult ? "Chess" : GAMES[game];
+  const headline =
+    game === "spelling-hive" ? `${score ?? 0} pts` : formatTime(time);
 
-  const rows = game === "groups" ? map.match(/.{4}/g) ?? [] : [];
-  const cell = Math.min(72, Math.floor((400 - (rows.length - 1) * 10) / Math.max(1, rows.length)));
+  const rows = game === "groups" ? (map.match(/.{4}/g) ?? []) : [];
+  const cell = Math.min(
+    72,
+    Math.floor((400 - (rows.length - 1) * 10) / Math.max(1, rows.length)),
+  );
   const board =
-    game === "groups" ? (
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", width: 432, height: 432, padding: 16, gap: 10, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+    game === "chess" ? (
+      // A plain board: nothing about the position or the solution.
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: 432,
+          height: 432,
+          padding: 16,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        {Array.from({ length: 64 }, (_, i) => (
+          <div
+            key={i}
+            style={{
+              width: 50,
+              height: 50,
+              background:
+                ((i >> 3) + i) % 2 ? "rgba(17,17,17,0.55)" : "#FFFFFF",
+            }}
+          />
+        ))}
+      </div>
+    ) : game === "groups" ? (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          width: 432,
+          height: 432,
+          padding: 16,
+          gap: 10,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
         {rows.map((row, r) => (
-          <div key={r} style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+          <div
+            key={r}
+            style={{ display: "flex", justifyContent: "center", gap: 10 }}
+          >
             {row.split("").map((c, i) => (
-              <div key={i} style={{ width: cell * 1.2, height: cell, borderRadius: 12, background: LEVEL_COLOR[Number(c) as Level], border: "3px solid #111111" }} />
+              <div
+                key={i}
+                style={{
+                  width: cell * 1.2,
+                  height: cell,
+                  borderRadius: 12,
+                  background: LEVEL_COLOR[Number(c) as Level],
+                  border: "3px solid #111111",
+                }}
+              />
             ))}
           </div>
         ))}
@@ -377,12 +449,12 @@ export async function GET(request: Request) {
         <span
           style={{
             fontFamily: "Bricolage",
-            fontSize: GAMES[game].length > 15 ? 68 : 92,
+            fontSize: title.length > 15 ? 68 : 92,
             lineHeight: 1,
             letterSpacing: "-0.035em",
           }}
         >
-          {GAMES[game]}
+          {title}
         </span>
         {label && (
           <span
@@ -493,10 +565,24 @@ function HiveBoard() {
     [dx, dy / 2],
   ];
   return (
-    <div style={{ display: "flex", width: 432, height: 432, borderRadius: 36, background: "rgba(17,17,17,0.08)", alignItems: "center", justifyContent: "center" }}>
+    <div
+      style={{
+        display: "flex",
+        width: 432,
+        height: 432,
+        borderRadius: 36,
+        background: "rgba(17,17,17,0.08)",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <svg width="400" height="400" viewBox="-200 -200 400 400">
         {cells.map(([x, y], i) => (
-          <polygon key={i} points={hex(x, y)} fill={i === 0 ? "#111111" : "#FFFFFF"} />
+          <polygon
+            key={i}
+            points={hex(x, y)}
+            fill={i === 0 ? "#111111" : "#FFFFFF"}
+          />
         ))}
       </svg>
     </div>
@@ -508,14 +594,46 @@ function BoxBoard({ path }: { path: string }) {
   const at = (i: number): [number, number] => {
     const side = Math.floor(i / 3);
     const t = 80 + (i % 3) * 120;
-    return side === 0 ? [t, 40] : side === 1 ? [360, t] : side === 2 ? [t, 360] : [40, t];
+    return side === 0
+      ? [t, 40]
+      : side === 1
+        ? [360, t]
+        : side === 2
+          ? [t, 360]
+          : [40, t];
   };
   const pts = path.split("").map((c) => at(parseInt(c, 16)));
   return (
-    <div style={{ display: "flex", width: 432, height: 432, borderRadius: 36, background: "rgba(17,17,17,0.08)", alignItems: "center", justifyContent: "center" }}>
+    <div
+      style={{
+        display: "flex",
+        width: 432,
+        height: 432,
+        borderRadius: 36,
+        background: "rgba(17,17,17,0.08)",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <svg width="400" height="400" viewBox="0 0 400 400">
-        <rect x="40" y="40" width="320" height="320" fill="#FFFFFF" stroke="#111111" strokeWidth="6" />
-        {pts.length > 1 && <polyline points={pts.map(([x, y]) => `${x},${y}`).join(" ")} fill="none" stroke="#111111" strokeWidth="8" strokeLinejoin="round" />}
+        <rect
+          x="40"
+          y="40"
+          width="320"
+          height="320"
+          fill="#FFFFFF"
+          stroke="#111111"
+          strokeWidth="6"
+        />
+        {pts.length > 1 && (
+          <polyline
+            points={pts.map(([x, y]) => `${x},${y}`).join(" ")}
+            fill="none"
+            stroke="#111111"
+            strokeWidth="8"
+            strokeLinejoin="round"
+          />
+        )}
         {Array.from({ length: 12 }, (_, i) => {
           const [x, y] = at(i);
           return <circle key={i} cx={x} cy={y} r="18" fill="#111111" />;

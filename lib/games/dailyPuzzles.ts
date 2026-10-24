@@ -20,6 +20,7 @@ import type { HivePuzzle } from "@/lib/games/hive";
 import { generateLetterBox } from "@/lib/games/letterbox/generate";
 import type { LetterBoxPuzzle } from "@/lib/games/letterbox";
 import { bankPuzzleFor, type GroupsPuzzle } from "@/lib/games/groups";
+import { generatePuzzle, type ChessPuzzle } from "@/lib/games/chess/puzzle";
 import { all, batch, first, parseJson } from "@/lib/db";
 
 export interface DailySudoku {
@@ -87,6 +88,12 @@ export interface DailyGroups {
   /** "ai": generated and validated by lib/cron/content/groups.ts; "bank": the fallback bank. */
   source: "ai" | "bank";
   puzzle: GroupsPuzzle;
+}
+
+export interface DailyChess {
+  date: string;
+  /** Found by seeded self-play and checked unique by an exact search. */
+  puzzle: ChessPuzzle;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -185,6 +192,10 @@ export async function getDailyGroups(date: string): Promise<DailyGroups> {
   return (await readRow<DailyGroups>("groups", date, "")) ?? generateDailyGroups(date);
 }
 
+export function generateDailyChess(date: string): DailyChess {
+  return { date, puzzle: generatePuzzle(`chess:${date}`) };
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
@@ -213,7 +224,12 @@ function generateRow(game: string, date: string, variant: string): object {
   if (game === "spider-solitaire") return generateDailySpider(date, 1);
   if (game === "spelling-hive") return generateDailyHive(date);
   if (game === "letter-box") return generateDailyLetterBox(date);
+  if (game === "chess") return generateDailyChess(date);
   return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
+}
+
+export async function getDailyChess(date: string): Promise<DailyChess> {
+  return (await readRow<DailyChess>("chess", date, "")) ?? generateDailyChess(date);
 }
 
 /**
@@ -232,6 +248,7 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "spider-solitaire", date, variant: "suits1" },
     { game: "spelling-hive", date, variant: "" },
     { game: "letter-box", date, variant: "" },
+    { game: "chess", date, variant: "" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,

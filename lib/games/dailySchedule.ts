@@ -70,3 +70,8 @@ export const SPELLING_HIVE_PUZZLE_RATING = 1300;
 export const LETTER_BOX_PUZZLE_RATING = 1450;
 /** Groups puzzles all aim for the same spread (levels 1–4 on every board). */
 export const GROUPS_PUZZLE_RATING = 1400;
+/** Daily/practice chess puzzles by difficulty (graded by solution length). */
+export const CHESS_PUZZLE_RATING = { easy: 1100, medium: 1450, hard: 1800 } as const;
+
+/** Chess vs the computer: each level's rating as the "opponent". */
+export const CHESS_LEVEL_RATING = { 1: 700, 2: 1000, 3: 1300, 4: 1600, 5: 1900, 6: 2200 } as const;

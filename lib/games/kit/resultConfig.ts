@@ -47,6 +47,8 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   // moves = words used.
   "letter-box": { variants: [""], lo: 30_000, hi: 900_000, minMs: 10_000, order: "fewest" },
   groups: { variants: [""], lo: 30_000, hi: 900_000, minMs: 8_000, order: "mistakes" },
+  // Daily chess puzzles rank like Groups: fewest wrong moves, then hints, then time.
+  chess: { variants: [""], lo: 5_000, hi: 420_000, minMs: 2_000, order: "mistakes" },
 };
 
 export const HISTOGRAM_BUCKETS = 14;

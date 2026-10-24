@@ -299,6 +299,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  chess: {
+    name: "Chess",
+    genre: "Board game",
+    summary:
+      "Funzzle Chess is free chess in the browser: play the computer at six levels from Beginner to Strong, or solve the Daily Chess Puzzle, one position for everyone today with a single winning tactic. The coach shows the engine's best move and explains why in plain English.",
+    description: "Free chess against the computer at six levels, a daily chess puzzle with one winning tactic, and unlimited practice puzzles.",
+    qa: [
+      {
+        q: "Can I play chess against the computer for free?",
+        a: "Yes. Pick a level from 1 (Beginner, which looks one move ahead and makes mistakes) to 6 (Strong, which thinks for about 1.5 seconds and searches five moves deep or more), choose white or black, and play. Undo and hints are unlimited, and the engine runs in your browser, so there's no account or download.",
+      },
+      {
+        q: "What is the Daily Chess Puzzle?",
+        a: "One position a day, the same for everyone, where you have a winning tactic: a mate in one to three moves, or a combination that wins at least three points of material. Each puzzle is checked by the engine so that only one first move works; the opponent's replies are its best defence. Your time and wrong moves are compared with today's other solvers.",
+      },
+      {
+        q: "How do you get better at chess tactics?",
+        a: "Look at forcing moves first: checks, captures and threats. Most puzzles are one of a few patterns, such as forks, pins, skewers, discovered attacks and back-rank mates. Funzzle tags every puzzle with its theme and tracks which ones you've solved in your skill tree.",
+      },
+      {
+        q: "What are the rules for a draw in chess?",
+        a: "A game is drawn by stalemate (the side to move has no legal move but isn't in check), threefold repetition of the same position, 50 moves by each side without a capture or pawn move, or when neither side has enough material left to checkmate, such as king against king and knight.",
+      },
+      {
+        q: "How do castling and en passant work?",
+        a: "Castling moves the king two squares toward a rook and puts the rook on the other side of it; it's only allowed if neither piece has moved, the squares between are empty, and the king isn't in check or passing through an attacked square. En passant lets a pawn capture an enemy pawn that has just moved two squares past it, as if it had moved one, but only on the very next move.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;
