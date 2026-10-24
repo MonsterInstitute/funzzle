@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Puzzle Studio</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#111111}a:hover{color:#3A22C9}
+</style>
+</helmet>
+<div style="width: 390px; height: 1260px; box-sizing: border-box; background: #FFFFFF; color: #111111; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; overflow: hidden">
+
+<div style="padding: 10px 12px 0; display: flex; align-items: center; justify-content: space-between">
+<a href="Main.dc.html" aria-label="Back to home" style="width: 44px; height: 44px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #F3F3F7">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+</a>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.02em">Puzzle Studio</span>
+<button type="button" aria-label="My puzzles" style="width: 44px; height: 44px; border-radius: 999px; border: 0; display: flex; align-items: center; justify-content: center; background: #F3F3F7; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"></path></svg>
+</button>
+</div>
+
+<div style="margin: 0 16px; display: flex; flex-direction: column; gap: 8px">
+<label for="desc" style="font-size: 13px; font-weight: 600; color: #3A3A44">Describe your puzzle</label>
+<textarea id="desc" rows="3" style="width: 100%; box-sizing: border-box; resize: none; border-radius: 18px; border: 1.5px solid #111111; padding: 14px 16px; font-family: inherit; font-size: 16px; line-height: 1.45; color: #111111; background: #FFFFFF">A word search for Mia’s 7th birthday — dinosaurs and strawberries</textarea>
+</div>
+
+<div style="margin: 0 16px; display: flex; flex-direction: column; gap: 10px">
+<div role="group" aria-label="Puzzle type" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{types}}" as="t" hint-placeholder-count="4">
+<button type="button" style="{{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+<div role="group" aria-label="Difficulty" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{levels}}" as="l" hint-placeholder-count="4">
+<button type="button" style="{{l.style}}">{{l.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="margin: 0 16px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; background: #EAF7EF; font-size: 13px; font-weight: 600; color: #1A5C3A">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>
+Built and solver-checked · 9 words, all findable
+</div>
+
+<div style="margin: 0 16px; display: flex; flex-direction: column; gap: 6px">
+<label for="ptitle" style="font-size: 13px; font-weight: 600; color: #3A3A44">Title</label>
+<input id="ptitle" type="text" value="Mia’s Dino Party" style="min-height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid #D9D9E0; padding: 0 14px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 700; color: #111111">
+</div>
+
+<div style="margin: 0 16px; padding: 10px; border-radius: 20px; background: #FFF6CC">
+<div role="grid" aria-label="Word search grid" style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="100">
+<span role="gridcell" style="{{c.style}}">{{c.ch}}</span>
+</sc-for>
+</div>
+</div>
+
+<div style="margin: 0 16px; display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{words}}" as="w" hint-placeholder-count="9">
+<span style="{{w.style}}">{{w.label}}</span>
+</sc-for>
+</div>
+
+<div style="margin: 0 16px; display: flex; flex-direction: column; gap: 6px">
+<label for="refine" style="font-size: 13px; font-weight: 600; color: #3A3A44">Ask for changes</label>
+<div style="display: flex; gap: 8px">
+<input id="refine" type="text" value="Add GROWL and make it a bit harder" style="flex: 1 1 auto; min-width: 0; min-height: 48px; box-sizing: border-box; border-radius: 14px; border: 1px solid #D9D9E0; padding: 0 14px; font-family: inherit; font-size: 15px; color: #111111">
+<button type="button" aria-label="Apply change" style="width: 48px; height: 48px; border-radius: 14px; border: 0; background: #5B3DF5; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+</button>
+</div>
+</div>
+
+<div style="margin: 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="min-height: 52px; border-radius: 999px; border: 0; background: #111111; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">Share link</button>
+<button type="button" style="min-height: 52px; border-radius: 999px; border: 1px solid #D9D9E0; background: #FFFFFF; color: #111111; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer">Print PDF</button>
+</div>
+
+<div style="margin: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 6px 0 14px; min-height: 48px; border-radius: 14px; background: #F4F5FA">
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px; color: #2A2A33">funzzle.com/p/mias-dino-party</span>
+<button type="button" style="min-height: 36px; padding: 0 12px; border-radius: 10px; border: 0; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; color: #111111; cursor: pointer">Copy</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var grid = [];
+    var filler = 'KLUMBHZWEQTONVGRSAPCXDYJIFLMOEBRNATSUHWKGPZDQVCIYXJ';
+    var k = 0;
+    for (var r = 0; r < 10; r++) {
+      grid.push([]);
+      for (var c = 0; c < 10; c++) { grid[r].push({ ch: filler[k % filler.length], hl: '' }); k += 7; }
+    }
+    var place = function (word, r, c, dr, dc, hl) {
+      for (var i = 0; i < word.length; i++) { grid[r + dr * i][c + dc * i] = { ch: word[i], hl: hl || '' }; }
+    };
+    place('STRAWBERRY', 0, 0, 0, 1, '#FFB3C7');
+    place('RAPTOR', 2, 1, 0, 1, '#B5E48C');
+    place('SEVEN', 3, 3, 0, 1);
+    place('FOSSIL', 4, 3, 0, 1);
+    place('PARTY', 6, 0, 0, 1);
+    place('CAKE', 8, 5, 0, 1);
+    place('MIA', 7, 0, 1, 0);
+    place('TREX', 2, 9, 1, 0, '#9DB4FF');
+    place('DINO', 9, 4, 0, 1);
+    var cells = [];
+    grid.forEach(function (row) {
+      row.forEach(function (cell) {
+        cells.push({
+          ch: cell.ch,
+          style: 'aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-family: Geist Mono, monospace; font-size: 16px; font-weight: 600; color: #111111; background: ' + (cell.hl || 'transparent')
+        });
+      });
+    });
+    var chip = 'min-height: 40px; padding: 0 14px; border-radius: 999px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ';
+    var on = chip + 'border: 1px solid #111111; background: #111111; color: #FFFFFF';
+    var off = chip + 'border: 1px solid #D9D9E0; background: #FFFFFF; color: #111111';
+    var types = [['Word search', true], ['Crossword', false], ['Trivia quiz', false], ['Word scramble', false]].map(function (t) { return { label: t[0], style: t[1] ? on : off }; });
+    var levels = [['Easy', true], ['Medium', false], ['Hard', false]].map(function (t) { return { label: t[0], style: t[1] ? on : off }; });
+    var wbase = 'padding: 6px 10px; border-radius: 999px; font-family: Geist Mono, monospace; font-size: 12px; font-weight: 600; ';
+    var words = [['STRAWBERRY','#FFB3C7'],['RAPTOR','#B5E48C'],['T-REX','#9DB4FF'],['FOSSIL',''],['SEVEN',''],['PARTY',''],['CAKE',''],['DINO',''],['MIA','']].map(function (w) {
+      return { label: w[0], style: wbase + (w[1] ? 'background: ' + w[1] + '; color: #111111; text-decoration: line-through' : 'background: #F4F5FA; color: #111111') };
+    });
+    return { cells: cells, types: types, levels: levels, words: words };
+  }
+}
+</script>
+</body>
+</html>

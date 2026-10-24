@@ -22,6 +22,7 @@ on:
       - ".github/workflows/gsc-report.yml"
       - "scripts/gsc-report.mjs"
       - "reports/**"
+      - "design/**"
       - ".claude/**"
       - ".vscode/**"
   workflow_dispatch:

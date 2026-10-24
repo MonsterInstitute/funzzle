@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Funzzle share card</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 540px; height: 540px; box-sizing: border-box; padding: 40px; background: {{accent}}; color: #111111; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="30" height="30" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="15" height="15" rx="4" fill="#111111"></rect><rect x="18" y="1" width="15" height="15" rx="7.5" fill="#FFFFFF"></rect><rect x="1" y="18" width="15" height="15" rx="7.5" fill="#FFFFFF"></rect><rect x="18" y="18" width="15" height="15" rx="4" fill="#111111"></rect></svg>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.03em">funzzle</span>
+</div>
+<span style="font-family: 'Geist Mono', monospace; font-size: 14px; font-weight: 600">Fri · Oct 23</span>
+</div>
+
+<div style="display: flex; align-items: baseline; gap: 12px">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 46px; line-height: 1; letter-spacing: -0.035em">Daily Sudoku</span>
+<span style="padding: 5px 10px; border-radius: 999px; background: #111111; color: #FFFFFF; font-size: 13px; font-weight: 600">Hard</span>
+</div>
+
+<div style="display: flex; gap: 28px; align-items: center">
+<div aria-label="Solve-order map, no numbers shown" role="img" style="width: 216px; height: 216px; flex: 0 0 216px; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; padding: 8px; box-sizing: border-box; border-radius: 18px; background: rgba(17,17,17,0.08)">
+<sc-for list="{{heat}}" as="h" hint-placeholder-count="81">
+<span style="{{h}}"></span>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Geist Mono', monospace; font-weight: 600; font-size: 76px; line-height: 1; letter-spacing: -0.04em">6:48</span>
+<span style="font-size: 19px; font-weight: 700">Top 27% today</span>
+<span style="font-size: 16px; font-weight: 500">12-day streak</span>
+<span style="font-size: 16px; font-weight: 500">0 mistakes · 1 hint</span>
+</div>
+</div>
+
+<div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 18px; border-top: 2px solid #111111">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.02em">Can you beat it?</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 15px; font-weight: 600">funzzle.com/daily</span>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#9DB4FF","options":["#9DB4FF","#B5E48C","#FFD6A5","#C9B8E8"]},"$preview":{"width":540,"height":540}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var P = ['53..7....','6..195...','.98....6.','8...6...3','4..8.3..1','7...2...6','.6....28.','...419..5','....8..79'];
+    var shades = ['#FFFFFF', 'rgba(255,255,255,0.72)', 'rgba(255,255,255,0.45)', 'rgba(255,255,255,0.22)'];
+    var heat = [];
+    for (var r = 0; r < 9; r++) {
+      for (var c = 0; c < 9; c++) {
+        var given = P[r][c] !== '.';
+        var bg = given ? '#111111' : shades[(r * 7 + c * 13 + Math.floor(r / 3) * 5) % 4];
+        heat.push('aspect-ratio: 1; border-radius: 4px; background: ' + bg);
+      }
+    }
+    return { heat: heat, accent: this.props.accent ?? '#9DB4FF' };
+  }
+}
+</script>
+</body>
+</html>
