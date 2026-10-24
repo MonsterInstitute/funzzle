@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import Header from "@/components/Header";
+import GameRails from "@/components/ads/GameRails";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
 import MiniCrossword from "@/components/MiniCrossword";
 import { SAMPLE_MINI } from "@/lib/miniCrossword";
 import { getMiniPuzzle } from "@/lib/getPuzzle";
@@ -29,20 +29,20 @@ export default async function MiniPlayPage() {
   return (
     <>
       <Header />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
-          {puzzle.title}
-        </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
-          {formatLongDate(today)} · 5×5 · Fill every square to win
-        </p>
+      <div className="relative flex flex-1 flex-col">
+        <GameRails board={672} />
+        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+          <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
+            {puzzle.title}
+          </h1>
+          <p className="mb-6 text-center text-sm text-gray-500">
+            {formatLongDate(today)} · 5×5 · Fill every square to win
+          </p>
 
-        <MiniCrossword puzzle={puzzle} date={today} />
-
-        <AdSlot slot="rectangle" className="mt-10" />
-      </main>
+          <MiniCrossword puzzle={puzzle} date={today} />
+        </main>
+      </div>
 
       <Footer />
     </>

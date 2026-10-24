@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import { EQUATIONS } from "@/lib/content/equations";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
@@ -43,7 +43,6 @@ export default async function EquationPage({ params }: { params: Promise<Params>
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Equations", path: "/equation" }, { name: e.equation, path: `/equation/${slug}` }])} />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{e.concept}</p>
         <h1 className="mt-1 font-mono text-4xl font-extrabold tracking-tight text-[#16a34a]">{e.equation}</h1>
@@ -69,7 +68,7 @@ export default async function EquationPage({ params }: { params: Promise<Params>
             Play free Nerdle →
           </Link>
         </div>
-        <AdSlot slot="rectangle" className="mt-10" />
+        <AdSlot slot="in-content" className="mt-10" />
       </main>
       <Footer />
     </>

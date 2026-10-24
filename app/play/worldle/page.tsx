@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
+import GameRails from "@/components/ads/GameRails";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
 import WorldleGame from "@/components/WorldleGame";
 import { countryForDate } from "@/lib/worldle";
 import { COUNTRIES } from "@/lib/content/countries";
@@ -31,17 +31,18 @@ export default function WorldlePlayPage() {
   return (
     <>
       <Header />
-      <AdSlot slot="mobile-banner" className="py-3" />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
-        <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
-          Funzzle Worldle
-        </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
-          {formatLongDate(today)} · Guess the country from its shape
-        </p>
-        <WorldleGame answer={answer} countries={guessList} date={today} />
-        <AdSlot slot="rectangle" className="mt-10" />
-      </main>
+      <div className="relative flex flex-1 flex-col">
+        <GameRails board={512} />
+        <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
+          <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
+            Funzzle Worldle
+          </h1>
+          <p className="mb-6 text-center text-sm text-gray-500">
+            {formatLongDate(today)} · Guess the country from its shape
+          </p>
+          <WorldleGame answer={answer} countries={guessList} date={today} />
+        </main>
+      </div>
       <Footer />
     </>
   );

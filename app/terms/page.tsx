@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -26,7 +26,6 @@ export default function TermsPage() {
         ])}
       />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
@@ -186,7 +185,7 @@ export default function TermsPage() {
           </p>
         </div>
 
-        <AdSlot slot="rectangle" className="mt-10" />
+        <AdSlot slot="in-content" className="mt-10" />
       </main>
 
       <Footer />

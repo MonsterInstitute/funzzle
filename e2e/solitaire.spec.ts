@@ -16,7 +16,7 @@ test("daily solitaire: the coach's best moves win the daily deal", async ({ page
   await page.getByRole("button", { name: "Redo" }).click();
   await expect(page.getByText("Moves 1")).toBeVisible();
 
-  const won = page.getByText("Won.");
+  const won = page.getByText("Won.", { exact: true });
   for (let i = 0; i < 600 && !(await won.isVisible()); i++) {
     const finish = page.getByRole("button", { name: "Auto-finish" });
     if ((await finish.count()) && (await finish.isEnabled())) {
@@ -29,7 +29,7 @@ test("daily solitaire: the coach's best moves win the daily deal", async ({ page
     const make = coach.getByRole("button", { name: "Make this move" });
     await make.click({ timeout: 5_000 }).catch(() => {});
   }
-  await expect(page.getByText("Won.")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Won.", { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Faster than 40% of today’s players")).toBeVisible();
   await expect(page.getByRole("button", { name: "Copy result" })).toBeVisible();
 });

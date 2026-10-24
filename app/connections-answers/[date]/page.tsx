@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import HintLadder from "@/components/kit/HintLadder";
 import { connectionsHints } from "@/lib/nytHints";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import ConnectionsReveal from "@/components/ConnectionsReveal";
 import { getAnswer, type ConnectionsAnswerData } from "@/lib/getAnswers";
@@ -80,8 +80,6 @@ export default async function ConnectionsAnswersPage({
         ])}
       />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <span
@@ -142,7 +140,7 @@ export default async function ConnectionsAnswersPage({
           </p>
         )}
 
-        <AdSlot slot="rectangle" className="my-10" />
+        <AdSlot slot="in-content" className="my-10" />
 
         {/* Play CTA */}
         <div className="mt-6 text-center">
@@ -184,7 +182,7 @@ export default async function ConnectionsAnswersPage({
           </Link>
         </nav>
 
-        <AdSlot slot="rectangle" className="mt-10" />
+        <AdSlot slot="in-content" className="mt-10" />
       </main>
 
       <Footer />

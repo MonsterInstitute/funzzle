@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
+import { nextWithBreak } from "@/lib/ads/placements";
 import { track } from "@/lib/games/kit/analytics";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { DAILY_SET, getDayStatus, getStreak, utcToday } from "@/lib/games/kit/daily";
@@ -206,13 +206,17 @@ export default function Recap(props: RecapProps) {
             })}
           </div>
           {next ? (
-            <Link
+            <a
               href={GAME_BY_SLUG[next].href ?? "/"}
+              onClick={(e) => {
+                e.preventDefault();
+                nextWithBreak(GAME_BY_SLUG[next].href ?? "/", "next-game");
+              }}
               className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-ink text-[15px] font-semibold text-ground no-underline hover:text-ground"
             >
               Next: {SET_NAME[next]}
               <Icon name="arrowRight" />
-            </Link>
+            </a>
           ) : (
             <span className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-soft text-[15px] font-semibold">Daily Set complete. See you tomorrow</span>
           )}
@@ -229,11 +233,7 @@ export default function Recap(props: RecapProps) {
         </div>
         {props.extraActions && <div className="mx-4 flex flex-col gap-2">{props.extraActions}</div>}
 
-        <div className="mx-4 mt-1 flex flex-col items-center gap-1.5">
-          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-2">Advertisement</span>
-          <AdSlot slot="rectangle" className="w-[300px]" />
-          <span className="text-xs text-muted-2">Ads appear between games, never while you play.</span>
-        </div>
+        <AdSlot slot="rectangle" className="mx-4 mt-1" note="Ads appear between games, never while you play." />
       </div>
     </div>
   );

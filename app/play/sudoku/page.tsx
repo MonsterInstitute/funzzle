@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GameRails from "@/components/ads/GameRails";
 import GameGuide from "@/components/seo/GameGuide";
 import SudokuGame from "@/components/sudoku/SudokuGame";
 import { getDailySudoku } from "@/lib/games/dailyPuzzles";
@@ -21,7 +22,17 @@ export default async function SudokuPage() {
   const daily = await getDailySudoku(today);
   return (
     <>
-      <SudokuGame date={today} daily={{ difficulty: daily.difficulty, puzzle: daily.puzzle, solution: daily.solution }} />
+      <div className="relative">
+        <GameRails />
+        <SudokuGame
+          date={today}
+          daily={{
+            difficulty: daily.difficulty,
+            puzzle: daily.puzzle,
+            solution: daily.solution,
+          }}
+        />
+      </div>
       <GameGuide slug="sudoku" path="/play/sudoku" />
     </>
   );

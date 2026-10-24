@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import CoachCard from "@/components/kit/CoachCard";
 import GameShell, { Chip, ToolButton } from "@/components/kit/GameShell";
 import PauseSheet, { SheetButton } from "@/components/kit/PauseSheet";
+import PracticeAction from "@/components/kit/PracticeAction";
 import Recap from "@/components/kit/Recap";
+import { useRewardedOffer } from "@/lib/ads/useRewardedOffer";
 import { generateSudoku, hintLadder, solveLogically, TECHNIQUES, type Difficulty, type Grid, type HintLadder } from "@/lib/games/sudoku";
 import { DIFFICULTY_LABEL, SUDOKU_PUZZLE_RATING } from "@/lib/games/dailySchedule";
 import { track } from "@/lib/games/kit/analytics";
@@ -12,6 +14,7 @@ import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { getStreak, markDone, setStatus } from "@/lib/games/kit/daily";
 import { getRating, recordMatch } from "@/lib/games/kit/rating";
 import { formatClock, formatTime, submitResult, type DayStats } from "@/lib/games/kit/results";
+import { countPractice } from "@/lib/games/kit/practiceQuota";
 import { readJson, writeJson } from "@/lib/games/kit/storage";
 import { useTimer } from "@/lib/games/kit/useTimer";
 import { TECHNIQUE_GUIDE } from "./techniqueGuide";
@@ -37,6 +40,7 @@ interface Finish {
 }
 
 const GAME = GAME_BY_SLUG.sudoku;
+const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "expert"];
 const DAILY_KEY = (date: string) => `fz:sudoku:daily:${date}`;
 const PRACTICE_KEY = "fz:sudoku:practice";
 const R = (c: number) => Math.floor(c / 9);
@@ -65,19 +69,28 @@ export default function SudokuGame({
 
   // Restore today's saved progress after hydration (local storage isn't on the server).
   useEffect(() => {
-    const saved = readJson<Saved | null>(DAILY_KEY(date), null);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
-    if (saved && saved.key === dailyKey) setGame(saved);
+    // "Play a practice puzzle" on the recap loads /play/sudoku?practice=<level>
+    // as a new page view (components/kit/PracticeAction).
+    const want = new URLSearchParams(location.search).get("practice");
+    if (want && (DIFFICULTIES as string[]).includes(want)) {
+      history.replaceState(null, "", location.pathname);
+      startPractice(want as Difficulty);
+    } else {
+      const saved = readJson<Saved | null>(DAILY_KEY(date), null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
+      if (saved && saved.key === dailyKey) setGame(saved);
+    }
     setLoaded(true);
   }, [date, dailyKey]);
 
-  const startPractice = (difficulty: Difficulty) => {
+  function startPractice(difficulty: Difficulty) {
+    countPractice("sudoku");
     const seed = `sudoku-practice:${crypto.randomUUID()}`;
     const p = generateSudoku(seed, difficulty);
     const next: Saved = { key: seed, mode: "practice", difficulty: p.difficulty, seed, state: initialState(p.puzzle, p.solution), elapsed: 0 };
     writeJson(PRACTICE_KEY, next);
     setGame(next);
-  };
+  }
   const resumePractice = () => {
     const saved = readJson<Saved | null>(PRACTICE_KEY, null);
     if (saved && !saved.done) setGame(saved);
@@ -118,6 +131,12 @@ function Board({
   const [coach, setCoach] = useState<Coach | null>(null);
   const [paused, setPaused] = useState(false);
   const [finish, setFinish] = useState<Finish | null>(game.done ?? null);
+  // Opt-in rewarded ad: one more hint after the free ones. Offered only when
+  // an ad is actually available (lib/ads/useRewardedOffer).
+  const [bonusHints, setBonusHints] = useState(0);
+  const [hintAfterAd, setHintAfterAd] = useState(false);
+  const outOfHints = state.hints >= MAX_HINTS + bonusHints;
+  const bonusOffer = useRewardedOffer("sudoku-extra-hint", "sudoku", outOfHints && !finish && !inert);
   const [showRecap, setShowRecap] = useState(!!game.done);
   const [loadingStats, setLoadingStats] = useState(false);
   const complete = isComplete(state);
@@ -202,7 +221,7 @@ function Board({
   const openHint = () => {
     if (finish) return;
     if (coach) return;
-    if (state.hints >= MAX_HINTS) {
+    if (state.hints >= MAX_HINTS + bonusHints) {
       setCoach(null);
       return;
     }
@@ -214,6 +233,15 @@ function Board({
     if (ladder.mistakeCell !== undefined) setSelected(ladder.mistakeCell);
     else if (ladder.answerPlacement) setSelected(ladder.answerPlacement.cell);
   };
+
+  // The bonus hint opens as soon as the rewarded ad has been watched.
+  useEffect(() => {
+    if (!hintAfterAd || outOfHints) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot after the ad
+    setHintAfterAd(false);
+    openHint();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hintAfterAd, outOfHints]);
 
   const teach = async () => {
     if (!coach) return;
@@ -307,7 +335,7 @@ function Board({
     }
   }
   const peerSet = new Set(sel >= 0 ? peers(sel) : []);
-  const hintsLeft = MAX_HINTS - state.hints;
+  const hintsLeft = Math.max(0, MAX_HINTS + bonusHints - state.hints);
 
   return (
     <GameShell
@@ -409,7 +437,21 @@ function Board({
           <CoachCard
             heading="Coach"
             tag={hintsLeft ? `${hintsLeft} hint${hintsLeft === 1 ? "" : "s"} left` : "No hints left"}
-            primary={hintsLeft && !finish ? { label: "Get a hint", onClick: openHint } : undefined}
+            primary={
+              hintsLeft && !finish
+                ? { label: "Get a hint", onClick: openHint }
+                : !finish && bonusOffer.ready
+                  ? {
+                      label: "Watch an ad for one more hint",
+                      onClick: async () => {
+                        if (await bonusOffer.watch()) {
+                          setBonusHints((b) => b + 1);
+                          setHintAfterAd(true);
+                        }
+                      },
+                    }
+                  : undefined
+            }
           >
             {finish
               ? "Solved. Open the recap to see how you did."
@@ -643,9 +685,11 @@ function SudokuRecap({
       onClose={onClose}
       extraActions={
         onPractice && (
-          <button type="button" onClick={() => onPractice(game.difficulty)} className="min-h-[52px] rounded-full border border-line-strong text-[15px] font-semibold text-ink">
-            Play {game.difficulty === "easy" || game.difficulty === "expert" ? "an" : "a"} {label.toLowerCase()} practice puzzle
-          </button>
+          <PracticeAction
+            game="sudoku"
+            href={`/play/sudoku?practice=${game.difficulty}`}
+            label={`Play ${game.difficulty === "easy" || game.difficulty === "expert" ? "an" : "a"} ${label.toLowerCase()} practice puzzle`}
+          />
         )
       }
     />

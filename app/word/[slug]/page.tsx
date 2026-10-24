@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import { WORDS } from "@/lib/content/words";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
@@ -43,7 +43,6 @@ export default async function WordPage({ params }: { params: Promise<Params> }) 
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Words", path: "/word" }, { name: w.word, path: `/word/${slug}` }])} />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{w.theme}</p>
         <h1 className="mt-1 text-4xl font-extrabold uppercase tracking-tight text-[#111827]">{w.word}</h1>
@@ -70,7 +69,7 @@ export default async function WordPage({ params }: { params: Promise<Params> }) 
           </section>
         )}
 
-        <AdSlot slot="rectangle" className="my-8" />
+        <AdSlot slot="in-content" className="my-8" />
 
         <div className="mt-4 text-center">
           <Link href="/play/strands" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">

@@ -5,6 +5,7 @@ import CoachCard from "@/components/kit/CoachCard";
 import GameShell, { Chip, ToolButton } from "@/components/kit/GameShell";
 import { Icon } from "@/components/kit/Icons";
 import PauseSheet, { SheetButton } from "@/components/kit/PauseSheet";
+import PracticeAction from "@/components/kit/PracticeAction";
 import Recap from "@/components/kit/Recap";
 import SuitIcon from "@/components/kit/SuitIcon";
 import {
@@ -30,6 +31,7 @@ import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { getStreak, markDone, setStatus } from "@/lib/games/kit/daily";
 import { recordMatch } from "@/lib/games/kit/rating";
 import { formatClock, formatTime, submitResult, type DayStats } from "@/lib/games/kit/results";
+import { countPractice } from "@/lib/games/kit/practiceQuota";
 import { readJson, writeJson } from "@/lib/games/kit/storage";
 import { useTimer } from "@/lib/games/kit/useTimer";
 import { computeLayout, samePile, type CardPos, type PileId } from "./layout";
@@ -87,7 +89,13 @@ export default function SolitaireGame({ date, daily1, daily3 }: { date: string; 
     rememberWinningLine(daily1.state, daily1.solution);
     rememberWinningLine(daily3.state, daily3.solution);
     const last = readJson<Mode | null>("fz:solitaire:mode", null);
-    if (last === "practice") {
+    // "Deal a practice game" on the recap loads /play/solitaire?practice=<draw>
+    // as a new page view (components/kit/PracticeAction).
+    const want = new URLSearchParams(location.search).get("practice");
+    if (want === "1" || want === "3") {
+      history.replaceState(null, "", location.pathname);
+      newPractice(want === "3" ? 3 : 1);
+    } else if (last === "practice") {
       const saved = readJson<Saved | null>(KEY("practice", date), null);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
       if (saved && !saved.done) setGame(saved);
@@ -96,9 +104,11 @@ export default function SolitaireGame({ date, daily1, daily3 }: { date: string; 
       openDaily(last === "daily3" ? "daily3" : "daily1");
     }
     setLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per page view
   }, [daily1, daily3, date, openDaily]);
 
-  const newPractice = (draw: 1 | 3) => {
+  function newPractice(draw: 1 | 3) {
+    countPractice("solitaire");
     setShuffling(true);
     // Let the "Shuffling" state paint before the solver runs.
     setTimeout(() => {
@@ -116,7 +126,7 @@ export default function SolitaireGame({ date, daily1, daily3 }: { date: string; 
       setGame(next);
       setShuffling(false);
     }, 30);
-  };
+  }
 
   const switchMode = (mode: Mode) => {
     writeJson("fz:solitaire:mode", mode);
@@ -408,7 +418,7 @@ function Table({
   });
 
   if (showRecap && finish) {
-    return <SolitaireRecap game={game} date={date} state={state} hints={hints} finish={finish} revealedAllAt={revealedAllAt} onClose={() => setShowRecap(false)} onNewPractice={onNewPractice} />;
+    return <SolitaireRecap game={game} date={date} state={state} hints={hints} finish={finish} revealedAllAt={revealedAllAt} onClose={() => setShowRecap(false)} />;
   }
   if (showRecap) {
     return (
@@ -721,7 +731,6 @@ function SolitaireRecap({
   finish,
   revealedAllAt,
   onClose,
-  onNewPractice,
 }: {
   game: Saved;
   date: string;
@@ -730,7 +739,6 @@ function SolitaireRecap({
   finish: Finish;
   revealedAllAt?: number;
   onClose: () => void;
-  onNewPractice: (draw: 1 | 3) => void;
 }) {
   const isDaily = game.mode !== "practice";
   const short = new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -793,9 +801,7 @@ function SolitaireRecap({
       share={{ imageUrl: `/api/share-card?${params}`, text }}
       onClose={onClose}
       extraActions={
-        <button type="button" onClick={() => onNewPractice(state.draw)} className="min-h-[52px] rounded-full border border-line-strong text-[15px] font-semibold text-ink">
-          Deal a practice game
-        </button>
+        <PracticeAction game="solitaire" href={`/play/solitaire?practice=${state.draw}`} label="Deal a practice game" />
       }
     />
   );

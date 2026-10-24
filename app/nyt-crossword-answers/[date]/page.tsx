@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 import HintLadder from "@/components/kit/HintLadder";
 import { miniAnswer, miniHints } from "@/lib/nytHints";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import {
   getAnswer,
@@ -92,8 +92,6 @@ export default async function CrosswordAnswersPage({
         ])}
       />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
@@ -179,7 +177,7 @@ export default async function CrosswordAnswersPage({
 
         </details>
 
-        <AdSlot slot="rectangle" className="my-10" />
+        <AdSlot slot="in-content" className="my-10" />
 
         {/* Tips for solving */}
         <section className="mt-10">
@@ -224,7 +222,7 @@ export default async function CrosswordAnswersPage({
           </Link>
         </nav>
 
-        <AdSlot slot="rectangle" className="mt-10" />
+        <AdSlot slot="in-content" className="mt-10" />
       </main>
 
       <Footer />

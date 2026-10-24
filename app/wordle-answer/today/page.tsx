@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import HintLadder from "@/components/kit/HintLadder";
 import { wordleHints } from "@/lib/nytHints";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
@@ -43,8 +43,6 @@ export default async function WordleAnswerPage() {
         ])}
       />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
@@ -83,7 +81,7 @@ export default async function WordleAnswerPage() {
           </Link>
         </div>
 
-        <AdSlot slot="rectangle" className="my-10" />
+        <AdSlot slot="in-content" className="my-10" />
 
         {/* SEO content */}
         <section className="prose prose-sm mt-4 text-gray-700">
@@ -115,6 +113,8 @@ export default async function WordleAnswerPage() {
             day, completely free and with no account required.
           </p>
         </section>
+
+        <AdSlot slot="in-content" className="my-10" />
 
         <QandA items={copy.qa} className="text-[#111827]" />
       </main>

@@ -5,7 +5,7 @@ import { clueAnswerCopy } from "@/lib/aeo";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import RevealBox from "@/components/RevealBox";
 import JsonLd from "@/components/JsonLd";
 import {
@@ -75,8 +75,6 @@ export default async function CluePage({
         ])}
       />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-[65ch] flex-1 px-4 py-8">
         {/* Breadcrumb */}
@@ -176,7 +174,7 @@ export default async function CluePage({
           </ul>
         </section>
 
-        <AdSlot slot="rectangle" className="my-10" />
+        <AdSlot slot="in-content" className="my-10" />
 
         {/* Appearances */}
         {clue.appearances.length > 0 && (
@@ -230,7 +228,7 @@ export default async function CluePage({
           </Link>
         </div>
 
-        <AdSlot slot="rectangle" className="mt-10" />
+        <AdSlot slot="in-content" className="mt-10" />
         <QandA items={copy.qa} className="text-[#111827]" />
       </main>
 

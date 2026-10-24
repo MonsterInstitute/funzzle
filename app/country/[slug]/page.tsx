@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import { COUNTRIES } from "@/lib/content/countries";
 import { WORLDLE_DAILY } from "@/lib/worldle";
@@ -42,7 +42,6 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Countries", path: "/country" }, { name: c.name, path: `/country/${slug}` }])} />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">{c.name}</h1>
         <p className="mt-3 leading-relaxed text-gray-700">{c.description}</p>
@@ -78,7 +77,7 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
           </section>
         )}
 
-        <AdSlot slot="rectangle" className="my-8" />
+        <AdSlot slot="in-content" className="my-8" />
 
         {isWorldle && (
           <p className="rounded-xl bg-green-50 p-4 text-sm text-[#111827]">

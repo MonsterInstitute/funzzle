@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import AffiliateLink from "@/components/AffiliateLink";
 import AffiliateCTA from "@/components/AffiliateCTA";
@@ -40,8 +40,6 @@ export default function Post() {
         ]}
       />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <p className="text-xs uppercase tracking-wide text-gray-400">
@@ -115,7 +113,7 @@ export default function Post() {
             </table>
           </div>
 
-          <AdSlot slot="rectangle" className="my-8" />
+          <AdSlot slot="in-content" className="my-8" />
 
           <h2 className="text-xl font-bold text-[#111827]">What you&apos;re paying for</h2>
           <p>
@@ -187,7 +185,7 @@ export default function Post() {
         </article>
 
         <AffiliateCTA />
-        <AdSlot slot="rectangle" className="mt-10" />
+        <AdSlot slot="in-content" className="mt-10" />
       </main>
 
       <Footer />

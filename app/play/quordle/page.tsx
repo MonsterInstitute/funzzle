@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
+import GameRails from "@/components/ads/GameRails";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
 import QuordleGame from "@/components/QuordleGame";
 import { wordsForDate } from "@/lib/quordle";
 import { pageMetadata } from "@/lib/seo";
@@ -25,17 +25,18 @@ export default function QuordlePlayPage() {
   return (
     <>
       <Header />
-      <AdSlot slot="mobile-banner" className="py-3" />
-      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8">
-        <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
-          Funzzle Quordle
-        </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
-          {formatLongDate(today)} · Guess four words in nine tries
-        </p>
-        <QuordleGame dailyAnswers={answers} date={today} />
-        <AdSlot slot="rectangle" className="mt-10" />
-      </main>
+      <div className="relative flex flex-1 flex-col">
+        <GameRails board={576} />
+        <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8">
+          <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
+            Funzzle Quordle
+          </h1>
+          <p className="mb-6 text-center text-sm text-gray-500">
+            {formatLongDate(today)} · Guess four words in nine tries
+          </p>
+          <QuordleGame dailyAnswers={answers} date={today} />
+        </main>
+      </div>
       <Footer />
     </>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
+import AdSlot from "@/components/ads/AdSlot";
 import DailySetHero, { type DailyCardInfo } from "@/components/home/DailySetHero";
 import GameGrid from "@/components/home/GameGrid";
 import ProfileSection from "@/components/home/ProfileSection";
@@ -89,6 +90,8 @@ export default async function HomePage() {
         <DailySetHero dateLabel={dateLabel} cards={cards} />
         <StudioBand />
         <GameGrid />
+        {/* Below the fold only: never in the hero or beside a game. */}
+        <AdSlot slot="rectangle" className="mx-auto mb-12 px-4" />
 
         <section id="answers" className="scroll-mt-4 border-y border-line bg-soft">
           <div className="mx-auto flex max-w-[1280px] flex-col gap-7 px-4 py-16 sm:px-8">
@@ -109,6 +112,7 @@ export default async function HomePage() {
           </div>
         </section>
 
+        <AdSlot slot="rectangle" className="mx-auto my-12 px-4" />
         <ProfileSection />
 
         <div className="mx-auto max-w-[880px] px-4 pb-16 sm:px-8">

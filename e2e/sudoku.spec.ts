@@ -7,7 +7,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 test("daily sudoku: mistake, undo, notes, coach ladder, solve, recap and share", async ({ page }) => {
   await stubWrites(page, 73);
   await page.goto("/play/sudoku");
-  await expect(page.getByRole("heading", { name: "Daily Sudoku" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Daily Sudoku", exact: true })).toBeVisible();
   // The daily grid is a pure function of the date (the stored row is generated the same way).
   const { puzzle, solution } = generateDailySudoku(today());
   const empties = puzzle.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);

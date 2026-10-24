@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdSlot from "@/components/AdSlot";
+import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import MiniCrossword from "@/components/MiniCrossword";
 import AffiliateCTA from "@/components/AffiliateCTA";
@@ -41,8 +41,6 @@ export default async function MiniFreePage() {
         ])}
       />
       <Header />
-      <AdSlot slot="leaderboard" className="py-4" />
-      <AdSlot slot="mobile-banner" className="py-3" />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
@@ -74,7 +72,6 @@ export default async function MiniFreePage() {
           <MiniCrossword puzzle={puzzle} date={today} />
         </div>
 
-        <AdSlot slot="rectangle" className="my-10" />
 
         <div className="prose prose-sm text-gray-700">
           <h2 className="text-xl font-bold text-[#111827]">
@@ -114,7 +111,7 @@ export default async function MiniFreePage() {
         </div>
 
         <AffiliateCTA />
-        <AdSlot slot="rectangle" className="mt-10" />
+        <AdSlot slot="in-content" className="mt-10" />
       </main>
 
       <Footer />
