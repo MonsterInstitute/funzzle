@@ -12,7 +12,6 @@
  */
 import { generateDailySpider } from "@/lib/games/dailyPuzzles";
 import type { SuitCount } from "@/lib/games/spider";
-// @ts-expect-error plain .mjs helper without types
 import { d1 } from "./lib/d1-rest.mjs";
 
 const arg = (name: string) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);

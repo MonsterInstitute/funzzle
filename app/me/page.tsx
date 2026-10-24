@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import ProfileSection from "@/components/home/ProfileSection";
 import ReminderOptIn from "@/components/kit/ReminderOptIn";
 import { BadgeGrid, SkillTree } from "@/components/profile/Badges";
+import { SKILL_TREES } from "@/lib/games/kit/achievements";
 import NameField from "@/components/profile/NameField";
 import Passport from "@/components/profile/Passport";
 import { pageMetadata } from "@/lib/seo";
@@ -26,11 +27,9 @@ export default function MePage() {
         <ProfileSection heading="h1" />
         <div className="mx-auto flex max-w-[1280px] flex-col gap-14 px-4 pb-20 sm:px-8">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
-            <SkillTree game="sudoku" />
-            <SkillTree game="solitaire" />
-            <SkillTree game="freecell" />
-            <SkillTree game="minesweeper" />
-            <SkillTree game="mahjong" />
+            {Object.keys(SKILL_TREES).map((g) => (
+              <SkillTree key={g} game={g} />
+            ))}
           </div>
           <BadgeGrid />
           <Passport />

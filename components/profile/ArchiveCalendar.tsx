@@ -1,29 +1,76 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { GameGlyph } from "@/components/kit/Icons";
+import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { getDayStatus, shiftDay } from "@/lib/games/kit/daily";
 import { readJson } from "@/lib/games/kit/storage";
 
-/** First day with a daily Sudoku, Solitaire and Mahjong. */
+/** First day with daily puzzles in the archive. */
 export const ARCHIVE_START = "2026-10-01";
+
+/**
+ * Games with a playable archive (/play/<game>?date=…, app/api/daily-puzzle)
+ * and the localStorage keys their finished archive/daily puzzles use, for the
+ * "solved" marks. Add a game here when it gains an archive.
+ */
+const ARCHIVE_GAMES: { slug: string; keys: (date: string) => string[] }[] = [
+  { slug: "sudoku", keys: (d) => [`fz:sudoku:archive:${d}`, `fz:sudoku:daily:${d}`] },
+  { slug: "solitaire", keys: (d) => [`fz:solitaire:archive:daily1:${d}`, `fz:solitaire:archive:daily3:${d}`, `fz:solitaire:daily1:${d}`, `fz:solitaire:daily3:${d}`] },
+  { slug: "spider-solitaire", keys: (d) => [`fz:spider-solitaire:archive:daily1:${d}`, `fz:spider-solitaire:daily1:${d}`] },
+  { slug: "freecell", keys: (d) => [`fz:freecell:archive:${d}`, `fz:freecell:daily:${d}`] },
+  { slug: "minesweeper", keys: (d) => [`fz:minesweeper:archive:${d}`, `fz:minesweeper:daily:${d}`] },
+  { slug: "mahjong", keys: (d) => [`fz:mahjong:archive:${d}`, `fz:mahjong:daily:${d}`] },
+];
 
 const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const subscribe = () => () => {};
 const today = () => new Date().toISOString().slice(0, 10);
 
-function doneOn(date: string, game: "sudoku" | "solitaire" | "mahjong", isToday: boolean): boolean {
-  // Mahjong isn't in the Daily Set, so its saved game says whether it was cleared.
-  if (game === "mahjong") return [`fz:mahjong:daily:${date}`, `fz:mahjong:archive:${date}`].some((k) => !!readJson<{ done?: unknown } | null>(k, null)?.done);
-  if (isToday) return getDayStatus(date)[game]?.state === "done";
-  const keys = game === "sudoku" ? [`fz:sudoku:archive:${date}`] : [`fz:solitaire:archive:daily1:${date}`, `fz:solitaire:archive:daily3:${date}`];
-  return keys.some((k) => !!readJson<{ done?: unknown } | null>(k, null)?.done) || getDayStatus(date)[game]?.state === "done";
+function solved(slug: string, keys: string[], date: string): boolean {
+  if (getDayStatus(date)[slug]?.state === "done") return true;
+  return keys.some((k) => !!readJson<{ done?: unknown } | null>(k, null)?.done);
 }
 
-/** Month grids from ARCHIVE_START to today, newest first; every past day is playable. */
+function DayGames({ date, isToday }: { date: string; isToday: boolean }) {
+  const label = new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+  return (
+    <div className="flex flex-col gap-3 rounded-[22px] border border-line p-4">
+      <span className="text-[15px] font-semibold">{isToday ? `Today · ${label}` : label}</span>
+      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 p-0">
+        {ARCHIVE_GAMES.map(({ slug, keys }) => {
+          const game = GAME_BY_SLUG[slug];
+          if (!game?.href) return null;
+          const done = solved(slug, keys(date), date);
+          return (
+            <li key={slug}>
+              <Link
+                href={isToday ? game.href : `${game.href}?date=${date}`}
+                className="flex min-h-12 items-center gap-2.5 rounded-2xl px-3 py-2 text-sm font-semibold text-[#111111] no-underline"
+                style={done ? { background: game.color } : { border: `2px solid ${game.color}` }}
+                aria-label={`${game.name}, ${label}${done ? ", solved" : ""}`}
+              >
+                <span className="scale-75">
+                  <GameGlyph path={game.glyph} />
+                </span>
+                <span className={done ? "" : "text-ink"}>{game.name}</span>
+                {done && <span className="ml-auto text-xs">✓</span>}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** Month grids from ARCHIVE_START to today, newest first; pick a day to see its puzzles. */
 export default function ArchiveCalendar() {
   const now = useSyncExternalStore(subscribe, today, () => null);
+  const [picked, setPicked] = useState<string | null>(null);
   if (!now) return <p className="text-muted">Loading the calendar…</p>;
+  const selected = picked ?? now;
   const months: string[] = [];
   for (let m = now.slice(0, 7); m >= ARCHIVE_START.slice(0, 7); ) {
     months.push(m);
@@ -33,6 +80,7 @@ export default function ArchiveCalendar() {
   }
   return (
     <div className="flex flex-col gap-10">
+      <DayGames date={selected} isToday={selected === now} />
       {months.map((month) => {
         const first = `${month}-01`;
         const lead = (new Date(`${first}T00:00:00Z`).getUTCDay() + 6) % 7;
@@ -53,48 +101,22 @@ export default function ArchiveCalendar() {
                 <span key={`lead-${i}`} />
               ))}
               {days.map((d) => {
-                const day = Number(d.slice(8));
                 const open = d >= ARCHIVE_START && d <= now;
-                const isToday = d === now;
-                if (!open) {
-                  return (
-                    <span key={d} className="flex min-h-[64px] items-start justify-center rounded-xl p-1.5 text-sm text-muted-2 opacity-50">
-                      {day}
-                    </span>
-                  );
-                }
-                const sudoku = doneOn(d, "sudoku", isToday);
-                const solitaire = doneOn(d, "solitaire", isToday);
-                const mahjong = doneOn(d, "mahjong", isToday);
-                const q = isToday ? "" : `?date=${d}`;
+                const count = open ? ARCHIVE_GAMES.filter(({ slug, keys }) => solved(slug, keys(d), d)).length : 0;
                 return (
-                  <div key={d} className={`flex min-h-[64px] flex-col gap-1 rounded-xl p-1.5 ${isToday ? "bg-violet-tint" : "bg-soft"}`}>
-                    <span className="text-center text-sm font-semibold">{day}</span>
-                    <Link
-                      href={`/play/sudoku${q}`}
-                      aria-label={`Sudoku, ${d}${sudoku ? ", solved" : ""}`}
-                      className="rounded-md px-1 py-0.5 text-center text-[11px] font-semibold text-[#111111] no-underline"
-                      style={{ background: sudoku ? "#9DB4FF" : "transparent", border: "1px solid #9DB4FF" }}
-                    >
-                      Sudoku
-                    </Link>
-                    <Link
-                      href={`/play/solitaire${q}`}
-                      aria-label={`Solitaire, ${d}${solitaire ? ", won" : ""}`}
-                      className="rounded-md px-1 py-0.5 text-center text-[11px] font-semibold text-[#111111] no-underline"
-                      style={{ background: solitaire ? "#7FD6A0" : "transparent", border: "1px solid #7FD6A0" }}
-                    >
-                      Cards
-                    </Link>
-                    <Link
-                      href={`/play/mahjong${q}`}
-                      aria-label={`Mahjong, ${d}${mahjong ? ", cleared" : ""}`}
-                      className="rounded-md px-1 py-0.5 text-center text-[11px] font-semibold text-[#111111] no-underline"
-                      style={{ background: mahjong ? "#F6A6A1" : "transparent", border: "1px solid #F6A6A1" }}
-                    >
-                      Tiles
-                    </Link>
-                  </div>
+                  <button
+                    key={d}
+                    type="button"
+                    disabled={!open}
+                    aria-pressed={d === selected}
+                    onClick={() => setPicked(d)}
+                    className={`flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl text-sm font-semibold disabled:opacity-40 ${
+                      d === selected ? "bg-ink text-ground" : d === now ? "bg-violet-tint" : "bg-soft"
+                    }`}
+                  >
+                    {Number(d.slice(8))}
+                    {count > 0 && <span className="font-mono text-[10px]">{count}✓</span>}
+                  </button>
                 );
               })}
             </div>
