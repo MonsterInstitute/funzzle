@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { COMPETITIVE_GAMES, name, puzzle, randomCode, result, UUID_RE } from "@/lib/apiValidate";
 import { all, batch, exec, first } from "@/lib/db";
+import { resultOrder, resultOrderSql } from "@/lib/games/kit/resultConfig";
 
 /**
  * Friend challenges (lib/games/kit/challenge.ts). No login: entries are keyed
@@ -19,8 +20,9 @@ async function load(id: string) {
     id
   );
   if (!c) return null;
+  // Best first: fastest, or best score for score-ranked games (lib/games/kit/resultConfig).
   const entries = await all<{ client_id: string; name: string; time_ms: number; mistakes: number; hints: number; moves: number | null }>(
-    "SELECT client_id, name, time_ms, mistakes, hints, moves FROM challenge_entries WHERE challenge_id = ? ORDER BY time_ms LIMIT 50",
+    `SELECT client_id, name, time_ms, mistakes, hints, moves FROM challenge_entries WHERE challenge_id = ? ORDER BY ${resultOrderSql(c.game)} LIMIT 50`,
     id
   );
   return {
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
   const clientId = String(body?.clientId ?? "");
   const n = name(body?.name);
   const r = result(body?.result);
-  if (!COMPETITIVE_GAMES.has(game) || !p || !label || !UUID_RE.test(clientId) || !n || !r) {
+  if (!COMPETITIVE_GAMES.has(game) || !p || !label || !UUID_RE.test(clientId) || !n || !r || (resultOrder(game) !== "time" && r.moves === null)) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
   const id = randomCode(8);

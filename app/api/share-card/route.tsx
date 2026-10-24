@@ -15,6 +15,9 @@ import {
  * cells (lighter = later), never digits.
  *
  * GET ?g=sudoku&d=2026-10-24&t=408000&top=27&s=12&m=0&h=1&lv=Hard&map=<81 chars 0-4>
+ * Spelling Hive adds sc=<score>&w=<words found> (the honeycomb has no letters);
+ * Letter Box adds w=<words used>&p=<box positions 0-b in play order> (the
+ * square shows the path, never the letters).
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
@@ -28,6 +31,8 @@ const GAMES: Record<string, string> = {
   freecell: "Daily FreeCell",
   mahjong: "Daily Mahjong",
   "spider-solitaire": "Daily Spider",
+  "spelling-hive": "Spelling Hive",
+  "letter-box": "Letter Box",
 };
 
 /**
@@ -102,6 +107,9 @@ export async function GET(request: Request) {
   const moves = q.get("mv") === null ? null : int(q.get("mv"), 100_000);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
+  const score = q.get("sc") === null ? null : int(q.get("sc"), 100_000);
+  const words = q.get("w") === null ? null : int(q.get("w"), 999);
+  const path = q.get("p") ?? "";
   if (
     !GAMES[game] ||
     !DATE_RE.test(date) ||
@@ -112,7 +120,10 @@ export async function GET(request: Request) {
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
-    (map && !/^[0-4]{81}$/.test(map))
+    (map && !/^[0-4]{81}$/.test(map)) ||
+    (q.get("sc") !== null && score === null) ||
+    (q.get("w") !== null && words === null) ||
+    (path && !/^[0-9ab]{2,80}$/.test(path))
   ) {
     return new Response("bad request", { status: 400 });
   }
@@ -129,8 +140,11 @@ export async function GET(request: Request) {
         ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
         : game === "mahjong"
           ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
-          : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+          : game === "spelling-hive" || game === "letter-box"
+            ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+            : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
+  const headline = game === "spelling-hive" ? `${score ?? 0} pts` : formatTime(time);
 
   const board =
     game === "minesweeper" ? (
@@ -221,6 +235,10 @@ export async function GET(request: Request) {
           </div>
         ))}
       </div>
+    ) : game === "spelling-hive" ? (
+      <HiveBoard />
+    ) : game === "letter-box" ? (
+      <BoxBoard path={path} />
     ) : game === "sudoku" && map ? (
       <div
         style={{
@@ -365,12 +383,12 @@ export async function GET(request: Request) {
           <span
             style={{
               fontFamily: "Geist Mono",
-              fontSize: 152,
+              fontSize: game === "spelling-hive" ? 96 : 152,
               lineHeight: 1,
               letterSpacing: "-0.04em",
             }}
           >
-            {formatTime(time)}
+            {headline}
           </span>
           {lines.map((line, i) => (
             <span
@@ -430,5 +448,57 @@ export async function GET(request: Request) {
       ],
       headers: { "Cache-Control": "public, max-age=31536000, immutable" },
     },
+  );
+}
+
+/** Seven blank hexagons, the center one dark: spoiler-free. */
+function HiveBoard() {
+  const r = 62;
+  const hex = (cx: number, cy: number) =>
+    Array.from({ length: 6 }, (_, i) => {
+      const a = (Math.PI / 3) * i;
+      return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+    }).join(" ");
+  const dx = r * 1.5 + 6;
+  const dy = r * Math.sqrt(3) + 6;
+  const cells = [
+    [0, 0],
+    [0, -dy],
+    [0, dy],
+    [-dx, -dy / 2],
+    [dx, -dy / 2],
+    [-dx, dy / 2],
+    [dx, dy / 2],
+  ];
+  return (
+    <div style={{ display: "flex", width: 432, height: 432, borderRadius: 36, background: "rgba(17,17,17,0.08)", alignItems: "center", justifyContent: "center" }}>
+      <svg width="400" height="400" viewBox="-200 -200 400 400">
+        {cells.map(([x, y], i) => (
+          <polygon key={i} points={hex(x, y)} fill={i === 0 ? "#111111" : "#FFFFFF"} />
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+/** The square with its twelve dots and the player's path, no letters. */
+function BoxBoard({ path }: { path: string }) {
+  const at = (i: number): [number, number] => {
+    const side = Math.floor(i / 3);
+    const t = 80 + (i % 3) * 120;
+    return side === 0 ? [t, 40] : side === 1 ? [360, t] : side === 2 ? [t, 360] : [40, t];
+  };
+  const pts = path.split("").map((c) => at(parseInt(c, 16)));
+  return (
+    <div style={{ display: "flex", width: 432, height: 432, borderRadius: 36, background: "rgba(17,17,17,0.08)", alignItems: "center", justifyContent: "center" }}>
+      <svg width="400" height="400" viewBox="0 0 400 400">
+        <rect x="40" y="40" width="320" height="320" fill="#FFFFFF" stroke="#111111" strokeWidth="6" />
+        {pts.length > 1 && <polyline points={pts.map(([x, y]) => `${x},${y}`).join(" ")} fill="none" stroke="#111111" strokeWidth="8" strokeLinejoin="round" />}
+        {Array.from({ length: 12 }, (_, i) => {
+          const [x, y] = at(i);
+          return <circle key={i} cx={x} cy={y} r="18" fill="#111111" />;
+        })}
+      </svg>
+    </div>
   );
 }

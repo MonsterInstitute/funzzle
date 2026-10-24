@@ -12,6 +12,7 @@ import {
   type ChallengeResult,
 } from "@/lib/games/kit/challenge";
 import { getDisplayName, NAME_MAX, setDisplayName } from "@/lib/games/kit/identity";
+import { resultHeadline, resultOrder } from "@/lib/games/kit/resultConfig";
 import { formatTime } from "@/lib/games/kit/results";
 import { Icon } from "./Icons";
 
@@ -41,7 +42,7 @@ export function HeadToHead({ challenge }: { challenge: Challenge }) {
               </span>
             </span>
             <span className="font-mono text-sm">
-              {formatTime(e.timeMs)}
+              {resultHeadline(challenge.game, e, formatTime)}
               <span className="ml-2 text-muted-2">
                 {e.hints} hint{e.hints === 1 ? "" : "s"}
               </span>
@@ -77,7 +78,7 @@ export default function ChallengePanel({ game, info }: { game: string; info: Cha
   }, [game, info.activeId, info.result]);
 
   async function share(url: string) {
-    const text = `Can you beat my ${formatTime(info.result.timeMs)} on ${info.label}?`;
+    const text = `Can you beat my ${resultHeadline(game, info.result, formatTime)} on ${info.label}?`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "Funzzle challenge", text, url });
@@ -145,7 +146,7 @@ export default function ChallengePanel({ game, info }: { game: string; info: Cha
         </>
       ) : (
         <>
-          <p className="m-0 text-sm text-muted">Send this exact puzzle with your time. No sign-up for either of you.</p>
+          <p className="m-0 text-sm text-muted">Send this exact puzzle with your {resultOrder(game) === "time" ? "time" : "result"}. No sign-up for either of you.</p>
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="challenge-name">
               Your name

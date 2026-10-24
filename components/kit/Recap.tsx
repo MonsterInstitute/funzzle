@@ -35,6 +35,10 @@ export interface RecapProps {
   extraActions?: ReactNode;
   /** Friend challenge for this puzzle (omit for games without comparable results). */
   challenge?: ChallengeInfo;
+  /** Big number under the title instead of the time (score games: "142 points"). */
+  value?: string;
+  /** Rank line prefix instead of "Faster than" (score games: "Scored higher than"). */
+  beatText?: string;
 }
 
 const SET_LABEL: Record<string, string> = { sudoku: "Sudoku", solitaire: "Solitaire", word: "Word", "mini-crossword": "Mini" };
@@ -69,7 +73,7 @@ export default function Recap(props: RecapProps) {
     percentile === null
       ? "First to finish today. Nice."
       : percentile !== undefined
-        ? `Faster than ${percentile}% of today’s players`
+        ? `${props.beatText ?? "Faster than"} ${percentile}% of today’s players`
         : loadingStats
           ? "Comparing with today’s players…"
           : "Practice puzzle";
@@ -115,7 +119,7 @@ export default function Recap(props: RecapProps) {
 
         <section className="mx-4 flex flex-col gap-1.5 rounded-[28px] px-[22px] pb-5 pt-6 text-[#111111]" style={{ background: accent }}>
           <span className="font-display text-[54px] font-extrabold leading-none tracking-[-0.04em]">{title}</span>
-          <span className="font-mono text-[60px] font-semibold leading-[1.05] tracking-[-0.03em]">{formatTime(timeMs)}</span>
+          <span className="font-mono text-[60px] font-semibold leading-[1.05] tracking-[-0.03em]">{props.value ?? formatTime(timeMs)}</span>
           <span className="text-base font-semibold">{rankLine}</span>
           {stats && stats.count > 1 && (
             <>

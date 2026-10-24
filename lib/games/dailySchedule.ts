@@ -65,3 +65,6 @@ export const MAHJONG_PUZZLE_RATING = {
 } as const;
 /** Spider by suit count: one suit is gentle, four is one of the hardest card games. */
 export const SPIDER_PUZZLE_RATING = { 1: 1150, 2: 1500, 4: 1900 } as const;
+/** Spelling Hive and Letter Box use one daily difficulty. */
+export const SPELLING_HIVE_PUZZLE_RATING = 1300;
+export const LETTER_BOX_PUZZLE_RATING = 1450;

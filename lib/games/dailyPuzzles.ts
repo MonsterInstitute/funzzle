@@ -15,6 +15,10 @@ import { dailyBoard, type Board } from "@/lib/games/minesweeper";
 import { dailyDeal as mahjongDailyDeal, type LayoutId, type Pair, type State as MahjongState } from "@/lib/games/mahjong";
 import { dailyDeal as spiderDailyDeal, type Move as SpiderMove, type State as SpiderState, type SuitCount } from "@/lib/games/spider";
 import { MINESWEEPER_DAILY_LEVEL, sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
+import { generateHive } from "@/lib/games/hive/generate";
+import type { HivePuzzle } from "@/lib/games/hive";
+import { generateLetterBox } from "@/lib/games/letterbox/generate";
+import type { LetterBoxPuzzle } from "@/lib/games/letterbox";
 import { all, batch, first, parseJson } from "@/lib/db";
 
 export interface DailySudoku {
@@ -66,6 +70,16 @@ export interface DailySpider {
 
 /** Daily Mahjong is always the 144-tile Turtle. */
 export const MAHJONG_DAILY_LAYOUT: LayoutId = "turtle";
+
+/** Spelling Hive: the row ships its own answer and bonus lists (lib/games/hive). */
+export interface DailyHive extends HivePuzzle {
+  date: string;
+}
+
+/** Letter Box: the row ships its playable word list (lib/games/letterbox). */
+export interface DailyLetterBox extends LetterBoxPuzzle {
+  date: string;
+}
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
   const row = await first<{ data: string }>(
@@ -133,6 +147,22 @@ export async function spiderDaysStored(today: string): Promise<number> {
   return row?.n ?? 0;
 }
 
+export function generateDailyHive(date: string): DailyHive {
+  return { date, ...generateHive(`spelling-hive:${date}`) };
+}
+
+export function generateDailyLetterBox(date: string): DailyLetterBox {
+  return { date, ...generateLetterBox(`letter-box:${date}`) };
+}
+
+export async function getDailyHive(date: string): Promise<DailyHive> {
+  return (await readRow<DailyHive>("spelling-hive", date, "")) ?? generateDailyHive(date);
+}
+
+export async function getDailyLetterBox(date: string): Promise<DailyLetterBox> {
+  return (await readRow<DailyLetterBox>("letter-box", date, "")) ?? generateDailyLetterBox(date);
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
@@ -159,6 +189,8 @@ function generateRow(game: string, date: string, variant: string): object {
   if (game === "freecell") return generateDailyFreeCell(date);
   if (game === "mahjong") return generateDailyMahjong(date);
   if (game === "spider-solitaire") return generateDailySpider(date, 1);
+  if (game === "spelling-hive") return generateDailyHive(date);
+  if (game === "letter-box") return generateDailyLetterBox(date);
   return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
 }
 
@@ -176,6 +208,8 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "mahjong", date, variant: MAHJONG_DAILY_LAYOUT },
     // 2- and 4-suit Spider rows come from scripts/pregenerate-spider.ts.
     { game: "spider-solitaire", date, variant: "suits1" },
+    { game: "spelling-hive", date, variant: "" },
+    { game: "letter-box", date, variant: "" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,

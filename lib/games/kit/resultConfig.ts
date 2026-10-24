@@ -10,7 +10,17 @@ export interface ResultGame {
   hi: number;
   /** Times below this are rejected as impossible. */
   minMs: number;
+  /** How results rank (default "time"); see ResultOrder. */
+  order?: ResultOrder;
 }
+
+/**
+ * How a game's results rank. "time": faster wins. "score": higher `moves`
+ * (the game's score) wins, ties go to the faster time. "fewest": fewer
+ * `moves` (e.g. words used) wins, ties go to the faster time. Score games
+ * store their number in the existing `moves` column, so no schema change.
+ */
+export type ResultOrder = "time" | "score" | "fewest";
 
 export const RESULT_GAMES: Record<string, ResultGame> = {
   sudoku: { variants: [""], lo: 60_000, hi: 1_500_000, minMs: 15_000 },
@@ -24,6 +34,45 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   mahjong: { variants: ["turtle"], lo: 120_000, hi: 1_500_000, minMs: 45_000 },
   // A Spider win takes 100+ moves even with one suit; four suits can take an hour.
   "spider-solitaire": { variants: ["suits1", "suits2", "suits4"], lo: 120_000, hi: 2_400_000, minMs: 40_000 },
+  // Score = points when the player finished; the histogram is of times.
+  "spelling-hive": { variants: [""], lo: 120_000, hi: 2_700_000, minMs: 10_000, order: "score" },
+  // moves = words used.
+  "letter-box": { variants: [""], lo: 30_000, hi: 900_000, minMs: 10_000, order: "fewest" },
 };
 
 export const HISTOGRAM_BUCKETS = 14;
+
+/** Ranking for games outside RESULT_GAMES too (challenges, leagues). */
+export function resultOrder(game: string): ResultOrder {
+  return RESULT_GAMES[game]?.order ?? "time";
+}
+
+export interface RankedResult {
+  timeMs: number;
+  moves?: number | null;
+}
+
+/** Negative when `a` ranks ahead of `b`. */
+export function compareResults(game: string, a: RankedResult, b: RankedResult): number {
+  const order = resultOrder(game);
+  if (order !== "time") {
+    const d = (a.moves ?? 0) - (b.moves ?? 0);
+    if (d) return order === "score" ? -d : d;
+  }
+  return a.timeMs - b.timeMs;
+}
+
+/** SQL ORDER BY for challenge entries / results of `game` (columns moves, time_ms). */
+export function resultOrderSql(game: string): string {
+  const order = resultOrder(game);
+  return order === "score" ? "moves DESC, time_ms" : order === "fewest" ? "moves, time_ms" : "time_ms";
+}
+
+/** The headline number of a result: "142 pts", "2 words" or the time. */
+export function resultHeadline(game: string, r: RankedResult, formatTime: (ms: number) => string): string {
+  const order = resultOrder(game);
+  const n = r.moves ?? 0;
+  if (order === "score") return `${n} pt${n === 1 ? "" : "s"}`;
+  if (order === "fewest") return `${n} word${n === 1 ? "" : "s"} · ${formatTime(r.timeMs)}`;
+  return formatTime(r.timeMs);
+}

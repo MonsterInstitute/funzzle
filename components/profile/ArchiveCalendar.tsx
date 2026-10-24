@@ -22,6 +22,8 @@ const ARCHIVE_GAMES: { slug: string; keys: (date: string) => string[] }[] = [
   { slug: "freecell", keys: (d) => [`fz:freecell:archive:${d}`, `fz:freecell:daily:${d}`] },
   { slug: "minesweeper", keys: (d) => [`fz:minesweeper:archive:${d}`, `fz:minesweeper:daily:${d}`] },
   { slug: "mahjong", keys: (d) => [`fz:mahjong:archive:${d}`, `fz:mahjong:daily:${d}`] },
+  { slug: "spelling-hive", keys: (d) => [`fz:spelling-hive:archive:${d}`, `fz:spelling-hive:daily:${d}`] },
+  { slug: "letter-box", keys: (d) => [`fz:letter-box:archive:${d}`, `fz:letter-box:daily:${d}`] },
 ];
 
 const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];

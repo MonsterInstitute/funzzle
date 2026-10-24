@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { HeadToHead } from "@/components/kit/ChallengePanel";
 import { challengePlayHref, fetchChallenge, myEntry, type Challenge } from "@/lib/games/kit/challenge";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
+import { resultHeadline, resultOrder } from "@/lib/games/kit/resultConfig";
 import { formatTime } from "@/lib/games/kit/results";
 
 /** /challenge?id=…: who set it, the board so far, and a button to play. */
@@ -50,7 +51,7 @@ export default function ChallengeView() {
           {played ? "Your challenge" : `${creator.name} challenges you`}
         </h1>
         <p className="m-0 text-[17px]">
-          {creator.name} finished in <strong className="font-mono">{formatTime(creator.timeMs)}</strong>
+          {creator.name} {resultOrder(challenge.game) === "time" ? "finished in" : "scored"} <strong className="font-mono">{resultHeadline(challenge.game, creator, formatTime)}</strong>
           {creator.hints ? ` with ${creator.hints} hint${creator.hints === 1 ? "" : "s"}` : " without a hint"}. Same puzzle, your turn.
         </p>
         {!played && (

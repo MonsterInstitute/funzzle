@@ -155,6 +155,28 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "4-suits-unaided", name: "Four suits unaided", tier: 4, what: "Win 4 suits without the coach" },
     ],
   },
+  "spelling-hive": {
+    title: "Spelling Hive skills",
+    skills: [
+      { id: "pangram", name: "Pangram", tier: 0, what: "Find a word that uses all seven letters" },
+      { id: "great", name: "Great", tier: 0, what: "Reach the Great rank" },
+      { id: "long-word", name: "Long word", tier: 1, what: "Find a word of 8 letters or more" },
+      { id: "genius", name: "Genius", tier: 2, what: "Reach the Genius rank" },
+      { id: "unaided-genius", name: "Genius unaided", tier: 3, what: "Reach Genius without the coach" },
+      { id: "hive-master", name: "Hive Master", tier: 4, what: "Find every word in a hive" },
+    ],
+  },
+  "letter-box": {
+    title: "Letter Box skills",
+    skills: [
+      { id: "solve", name: "Boxed", tier: 0, what: "Use all twelve letters" },
+      { id: "par", name: "On par", tier: 1, what: "Solve in par (usually two words)" },
+      { id: "unaided", name: "Unaided", tier: 1, what: "Solve without the coach" },
+      { id: "long-word", name: "Long word", tier: 2, what: "Play a word of 8 letters or more" },
+      { id: "fast", name: "Quick box", tier: 2, what: "Solve in under 3 minutes" },
+      { id: "par-unaided", name: "Par unaided", tier: 3, what: "Solve in par without the coach" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

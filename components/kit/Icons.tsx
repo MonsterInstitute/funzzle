@@ -50,6 +50,8 @@ export const ICONS = {
   flag: "M6 21V4M6 4h11l-2.5 4.5L17 13H6",
   zoomIn: "M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4M8 11h6M11 8v6",
   zoomOut: "M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4M8 11h6",
+  shuffle: "M4 7h3c5 0 5 10 10 10h3M4 17h3c2 0 3-1.5 4-3.5M13 9.5c1-2 2-2.5 4-2.5h3M17 4l3 3-3 3M17 14l3 3-3 3",
+  enter: "M20 5v7a3 3 0 0 1-3 3H5M9 11l-4 4 4 4",
 } as const;
 
 export type IconName = keyof typeof ICONS;
