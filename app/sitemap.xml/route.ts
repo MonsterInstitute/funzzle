@@ -13,7 +13,8 @@ export const revalidate = 21600;
 interface Entry {
   path: string;
   priority: number;
-  lastmod: string;
+  /** Real content date only; omitted for pages whose content has no date. */
+  lastmod?: string;
 }
 
 export function GET() {
@@ -52,13 +53,11 @@ export function GET() {
     });
   }
 
-  // Last 30 days of answer pages (priority 0.9).
+  // Last 30 days of answer pages (priority 0.9), the dates both routes prerender.
   for (const date of recentDates(30)) {
-    entries.push({
-      path: `/nyt-crossword-answers/${date}`,
-      priority: 0.9,
-      lastmod: date,
-    });
+    for (const route of ["/nyt-crossword-answers", "/connections-answers"]) {
+      entries.push({ path: `${route}/${date}`, priority: 0.9, lastmod: date });
+    }
   }
 
   // Clue pages (priority 0.6).
@@ -66,7 +65,7 @@ export function GET() {
     entries.push({
       path: `/clue/${clue.slug}`,
       priority: 0.6,
-      lastmod: clue.appearances[0] ?? today,
+      lastmod: clue.appearances[0],
     });
   }
 
@@ -84,21 +83,22 @@ export function GET() {
     }
   }
 
-  // Country / equation / word detail pages.
+  // Country / equation / word detail pages: static datasets, so no lastmod
+  // (a lastmod that is always today teaches Google to ignore it everywhere).
   for (const c of COUNTRIES) {
-    entries.push({ path: `/country/${c.slug}`, priority: 0.6, lastmod: today });
+    entries.push({ path: `/country/${c.slug}`, priority: 0.6 });
   }
   for (const e of EQUATIONS) {
-    entries.push({ path: `/equation/${e.slug}`, priority: 0.5, lastmod: today });
+    entries.push({ path: `/equation/${e.slug}`, priority: 0.5 });
   }
   for (const w of WORDS) {
-    entries.push({ path: `/word/${w.slug}`, priority: 0.5, lastmod: today });
+    entries.push({ path: `/word/${w.slug}`, priority: 0.5 });
   }
 
   const urls = entries
     .map(
       (e) =>
-        `  <url>\n    <loc>${SITE_URL}${e.path}</loc>\n    <lastmod>${e.lastmod}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>${e.priority.toFixed(1)}</priority>\n  </url>`
+        `  <url>\n    <loc>${SITE_URL}${e.path}</loc>\n${e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>\n` : ""}    <changefreq>daily</changefreq>\n    <priority>${e.priority.toFixed(1)}</priority>\n  </url>`
     )
     .join("\n");
 
