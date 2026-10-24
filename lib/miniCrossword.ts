@@ -290,3 +290,17 @@ export const SAMPLE_MINI: MiniPuzzle = {
     ],
   },
 };
+
+/**
+ * Today's Game Kit Mini (lib/games/dailyPuzzles getDailyMini) in this older
+ * shape, for the content pages that still embed components/MiniCrossword, so
+ * they show the same daily grid as /play/mini.
+ */
+export function fromDailyMini(p: { rows: string[]; clues: Record<string, string> }, title = "Mini Crossword"): MiniPuzzle {
+  const clues = (dir: "A" | "D") =>
+    Object.entries(p.clues)
+      .filter(([id]) => id.endsWith(dir))
+      .map(([id, clue]) => ({ number: Number(id.slice(0, -1)), clue }))
+      .sort((a, b) => a.number - b.number);
+  return { title, solution: p.rows.map((r) => [...r]), clues: { across: clues("A"), down: clues("D") } };
+}

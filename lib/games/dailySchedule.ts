@@ -34,3 +34,6 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Mini Crossword "opponent" ratings: the everyday 5×5 and the Saturday 7×7. */
+export const MINI_PUZZLE_RATING: Record<number, number> = { 5: 1100, 7: 1450 };

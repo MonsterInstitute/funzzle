@@ -1,52 +1,32 @@
 import type { Metadata } from "next";
-import { pageMetadata } from "@/lib/seo";
-import Header from "@/components/Header";
 import GameRails from "@/components/ads/GameRails";
-import PassportStamp from "@/components/kit/PassportStamp";
-import Footer from "@/components/Footer";
-import MiniCrossword from "@/components/MiniCrossword";
-import { SAMPLE_MINI } from "@/lib/miniCrossword";
-import { getMiniPuzzle } from "@/lib/getPuzzle";
-import { todayISO, formatLongDate } from "@/lib/dates";
+import MiniGame from "@/components/mini/MiniGame";
+import GameGuide from "@/components/seo/GameGuide";
+import { getDailyMini } from "@/lib/games/dailyPuzzles";
+import { todayISO } from "@/lib/dates";
+import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Free Mini Crossword",
+  title: "Mini Crossword — Free Daily 5×5 Crossword",
   description:
-    "Play a free 5×5 mini crossword on Funzzle. Quick daily solve, no account required.",
+    "Play today's free Mini Crossword: a quick 5×5 grid that's the same for everyone, with check, reveal and a hint coach, your rank against today's players, and unlimited practice minis.",
   path: "/play/mini",
 });
 
-// Pick up a freshly published daily puzzle within the hour.
-// Shows "today": refreshed on demand at the UTC day change and after the daily
+// Today's grid: refreshed on demand at the UTC day change and after the daily
 // content run (lib/revalidation.ts); the 6h window is only a fallback.
 export const revalidate = 21600;
 
-export default async function MiniPlayPage() {
+export default async function MiniPage() {
   const today = todayISO();
-  // Use today's published puzzle from D1 when available; otherwise fall
-  // back to the built-in sample so the page is always playable.
-  const puzzle = (await getMiniPuzzle(today)) ?? SAMPLE_MINI;
-
+  const daily = await getDailyMini(today);
   return (
     <>
-      <Header />
-
-      <div className="relative flex flex-1 flex-col">
-        <PassportStamp game="mini-crossword" />
-        <GameRails board={672} />
-        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-          <h1 className="text-center text-2xl font-extrabold tracking-tight text-[#111827]">
-            {puzzle.title}
-          </h1>
-          <p className="mb-6 text-center text-sm text-gray-500">
-            {formatLongDate(today)} · 5×5 · Fill every square to win
-          </p>
-
-          <MiniCrossword puzzle={puzzle} date={today} />
-        </main>
+      <div className="relative">
+        <GameRails />
+        <MiniGame date={today} daily={{ size: daily.size, rows: daily.rows, clues: daily.clues, bankId: daily.bankId }} />
       </div>
-
-      <Footer />
+      <GameGuide slug="mini-crossword" path="/play/mini" />
     </>
   );
 }

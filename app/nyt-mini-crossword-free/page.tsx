@@ -8,8 +8,8 @@ import MiniCrossword from "@/components/MiniCrossword";
 import AffiliateCTA from "@/components/AffiliateCTA";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { todayISO } from "@/lib/dates";
-import { getMiniPuzzle } from "@/lib/getPuzzle";
-import { SAMPLE_MINI } from "@/lib/miniCrossword";
+import { getDailyMini } from "@/lib/games/dailyPuzzles";
+import { fromDailyMini } from "@/lib/miniCrossword";
 
 export const metadata: Metadata = pageMetadata({
   title: "Free NYT Mini Crossword — Play Online Daily",
@@ -30,7 +30,7 @@ export const revalidate = 21600;
 
 export default async function MiniFreePage() {
   const today = todayISO();
-  const puzzle = (await getMiniPuzzle(today)) ?? SAMPLE_MINI;
+  const puzzle = fromDailyMini(await getDailyMini(today));
 
   return (
     <>

@@ -16,7 +16,7 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", "mini-crossword": "Mini Crossword" };
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
-    (map && !/^[0-4]{81}$/.test(map))
+    (map && !(game === "mini-crossword" ? /^(?:[0-5]{25}|[0-5]{49})$/ : /^[0-4]{81}$/).test(map))
   ) {
     return new Response("bad request", { status: 400 });
   }
@@ -74,11 +74,24 @@ export async function GET(request: Request) {
     streak > 0 ? `${streak}-day streak` : null,
     game === "sudoku"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+      : game === "mini-crossword"
+        ? hints
+          ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
+          : "No checks, no hints"
+        : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
+  // Mini Crossword map: black squares, then solve order (lighter = later); "5" = revealed.
+  const miniSide = map.length === 49 ? 7 : 5;
+  const miniCell = Math.floor((400 - (miniSide - 1) * 8) / miniSide);
   const board =
-    game === "sudoku" && map ? (
+    game === "mini-crossword" && map ? (
+      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 8, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {map.split("").map((c, i) => (
+          <div key={i} style={{ width: miniCell, height: miniCell, borderRadius: 10, background: c === "5" ? "rgba(17,17,17,0.28)" : SHADES[Number(c)] }} />
+        ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />

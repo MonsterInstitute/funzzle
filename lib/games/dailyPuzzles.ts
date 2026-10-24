@@ -10,6 +10,9 @@
  */
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
+import { bankMiniFor } from "@/lib/games/mini/bank";
+import { clueSetProblems } from "@/lib/games/mini/clues";
+import { shapeProblems, type MiniPuzzle } from "@/lib/games/mini/grid";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -27,6 +30,13 @@ export interface DailySolitaire {
   state: State;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: Move[];
+}
+
+export interface DailyMini extends MiniPuzzle {
+  date: string;
+  /** "generated": filled by lib/games/mini/fill + LLM clues (lib/cron/content/mini.ts); "bank": the hand-clued fallback. */
+  source: "generated" | "bank";
+  bankId?: string;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -56,6 +66,24 @@ export async function getDailySudoku(date: string): Promise<DailySudoku> {
 
 export async function getDailySolitaire(date: string, draw: 1 | 3): Promise<DailySolitaire> {
   return (await readRow<DailySolitaire>("solitaire", date, `draw${draw}`)) ?? generateDailySolitaire(date, draw);
+}
+
+/** The hand-clued bank puzzle a date falls back to (lib/games/mini/bank.ts). */
+export function fallbackDailyMini(date: string): DailyMini {
+  const b = bankMiniFor(date);
+  return { date, size: b.size, rows: b.rows, clues: b.clues, source: "bank", bankId: b.id };
+}
+
+/**
+ * The day's Mini Crossword: the stored row (generated grid + LLM clues,
+ * written ahead by lib/cron/content/mini.ts) or the bank fallback. Not part of
+ * ensureDailyPuzzles: storing the fallback would block the clued row.
+ */
+export async function getDailyMini(date: string): Promise<DailyMini> {
+  const row = await readRow<DailyMini>("mini-crossword", date, "");
+  // A malformed row (hand-edited, older format) must never reach the board.
+  if (row && Array.isArray(row.rows) && row.clues && !shapeProblems(row.rows).length && !clueSetProblems(row).length) return row;
+  return fallbackDailyMini(date);
 }
 
 /**
