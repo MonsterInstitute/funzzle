@@ -6,7 +6,7 @@ export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 export const DAY_MS = 86_400_000;
 
 /** Games whose results can be compared (challenges, leagues). */
-export const COMPETITIVE_GAMES = new Set(["sudoku", "solitaire", "spider-solitaire", "freecell", "minesweeper", "mahjong"]);
+export const COMPETITIVE_GAMES = new Set(["sudoku", "solitaire", "spider-solitaire", "freecell", "minesweeper", "mahjong", "word-hunt"]);
 
 export function intIn(value: unknown, min: number, max: number): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : null;

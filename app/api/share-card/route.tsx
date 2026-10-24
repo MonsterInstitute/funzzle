@@ -10,13 +10,21 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
  * cells (lighter = later), never digits.
  *
  * GET ?g=sudoku&d=2026-10-24&t=408000&top=27&s=12&m=0&h=1&lv=Hard&map=<81 chars 0-4>
+ * Word Hunt: map = one letter per theme word in the order found (s span,
+ * t theme word, r revealed by the coach), bw = bonus words found.
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", "word-hunt": "Word Hunt" };
+const MAP_RE: Record<string, RegExp> = { sudoku: /^[0-4]{81}$/, "word-hunt": /^[str]{1,9}$/ };
+const HUNT_DOT: Record<string, { bg: string; border: string }> = {
+  s: { bg: "#FFE066", border: "#111111" },
+  t: { bg: "#FFFFFF", border: "#FFFFFF" },
+  r: { bg: "transparent", border: "#111111" },
+};
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -49,6 +57,7 @@ export async function GET(request: Request) {
   const mistakes = int(q.get("m") ?? "0", 999);
   const hints = int(q.get("h") ?? "0", 999);
   const moves = q.get("mv") === null ? null : int(q.get("mv"), 100_000);
+  const bonusWords = q.get("bw") === null ? null : int(q.get("bw"), 999);
   const label = q.get("lv") ?? "";
   const map = q.get("map") ?? "";
   if (
@@ -60,8 +69,9 @@ export async function GET(request: Request) {
     mistakes === null ||
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
+    (q.get("bw") !== null && bonusWords === null) ||
     !LABEL_RE.test(label) ||
-    (map && !/^[0-4]{81}$/.test(map))
+    (map && !MAP_RE[game]?.test(map))
   ) {
     return new Response("bad request", { status: 400 });
   }
@@ -74,11 +84,19 @@ export async function GET(request: Request) {
     streak > 0 ? `${streak}-day streak` : null,
     game === "sudoku"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+      : game === "word-hunt"
+        ? `${bonusWords ?? 0} bonus word${bonusWords === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+        : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
   const board =
-    game === "sudoku" && map ? (
+    game === "word-hunt" && map ? (
+      <div style={{ display: "flex", flexWrap: "wrap", alignContent: "center", justifyContent: "center", width: 432, height: 432, padding: 36, gap: 24, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {map.split("").map((c, i) => (
+          <div key={i} style={{ width: 96, height: 96, borderRadius: 48, background: HUNT_DOT[c].bg, border: `8px solid ${HUNT_DOT[c].border}` }} />
+        ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />

@@ -96,6 +96,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  "word-hunt": {
+    name: "Word Hunt",
+    genre: "Word game",
+    summary:
+      "Word Hunt is a free daily themed word search on a 6×8 board of letters: find the theme words by dragging through touching letters, including one span word that stretches across the board from one side to the opposite side. Every letter belongs to exactly one theme word, and every three other words you find earn a hint.",
+    description: "Free daily themed word hunt: trace words through a 6×8 letter grid, find the span word, earn hints with bonus words.",
+    qa: [
+      {
+        q: "How do you play Word Hunt?",
+        a: "Read the theme, then drag across touching letters (up, down, sideways or diagonally) to spell a word, or tap the letters one by one and tap the last one again to submit. Theme words light up when you find them. The puzzle is solved when every one of the 48 letters is part of a found theme word.",
+      },
+      {
+        q: "What is the span word?",
+        a: "The span word sums up the theme and touches two opposite sides of the board, left and right or top and bottom. Because no words cross, finding it splits the board into smaller areas, which makes the remaining theme words easier to spot.",
+      },
+      {
+        q: "How do you get hints in Word Hunt?",
+        a: "Every three non-theme words you find (four letters or more, real English words) fill the hint meter and earn a hint. The coach also gives three hints per puzzle: first it highlights the letters of one theme word, then it circles the first letter, then it shows the word.",
+      },
+      {
+        q: "Can a letter be used in two words?",
+        a: "Not in theme words: each letter belongs to exactly one theme word, so the theme words fill the board without overlapping. Bonus words can use any letters that aren't already part of a found theme word.",
+      },
+      {
+        q: "When is there a new Word Hunt?",
+        a: "Every day at midnight UTC, with a new theme that's the same for everyone. You can replay past days from the archive and play practice themes any time.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

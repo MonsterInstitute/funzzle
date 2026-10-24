@@ -34,3 +34,6 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Word Hunt has no difficulty levels: every theme plays as one "opponent". */
+export const WORD_HUNT_PUZZLE_RATING = 1350;

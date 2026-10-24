@@ -33,6 +33,8 @@ export interface RecapProps {
   share: { imageUrl: string; text: string };
   onClose: () => void;
   extraActions?: ReactNode;
+  /** Game-specific summary shown under the stat tiles (e.g. Word Hunt's words in the order found). */
+  details?: ReactNode;
   /** Friend challenge for this puzzle (omit for games without comparable results). */
   challenge?: ChallengeInfo;
 }
@@ -147,6 +149,8 @@ export default function Recap(props: RecapProps) {
             </div>
           ))}
         </div>
+
+        {props.details && <div className="mx-4">{props.details}</div>}
 
         <section aria-label="Coach recap" className="mx-4 flex flex-col gap-2.5 rounded-[20px] border border-coach-line bg-coach-tint px-[18px] py-4">
           <span className="flex items-center gap-2 text-[13px] font-bold">

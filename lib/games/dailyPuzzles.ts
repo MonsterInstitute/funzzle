@@ -10,6 +10,8 @@
  */
 import { generateSudoku, type Grid } from "@/lib/games/sudoku";
 import { dailyDeal, type Move, type State } from "@/lib/games/solitaire";
+import type { WordHuntPuzzle } from "@/lib/games/wordhunt";
+import { bankIdForDate, bankPuzzle } from "@/lib/games/wordhunt/server";
 import { sudokuDifficultyFor, type SudokuDifficulty } from "./dailySchedule";
 import { all, batch, first, parseJson } from "@/lib/db";
 
@@ -27,6 +29,13 @@ export interface DailySolitaire {
   state: State;
   /** Winning line found by the solver: proof the deal is winnable. */
   solution: Move[];
+}
+
+export interface DailyWordHunt {
+  date: string;
+  /** "ai": the stored theme from the daily content job; "bank": the hand-written fallback. */
+  source: "ai" | "bank";
+  puzzle: WordHuntPuzzle;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -48,6 +57,19 @@ export function generateDailySudoku(date: string): DailySudoku {
 export function generateDailySolitaire(date: string, draw: 1 | 3): DailySolitaire {
   const d = dailyDeal(date, draw);
   return { date, draw, seed: d.seed, state: d.state, solution: d.solution };
+}
+
+/**
+ * Word Hunt's fallback: a hand-written bank theme picked by date. The daily
+ * AI theme is stored by lib/cron/content/wordhunt.ts (ensureWordHuntPuzzles),
+ * not by ensureDailyPuzzles: storing the fallback ahead of time would block it.
+ */
+export function generateDailyWordHunt(date: string): DailyWordHunt {
+  return { date, source: "bank", puzzle: bankPuzzle(bankIdForDate(date))! };
+}
+
+export async function getDailyWordHunt(date: string): Promise<DailyWordHunt> {
+  return (await readRow<DailyWordHunt>("word-hunt", date, "")) ?? generateDailyWordHunt(date);
 }
 
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
