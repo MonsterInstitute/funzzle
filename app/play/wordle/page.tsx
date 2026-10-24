@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
@@ -6,11 +7,12 @@ import WordleGame from "@/components/WordleGame";
 import { todayISO, formatLongDate } from "@/lib/dates";
 import { wordForDate } from "@/lib/wordleWords";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Play Free Wordle",
   description:
     "Play a free daily Wordle clone on Funzzle. Six guesses, one five-letter word, no account required.",
-};
+  path: "/play/wordle",
+});
 
 // New word each day.
 // Shows "today": refreshed on demand at the UTC day change and after the daily

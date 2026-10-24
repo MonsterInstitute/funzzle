@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
@@ -7,11 +8,12 @@ import { SAMPLE_MINI } from "@/lib/miniCrossword";
 import { getMiniPuzzle } from "@/lib/getPuzzle";
 import { todayISO, formatLongDate } from "@/lib/dates";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Free Mini Crossword",
   description:
     "Play a free 5×5 mini crossword on Funzzle. Quick daily solve, no account required.",
-};
+  path: "/play/mini",
+});
 
 // Pick up a freshly published daily puzzle within the hour.
 // Shows "today": refreshed on demand at the UTC day change and after the daily

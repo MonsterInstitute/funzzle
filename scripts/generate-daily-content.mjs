@@ -29,7 +29,7 @@
  *
  * Required env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE
  * Explanations: DEEPSEEK_API_KEY  (optional but recommended)
- * Revalidation: REVALIDATE_SECRET, SITE_URL (default https://funzzle.com)
+ * Revalidation: REVALIDATE_SECRET, SITE_URL (default https://www.funzzle.com)
  * Optional:     DEEPSEEK_MODEL
  */
 import { createClient } from "@supabase/supabase-js";

@@ -3,7 +3,7 @@
  * Change SITE_URL here to update canonicals, Open Graph, sitemap, and robots.
  */
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://funzzle.com";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.funzzle.com";
 export const SITE_NAME = "Funzzle";
 export const SITE_TAGLINE = "Free NYT Games, No Paywall";
 export const SITE_DESCRIPTION =
