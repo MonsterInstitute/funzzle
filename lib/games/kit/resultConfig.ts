@@ -15,6 +15,9 @@ export interface ResultGame {
 export const RESULT_GAMES: Record<string, ResultGame> = {
   sudoku: { variants: [""], lo: 60_000, hi: 1_500_000, minMs: 15_000 },
   solitaire: { variants: ["draw1", "draw3"], lo: 60_000, hi: 900_000, minMs: 20_000 },
+  // Variant = level; only the Intermediate daily board submits today. A
+  // no-guess 16×16 clear takes fast players about a minute, most 3–10.
+  minesweeper: { variants: ["beginner", "intermediate", "expert"], lo: 60_000, hi: 900_000, minMs: 10_000 },
 };
 
 export const HISTOGRAM_BUCKETS = 14;

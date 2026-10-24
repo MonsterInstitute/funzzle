@@ -28,6 +28,7 @@ export default function MePage() {
           <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
             <SkillTree game="sudoku" />
             <SkillTree game="solitaire" />
+            <SkillTree game="minesweeper" />
           </div>
           <BadgeGrid />
           <Passport />

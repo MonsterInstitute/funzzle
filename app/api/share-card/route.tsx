@@ -15,8 +15,15 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
  */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const LABEL_RE = /^[A-Za-z0-9 ·-]{0,24}$/;
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", minesweeper: "Daily Minesweeper" };
+
+/**
+ * Minesweeper's card shows a fixed, made-up corner of a board (consistent
+ * numbers, never the real layout): h hidden, F flag, . open, 1–9 numbers.
+ */
+const MINE_ART = ["hh1...", "hF21..", "12F1..", ".11211", "...1Fh", "...1hh"];
+const MINE_NUMBER = ["", "#2563EB", "#15803D", "#DC2626"];
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -74,11 +81,44 @@ export async function GET(request: Request) {
     streak > 0 ? `${streak}-day streak` : null,
     game === "sudoku"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+      : game === "minesweeper"
+        ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
+        : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
   const board =
-    game === "sudoku" && map ? (
+    game === "minesweeper" ? (
+      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 8, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {MINE_ART.join("")
+          .split("")
+          .map((c, i) => (
+            <div
+              key={i}
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: c === "h" || c === "F" ? "rgba(255,255,255,0.45)" : "#FFFFFF",
+                fontFamily: "Bricolage",
+                fontSize: 38,
+                color: MINE_NUMBER[Number(c)] ?? "#111111",
+              }}
+            >
+              {c === "F" ? (
+                <svg width="40" height="40" viewBox="0 0 24 24">
+                  <path d="M7 21V4M4 21h7" stroke="#111111" strokeWidth="2.4" strokeLinecap="round" />
+                  <path d="M7 4h11l-3 4.5 3 4.5H7z" fill="#C8102E" />
+                </svg>
+              ) : /\d/.test(c) ? (
+                c
+              ) : null}
+            </div>
+          ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />
@@ -113,7 +153,7 @@ export async function GET(request: Request) {
           <span style={{ fontFamily: "Geist Mono", fontSize: 28 }}>{dateLabel}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <span style={{ fontFamily: "Bricolage", fontSize: 92, lineHeight: 1, letterSpacing: "-0.035em" }}>{GAMES[game]}</span>
+          <span style={{ fontFamily: "Bricolage", fontSize: GAMES[game].length > 15 ? 68 : 92, lineHeight: 1, letterSpacing: "-0.035em" }}>{GAMES[game]}</span>
           {label && (
             <span style={{ padding: "10px 20px", borderRadius: 999, background: "#111111", color: "#FFFFFF", fontSize: 26, fontWeight: 700 }}>{label}</span>
           )}
