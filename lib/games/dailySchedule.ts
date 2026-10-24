@@ -79,3 +79,5 @@ export const CHESS_LEVEL_RATING = { 1: 700, 2: 1000, 3: 1300, 4: 1600, 5: 1900, 
 export const MINI_PUZZLE_RATING: Record<number, number> = { 5: 1100, 7: 1450 };
 /** Funzzle Word modes: Quad and Math take more deduction than one word. */
 export const WORD_PUZZLE_RATING = { classic: 1250, quad: 1450, geo: 1300, math: 1450 } as const;
+/** Word Hunt has no difficulty levels: every theme plays as one "opponent". */
+export const WORD_HUNT_PUZZLE_RATING = 1350;

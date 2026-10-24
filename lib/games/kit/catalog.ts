@@ -58,7 +58,7 @@ const ROWS: Row[] = [
   ["word", "Funzzle Word", "Words", "Guess the word in six. Quad, Geo and Math modes.", "#B5E48C", "#F0F9E6", "word", "/play/word"],
   ["groups", "Groups", "Words", "Find four groups of four.", "#C9B8E8", "#F3EFFA", "groups", "/play/groups"],
   ["spelling-hive", "Spelling Hive", "Words", "Seven letters. How many words can you make?", "#FFD23F", "#FFF6D6", "hive", "/play/spelling-hive"],
-  ["word-hunt", "Word Hunt", "Words", "A themed hunt with one word that spans the board.", "#9EE6E0", "#E9F8F7", "hunt", "/play/strands"],
+  ["word-hunt", "Word Hunt", "Words", "A themed hunt with one word that spans the board.", "#9EE6E0", "#E9F8F7", "hunt", "/play/word-hunt"],
   ["letter-box", "Letter Box", "Words", "Chain words around the square to use every letter.", "#FF9E9E", "#FFECEC", "box", "/play/letter-box"],
   ["2048", "2048", "Logic", "Slide, merge, and chase the big tile.", "#FFC857", "#FFF4DD", "t2048", null],
   ["block-puzzle", "Block Puzzle", "Logic", "Fit the pieces, clear the lines.", "#FFA978", "#FFEFE6", "block", null],

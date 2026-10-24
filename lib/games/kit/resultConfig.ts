@@ -53,6 +53,7 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   chess: { variants: [""], lo: 5_000, hi: 420_000, minMs: 2_000, order: "mistakes" },
   "mini-crossword": { variants: [""], lo: 20_000, hi: 600_000, minMs: 5_000 },
   word: { variants: ["classic", "quad", "geo", "math"], lo: 15_000, hi: 600_000, minMs: 2_000, order: "fewest", unit: ["guess", "guesses"] },
+  "word-hunt": { variants: [""], lo: 60_000, hi: 900_000, minMs: 15_000 },
 };
 
 export const HISTOGRAM_BUCKETS = 14;

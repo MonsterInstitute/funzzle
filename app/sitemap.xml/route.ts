@@ -40,6 +40,7 @@ export function GET() {
     { path: "/play/word/quad", priority: 0.9, lastmod: today },
     { path: "/play/word/geo", priority: 0.9, lastmod: today },
     { path: "/play/word/math", priority: 0.9, lastmod: today },
+    { path: "/play/word-hunt", priority: 0.9, lastmod: today },
     { path: "/play/mini", priority: 0.8, lastmod: today },
     { path: "/play/wordle", priority: 0.8, lastmod: today },
     { path: "/play/connections", priority: 0.8, lastmod: today },

@@ -24,6 +24,7 @@ export const TODAY_PATHS = [
   "/play/spelling-hive",
   "/play/letter-box",
   "/play/chess",
+  "/play/word-hunt",
   "/play/wordle",
   "/play/mini",
   "/play/connections",

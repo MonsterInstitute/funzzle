@@ -26,6 +26,8 @@ import { clueSetProblems } from "@/lib/games/mini/clues";
 import { shapeProblems, type MiniPuzzle } from "@/lib/games/mini/grid";
 import { classicAnswer, mathAnswer, quadAnswers, WORD_MODES, type DailyWord, type WordMode } from "@/lib/games/word";
 import { geoAnswer } from "@/lib/games/word/geoData";
+import type { WordHuntPuzzle } from "@/lib/games/wordhunt";
+import { bankIdForDate, bankPuzzle } from "@/lib/games/wordhunt/server";
 import { all, batch, first, parseJson } from "@/lib/db";
 
 export interface DailySudoku {
@@ -106,6 +108,13 @@ export interface DailyMini extends MiniPuzzle {
   /** "generated": filled by lib/games/mini/fill + LLM clues (lib/cron/content/mini.ts); "bank": the hand-clued fallback. */
   source: "generated" | "bank";
   bankId?: string;
+}
+
+export interface DailyWordHunt {
+  date: string;
+  /** "ai": the stored theme from the daily content job; "bank": the hand-written fallback. */
+  source: "ai" | "bank";
+  puzzle: WordHuntPuzzle;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -217,6 +226,19 @@ export function generateDailyWord(date: string, mode: WordMode): DailyWord {
 
 export async function getDailyWord(date: string, mode: WordMode): Promise<DailyWord> {
   return (await readRow<DailyWord>("word", date, mode)) ?? generateDailyWord(date, mode);
+}
+
+/**
+ * Word Hunt's fallback: a hand-written bank theme picked by date. The daily
+ * AI theme is stored by lib/cron/content/wordhunt.ts (ensureWordHuntPuzzles),
+ * not by ensureDailyPuzzles: storing the fallback ahead of time would block it.
+ */
+export function generateDailyWordHunt(date: string): DailyWordHunt {
+  return { date, source: "bank", puzzle: bankPuzzle(bankIdForDate(date))! };
+}
+
+export async function getDailyWordHunt(date: string): Promise<DailyWordHunt> {
+  return (await readRow<DailyWordHunt>("word-hunt", date, "")) ?? generateDailyWordHunt(date);
 }
 
 export async function getDailySudoku(date: string): Promise<DailySudoku> {

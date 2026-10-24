@@ -233,6 +233,19 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "geo-three", name: "Pathfinder", tier: 4, what: "Find the Geo country in three guesses" },
     ],
   },
+  "word-hunt": {
+    title: "Word Hunt skills",
+    skills: [
+      { id: "first-hunt", name: "Hunter", tier: 0, what: "Find every theme word" },
+      { id: "span-solo", name: "Edge to edge", tier: 0, what: "Find the span word without a hint" },
+      { id: "bonus-hint", name: "Earn your keep", tier: 1, what: "Earn a hint with three bonus words" },
+      { id: "unaided", name: "Unaided", tier: 1, what: "Finish without any hint" },
+      { id: "span-early", name: "Big picture", tier: 2, what: "Find the span word among your first three" },
+      { id: "quick", name: "Quick eyes", tier: 2, what: "Finish in under 4 minutes" },
+      { id: "bonus-10", name: "Wordsmith", tier: 3, what: "Find 10 bonus words in one hunt" },
+      { id: "sharp", name: "Sharp eye", tier: 3, what: "No hints and no misses" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

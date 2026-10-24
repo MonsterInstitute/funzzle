@@ -41,7 +41,7 @@ export interface RecapProps {
   beatText?: string;
   /** Replaces the default "Faster than N% …" line (games ranked by more than time, or a loss). */
   rankLine?: string;
-  /** Game-specific block under the stat tiles (Groups: the four groups in solve order). */
+  /** Game-specific block under the stat tiles (Groups: groups in solve order; Word Hunt: words in the order found). */
   details?: ReactNode;
   /** Rank wording: "Faster" (default) or "Better" for games ranked by moves first (Funzzle Word). */
   rankWord?: string;
