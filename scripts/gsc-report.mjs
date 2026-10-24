@@ -17,6 +17,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 const SITEMAP_URL = process.env.SITEMAP_URL || "https://www.funzzle.com/sitemap.xml";
+const CANONICAL_HOST = "www.funzzle.com";
 const RANGES = [7, 28, 90];
 // Search Console data settles ~2-3 days after the fact; end windows there so
 // weekly reports compare like with like.
@@ -144,10 +145,11 @@ function aggregate(rows) {
   return { clicks, impressions, ctr: impressions ? clicks / impressions : 0, position, pages: rows.length };
 }
 
-function table(headers, rows) {
+// Columns after the first `textCols` are numeric and right-aligned.
+function table(headers, rows, textCols = 1) {
   return [
     `| ${headers.join(" | ")} |`,
-    `| ${headers.map((h, i) => (i === 0 ? "---" : "---:")).join(" | ")} |`,
+    `| ${headers.map((h, i) => (i < textCols ? "---" : "---:")).join(" | ")} |`,
     ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
   ].join("\n");
 }
@@ -169,8 +171,16 @@ async function main() {
       query(token, site, { ...body, dimensions: ["query"] }),
       query(token, site, { ...body, dimensions: ["page"] }),
     ]);
-    const pageRows = pages.map((r) => ({ ...r, path: pathOf(r.keys[0]), group: groupOf(pathOf(r.keys[0])) }));
-    windows.push({ days, startDate: body.startDate, totals: totals[0] || { clicks: 0, impressions: 0, ctr: 0, position: 0 }, queries, pages: pageRows });
+    // Google reports funzzle.com and www.funzzle.com URLs separately; merge
+    // them by path, and count the non-canonical host so it can be tracked.
+    const byPath = new Map();
+    for (const r of pages) {
+      const path = pathOf(r.keys[0]);
+      byPath.set(path, [...(byPath.get(path) || []), r]);
+    }
+    const pageRows = [...byPath].map(([path, rows]) => ({ path, group: groupOf(path), ...aggregate(rows) }));
+    const offHost = pages.filter((r) => new URL(r.keys[0]).host !== CANONICAL_HOST);
+    windows.push({ days, startDate: body.startDate, totals: totals[0] || { clicks: 0, impressions: 0, ctr: 0, position: 0 }, queries, pages: pageRows, offHost });
   }
 
   const today = isoDay(new Date());
@@ -181,6 +191,8 @@ async function main() {
   out.push("## Totals", "");
   out.push(table(["Window", "Clicks", "Impressions", "CTR", "Avg position", "Queries", "Pages"],
     windows.map((w) => [`${w.days}d (${w.startDate} → ${endDate})`, ...metricCols(w.totals), fmtInt(w.queries.length), fmtInt(w.pages.length)])), "");
+  const off90 = windows.find((w) => w.days === 90).offHost;
+  out.push(`Pages are merged by path. ${fmtInt(off90.length)} URLs in the 90-day data are on a host other than ${CANONICAL_HOST}${off90.length ? ` (${fmtInt(off90.reduce((s, r) => s + r.impressions, 0))} impressions)` : ""}.`, "");
 
   out.push("## By URL pattern", "");
   out.push("Position is the impression-weighted mean of page positions.", "");
@@ -199,14 +211,14 @@ async function main() {
     out.push(`## Top ${TOP_N} queries — ${w.days} days`, "");
     out.push(table(["Query", "Clicks", "Impressions", "CTR", "Position"], [...w.queries].sort(byClicks).slice(0, TOP_N).map((r) => [r.keys[0], ...metricCols(r)])), "");
     out.push(`## Top ${TOP_N} pages — ${w.days} days`, "");
-    out.push(table(["Page", "Pattern", "Clicks", "Impressions", "CTR", "Position"], [...w.pages].sort(byClicks).slice(0, TOP_N).map((r) => [r.path, r.group, ...metricCols(r)])), "");
+    out.push(table(["Page", "Pattern", "Clicks", "Impressions", "CTR", "Position"], [...w.pages].sort(byClicks).slice(0, TOP_N).map((r) => [r.path, r.group, ...metricCols(r)]), 2), "");
   }
 
   const w28 = windows.find((w) => w.days === 28);
   const zeroClick = w28.pages.filter((p) => p.impressions > 0 && p.clicks === 0).sort((a, b) => b.impressions - a.impressions);
   out.push("## Pages with impressions but 0 clicks — 28 days", "");
   out.push(`${fmtInt(zeroClick.length)} of ${fmtInt(w28.pages.length)} pages with impressions got no clicks. Highest-impression ${Math.min(TOP_N, zeroClick.length)}:`, "");
-  out.push(table(["Page", "Pattern", "Impressions", "Position"], zeroClick.slice(0, TOP_N).map((r) => [r.path, r.group, fmtInt(r.impressions), fmtPos(r.position)])), "");
+  out.push(table(["Page", "Pattern", "Impressions", "Position"], zeroClick.slice(0, TOP_N).map((r) => [r.path, r.group, fmtInt(r.impressions), fmtPos(r.position)]), 2), "");
 
   out.push("## Sitemap pages with no impressions — 90 days", "");
   try {
