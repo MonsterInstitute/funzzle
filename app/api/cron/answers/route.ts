@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { shiftISODate, todayISO } from "@/lib/dates";
+import { ensureDailyPuzzles } from "@/lib/games/dailyPuzzles";
 import { pathsToRevalidate } from "@/lib/revalidation";
 import { isCronRequest } from "@/lib/secret";
 import { createServiceSupabase } from "@/lib/supabase";
@@ -86,10 +87,22 @@ export async function GET(request: Request) {
   const wroteToday = results.some((r) => r.status === "written" && r.date === today);
   if (wroteToday) for (const p of pathsToRevalidate()) revalidatePath(p);
 
+  // Funzzle's own daily puzzles (Sudoku grid, Solitaire deals): stored ahead
+  // of time so everyone gets the stored puzzle. Pages generate the same puzzle
+  // from the same seed until the row exists, so no refresh is needed.
+  let puzzles: string[] | { error: string };
+  try {
+    puzzles = await ensureDailyPuzzles(dates);
+    for (const p of puzzles) console.log(`answers cron: stored daily puzzle ${p}`);
+  } catch (err) {
+    puzzles = { error: (err as Error).message };
+    console.error(`answers cron: daily puzzles failed — ${puzzles.error}`);
+  }
+
   // Today's answers should always exist by now; a gap is an error worth seeing in the logs.
   const todayMissing = results.filter((r) => r.status === "missing" && r.date === today);
   return NextResponse.json(
-    { today, revalidated: wroteToday, results },
-    { status: todayMissing.length ? 502 : 200 }
+    { today, revalidated: wroteToday, results, puzzles },
+    { status: todayMissing.length || "error" in puzzles ? 502 : 200 }
   );
 }
