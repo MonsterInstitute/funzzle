@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isValidISODate, todayISO } from "@/lib/dates";
-import { getDaily2048, getDailyBlock, getDailyChess, getDailyJigsaw, getDailyFreeCell, getDailyGroups, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMini, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getDailyWord, getDailyWordHunt, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
+import { getDaily2048, getDailyBlock, getDailyChess, getDailyCrossword, getDailyJigsaw, getDailyFreeCell, getDailyGroups, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMini, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getDailyWord, getDailyWordHunt, getDailyWordSearch, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
 import { generateHive } from "@/lib/games/hive/generate";
 import { generateLetterBox } from "@/lib/games/letterbox/generate";
 import { WORD_MODES, type WordMode } from "@/lib/games/word";
@@ -8,7 +8,6 @@ import { WORD_MODES, type WordMode } from "@/lib/games/word";
 /**
  * A past day's daily puzzle for the archive (/archive) and challenges:
  * GET ?game=<game>&date=YYYY-MM-DD[&draw=1|3]. The stored row, or the
-import { WORD_MODES, type WordMode } from "@/lib/games/word";
  * same puzzle regenerated from its seed. Past puzzles never change, so the
  * CDN keeps them for a day; today's only for a minute (it's on the page).
  *
@@ -40,6 +39,8 @@ const LOADERS: Record<string, (date: string, draw: 1 | 3, suits: 1 | 2 | 4, mode
   "2048": (date) => getDaily2048(date),
   "block-puzzle": (date) => getDailyBlock(date),
   jigsaw: (date) => getDailyJigsaw(date),
+  "word-search": (date) => getDailyWordSearch(date),
+  crossword: (date) => getDailyCrossword(date),
 };
 
 export async function GET(request: Request) {

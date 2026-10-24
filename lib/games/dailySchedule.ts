@@ -86,3 +86,8 @@ export const T2048_PUZZLE_RATING = 1300;
 export const BLOCK_PUZZLE_RATING = 1250;
 /** Jigsaw by piece count (the daily is 24 pieces). */
 export const JIGSAW_PUZZLE_RATING: Record<number, number> = { 12: 900, 24: 1100, 48: 1350, 96: 1600 };
+/** Word Search ratings by grid size (the daily is 12×12). */
+export const WORD_SEARCH_PUZZLE_RATING: Record<number, number> = { 10: 1000, 12: 1150, 15: 1350 };
+
+/** Crossword ratings by grid size (11×11 Mon–Wed, 13×13 Thu–Fri, 15×15 weekends). */
+export const CROSSWORD_PUZZLE_RATING: Record<number, number> = { 11: 1300, 13: 1500, 15: 1700 };

@@ -545,6 +545,64 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  "word-search": {
+    name: "Daily Word Search",
+    genre: "Word game",
+    summary:
+      "Daily Word Search is a free themed 12×12 word search, the same grid for everyone today, with 10 to 16 words hidden across, down, diagonally and backward. Drag across the letters to circle a word; stuck, the coach shows where a word starts, then which way it runs.",
+    description: "Free daily themed word search with words in all 8 directions, a step-by-step coach and unlimited practice grids.",
+    qa: [
+      {
+        q: "How do you play Word Search?",
+        a: "Find every word in the list hidden in the grid of letters. Words run in straight lines in any of 8 directions: left to right, right to left, up, down or on a diagonal either way. Drag from the first letter to the last to circle a word; found words are crossed off the list.",
+      },
+      {
+        q: "What's the fastest way to solve a word search?",
+        a: "Scan for an unusual letter in the word, such as a Q, Z, X, J or K, or a double letter, then check the eight directions around each match. Look for the long words first, and for words that run backward or diagonally once the easy ones are gone.",
+      },
+      {
+        q: "Can words in a word search go backwards or overlap?",
+        a: "Yes. Funzzle's grids hide words backward and on both diagonals, and two words can share a letter where they cross. Each word appears exactly once, and the filler letters never spell anything offensive.",
+      },
+      {
+        q: "Is there a new word search every day?",
+        a: "Yes. A new themed 12×12 grid goes live at midnight UTC, the same for every player, and your time is ranked against today's players. Practice grids at 10×10, 12×12 and 15×15 are unlimited.",
+      },
+      {
+        q: "Does Daily Word Search have hints?",
+        a: "Yes. The coach gives up to three hints per grid, each in steps: first it lights up the letter a word starts on, then it says which way the word runs, then it circles the word. Hints count in your result.",
+      },
+    ],
+  },
+  crossword: {
+    name: "Daily Crossword",
+    genre: "Word game",
+    summary:
+      "Daily Crossword is a free American-style crossword with a new grid every day: 11×11 early in the week, 13×13 on Thursday and Friday and 15×15 on weekends. Every square is checked by an across and a down answer, and you can check or reveal a square, word or the whole puzzle, or ask the coach for the easiest clue to try next.",
+    description: "Free daily crossword, 11×11 to 15×15, with check and reveal, pencil mode and a coach that points you to the easiest clue.",
+    qa: [
+      {
+        q: "How do you solve a crossword puzzle?",
+        a: "Read the clues, fill the answers you're sure of first, then use the letters they give you in the crossing answers. Short answers and fill-in-the-blank clues are usually the easiest place to start; a question mark at the end of a clue means wordplay.",
+      },
+      {
+        q: "How big is today's Daily Crossword?",
+        a: "It follows the week: Monday to Wednesday are 11×11, Thursday and Friday are 13×13, and Saturday and Sunday are 15×15. Every answer is at least three letters long and the black squares are symmetric.",
+      },
+      {
+        q: "Can I check my answers in the crossword?",
+        a: "Yes. Check marks wrong letters in the current square, word or whole puzzle, and Reveal fills them in. Both count as hints in your result, so the cleanest solves use neither.",
+      },
+      {
+        q: "What is pencil mode in a crossword?",
+        a: "Pencil mode writes letters in gray so you can try a guess without committing to it. Switch it off to write in ink. Pencilled letters still count once the whole grid is right.",
+      },
+      {
+        q: "How do I move around the crossword grid?",
+        a: "Tap a square to select it and tap it again to switch between across and down. On a keyboard, type to fill, use the arrow keys to move, Space to switch direction, Tab for the next clue and Backspace to delete.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

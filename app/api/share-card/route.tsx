@@ -25,6 +25,9 @@ import {
  * "-" between rows, "_" between Quad boards> (colors only, never letters).
  * Word Hunt: map = one letter per theme word in the order found (s span,
  * t theme word, r revealed by the coach), bw = bonus words found.
+ * Word Search: &wl=<word lengths in the order found, comma-separated> (bars,
+ * no letters or positions). Crossword: &cw=<size² chars: 0 black, 1 solved,
+ * 2 helped> (the grid's black-square shape, no letters).
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
@@ -48,6 +51,8 @@ const GAMES: Record<string, string> = {
   "2048": "Daily 2048",
   "block-puzzle": "Daily Block Puzzle",
   jigsaw: "Daily Jigsaw",
+  "word-search": "Word Search",
+  crossword: "Daily Crossword",
 };
 /** 2048 tile colors by exponent (lib/games/t2048 uses the same ramp). */
 const TILE_BG = [
@@ -160,6 +165,9 @@ export async function GET(request: Request) {
   const chessResult = q.get("r");
   const gs = q.get("gs") ?? "";
   const bestTile = q.get("bt") === null ? null : int(q.get("bt"), 1 << 20);
+  const wl = q.get("wl") ?? "";
+  const cw = q.get("cw") ?? "";
+  const cwSize = Math.round(Math.sqrt(cw.length));
   if (
     (chessResult !== null &&
       (game !== "chess" || !CHESS_RESULT[chessResult])) ||
@@ -182,11 +190,18 @@ export async function GET(request: Request) {
       game !== "groups" &&
       game !== "word" &&
       game !== "word-hunt" &&
+      game !== "word-search" &&
+      game !== "crossword" &&
       !(
         game === "mini-crossword" ? /^(?:[0-5]{25}|[0-5]{49})$/ : /^[0-4]{81}$/
       ).test(map)) ||
     (game === "word" &&
       (!WORD_MAP_RE.test(map) || !/^([1-9]|X)\/[69]$/.test(gs))) ||
+    (wl && !/^(1[0-5]|[3-9])(,(1[0-5]|[3-9])){0,15}$/.test(wl)) ||
+    (cw &&
+      (!/^[0-2]+$/.test(cw) ||
+        ![11, 13, 15].includes(cwSize) ||
+        cwSize * cwSize !== cw.length)) ||
     (game === "word-hunt" && !/^[str]{1,9}$/.test(map)) ||
     (game === "groups" &&
       (!/^[1-4]{4,32}$/.test(map) || map.length % 4 !== 0 || found === null)) ||
@@ -219,21 +234,26 @@ export async function GET(request: Request) {
               ? `${bestTile ? `Best tile ${bestTile} · ` : ""}${moves ?? 0} moves`
               : game === "block-puzzle" || game === "jigsaw"
                 ? `${moves ?? 0} pieces · ${hints} hint${hints === 1 ? "" : "s"}`
-                : game === "word-hunt"
-                  ? `${bonusWords ?? 0} bonus word${bonusWords === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                  : game === "word"
-                    ? `${formatTime(time)} · ${hints} hint${hints === 1 ? "" : "s"}`
-                    : game === "mini-crossword"
-                      ? hints
-                        ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
-                        : "No checks, no hints"
-                      : game === "minesweeper"
-                        ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                        : game === "mahjong"
-                          ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
-                          : game === "spelling-hive" || game === "letter-box"
-                            ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-                            : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+                : game === "word-search"
+                  ? `${wl ? wl.split(",").length : (moves ?? 0)} words · ${hints} hint${hints === 1 ? "" : "s"}`
+                  : game === "crossword"
+                    ? `${cw ? `${cwSize}×${cwSize} · ` : ""}${hints} hint${hints === 1 ? "" : "s"}`
+                    : game === "word-hunt"
+                      ? `${bonusWords ?? 0} bonus word${bonusWords === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                      : game === "word"
+                        ? `${formatTime(time)} · ${hints} hint${hints === 1 ? "" : "s"}`
+                        : game === "mini-crossword"
+                          ? hints
+                            ? `${hints} check${hints === 1 ? "" : "s"} or hint${hints === 1 ? "" : "s"}`
+                            : "No checks, no hints"
+                          : game === "minesweeper"
+                            ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                            : game === "mahjong"
+                              ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
+                              : game === "spelling-hive" ||
+                                  game === "letter-box"
+                                ? `${words ?? 0} word${words === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
+                                : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
         ]
   ).filter(Boolean) as string[];
   const title = chessResult ? "Chess" : GAMES[game];
@@ -286,8 +306,68 @@ export async function GET(request: Request) {
       ))}
     </div>
   );
+  const wordBars = wl ? wl.split(",").map(Number) : [];
+  const cwCell = cwSize ? Math.floor((400 - 2 * (cwSize - 1)) / cwSize) : 0;
   const board =
-    game === "2048" ? (
+    game === "word-search" && wordBars.length ? (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          width: 432,
+          height: 432,
+          padding: 28,
+          gap: 8,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        {wordBars.map((len, i) => (
+          <div
+            key={i}
+            style={{
+              height: Math.min(22, Math.floor(360 / wordBars.length) - 8),
+              width: `${Math.round((len / 15) * 100)}%`,
+              borderRadius: 999,
+              background: i === wordBars.length - 1 ? "#111111" : "#FFFFFF",
+            }}
+          />
+        ))}
+      </div>
+    ) : game === "crossword" && cw ? (
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignContent: "center",
+          justifyContent: "center",
+          width: 432,
+          height: 432,
+          padding: 16,
+          gap: 2,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        {cw.split("").map((c, i) => (
+          <div
+            key={i}
+            style={{
+              width: cwCell,
+              height: cwCell,
+              borderRadius: 4,
+              background:
+                c === "0"
+                  ? "#111111"
+                  : c === "1"
+                    ? "#FFFFFF"
+                    : "rgba(255,255,255,0.45)",
+            }}
+          />
+        ))}
+      </div>
+    ) : game === "2048" ? (
       <div
         style={{
           display: "flex",

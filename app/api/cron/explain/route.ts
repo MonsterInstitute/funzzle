@@ -9,6 +9,8 @@ import { revalidatePath } from "next/cache";
 import { ensureGroupsPuzzles } from "@/lib/cron/content/groups";
 import { ensureMiniPuzzles } from "@/lib/cron/content/mini";
 import { ensureWordHuntPuzzles } from "@/lib/cron/content/wordhunt";
+import { ensureWordSearchPuzzles } from "@/lib/cron/content/wordsearch";
+import { crosswordDatesAhead, ensureCrosswordPuzzles } from "@/lib/cron/content/crossword";
 
 /**
  * Explain cron ("20 3,7,15,23 * * *", worker.ts): DeepSeek explanations for
@@ -58,6 +60,9 @@ export async function GET(request: Request) {
     ["groups", "/play/groups", ensureGroupsPuzzles],
     ["mini-crossword", "/play/mini", ensureMiniPuzzles],
     ["word-hunt", "/play/word-hunt", ensureWordHuntPuzzles],
+    ["word-search", "/play/word-search", ensureWordSearchPuzzles],
+    // Crosswords are clued up to a week ahead (many clues per grid).
+    ["crossword", "/play/crossword", () => ensureCrosswordPuzzles(crosswordDatesAhead())],
   ];
   for (const [game, path, ensure] of jobs) {
     try {

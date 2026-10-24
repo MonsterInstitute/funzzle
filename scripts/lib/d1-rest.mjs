@@ -41,13 +41,22 @@ export async function cloudflareAccountId() {
   return (accountId = body.result[0].id);
 }
 
-/** Cloudflare API call; throws on a non-success response. */
+/** Cloudflare API call; throws on a non-success response. Network errors retry twice. */
 export async function cf(pathname, init = {}) {
-  const res = await fetch(`${API}${pathname}`, {
-    ...init,
-    headers: { authorization: `Bearer ${cloudflareToken()}`, "content-type": "application/json", ...init.headers },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      res = await fetch(`${API}${pathname}`, {
+        ...init,
+        headers: { authorization: `Bearer ${cloudflareToken()}`, "content-type": "application/json", ...init.headers },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      break;
+    } catch (err) {
+      if (attempt >= 2) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok || body.success === false) {
     throw new Error(`Cloudflare ${pathname}: ${res.status} ${JSON.stringify(body.errors ?? body).slice(0, 300)}`);

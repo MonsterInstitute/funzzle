@@ -18,7 +18,7 @@ export default function GameShell({
   chips,
   children,
   fullTint = false,
-  maxWidth,
+  maxWidth = 520,
 }: {
   tint: string;
   title: string;
@@ -29,12 +29,12 @@ export default function GameShell({
   children: ReactNode;
   /** Solitaire paints the whole screen in its tint; Sudoku only the header. */
   fullTint?: boolean;
-  /** Column width in px for wide boards (Mahjong); 520 by default. */
+  /** Column width in px (Mahjong's wide board, Crossword's clue lists); 520 by default. */
   maxWidth?: number;
 }) {
   return (
     <div data-kit className="min-h-dvh" style={fullTint ? { background: tint } : undefined}>
-      <div className={`mx-auto flex w-full max-w-[520px] flex-col ${fullTint ? "gap-3.5" : "gap-3"} pb-5`} style={maxWidth ? { maxWidth } : undefined}>
+      <div className={`mx-auto flex w-full flex-col ${fullTint ? "gap-3.5" : "gap-3"} pb-5`} style={{ maxWidth }}>
         <div className="flex flex-col gap-2.5 px-3 pb-3 pt-2.5" style={{ background: tint }}>
           <div className="flex items-center justify-between text-[#111111]">
             <Link href="/" aria-label="Back to home" className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#111111]">

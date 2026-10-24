@@ -30,6 +30,8 @@ const ARCHIVE_GAMES: { slug: string; keys: (date: string) => string[] }[] = [
   { slug: "2048", keys: (d) => [`fz:2048:archive:${d}`, `fz:2048:daily:${d}`] },
   { slug: "block-puzzle", keys: (d) => [`fz:block:archive:${d}`, `fz:block:daily:${d}`] },
   { slug: "jigsaw", keys: (d) => [`fz:jigsaw:archive:${d}`, `fz:jigsaw:daily:${d}`] },
+  { slug: "word-search", keys: (d) => [`fz:word-search:archive:${d}`, `fz:word-search:daily:${d}`] },
+  { slug: "crossword", keys: (d) => [`fz:crossword:archive:${d}`, `fz:crossword:daily:${d}`] },
   { slug: "groups", keys: (d) => [`fz:groups:archive:${d}`, `fz:groups:daily:${d}`] },
   { slug: "letter-box", keys: (d) => [`fz:letter-box:archive:${d}`, `fz:letter-box:daily:${d}`] },
 ];
