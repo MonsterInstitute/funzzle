@@ -68,3 +68,5 @@ export const SPIDER_PUZZLE_RATING = { 1: 1150, 2: 1500, 4: 1900 } as const;
 /** Spelling Hive and Letter Box use one daily difficulty. */
 export const SPELLING_HIVE_PUZZLE_RATING = 1300;
 export const LETTER_BOX_PUZZLE_RATING = 1450;
+/** Groups puzzles all aim for the same spread (levels 1–4 on every board). */
+export const GROUPS_PUZZLE_RATING = 1400;

@@ -39,6 +39,10 @@ export interface RecapProps {
   value?: string;
   /** Rank line prefix instead of "Faster than" (score games: "Scored higher than"). */
   beatText?: string;
+  /** Replaces the default "Faster than N% …" line (games ranked by more than time, or a loss). */
+  rankLine?: string;
+  /** Game-specific block under the stat tiles (Groups: the four groups in solve order). */
+  details?: ReactNode;
 }
 
 const SET_LABEL: Record<string, string> = { sudoku: "Sudoku", solitaire: "Solitaire", word: "Word", "mini-crossword": "Mini" };
@@ -70,13 +74,14 @@ export default function Recap(props: RecapProps) {
   const you = stats ? bucketOf(timeMs, stats) : -1;
 
   const rankLine =
-    percentile === null
+    props.rankLine ??
+    (percentile === null
       ? "First to finish today. Nice."
       : percentile !== undefined
         ? `${props.beatText ?? "Faster than"} ${percentile}% of today’s players`
         : loadingStats
           ? "Comparing with today’s players…"
-          : "Practice puzzle";
+          : "Practice puzzle");
 
   async function shareCard() {
     track("share", game, { via: "card" });
@@ -151,6 +156,8 @@ export default function Recap(props: RecapProps) {
             </div>
           ))}
         </div>
+
+        {props.details && <div className="mx-4">{props.details}</div>}
 
         <section aria-label="Coach recap" className="mx-4 flex flex-col gap-2.5 rounded-[20px] border border-coach-line bg-coach-tint px-[18px] py-4">
           <span className="flex items-center gap-2 text-[13px] font-bold">

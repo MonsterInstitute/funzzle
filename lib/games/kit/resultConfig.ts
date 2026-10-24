@@ -46,6 +46,7 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   "spelling-hive": { variants: [""], lo: 120_000, hi: 2_700_000, minMs: 10_000, order: "score" },
   // moves = words used.
   "letter-box": { variants: [""], lo: 30_000, hi: 900_000, minMs: 10_000, order: "fewest" },
+  groups: { variants: [""], lo: 30_000, hi: 900_000, minMs: 8_000, order: "mistakes" },
 };
 
 export const HISTOGRAM_BUCKETS = 14;

@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { GAME_BY_SLUG } from "@/lib/games/kit/catalog";
 import { formatTime } from "@/lib/games/kit/results";
+import { LEVEL_COLOR, type Level } from "@/lib/games/groups/puzzle";
 import { SUIT_PATHS } from "@/components/kit/SuitIcon";
 import {
   bricolage800,
@@ -18,6 +19,8 @@ import {
  * Spelling Hive adds sc=<score>&w=<words found> (the honeycomb has no letters);
  * Letter Box adds w=<words used>&p=<box positions 0-b in play order> (the
  * square shows the path, never the letters).
+ * Groups: map = the level (1-4) of every word of every guess, 4 per guess
+ * (colors only, never words), and f = groups found (0-4).
  * Every input is validated; the image for a URL never changes, so it is cached
  * for a year.
  */
@@ -33,6 +36,7 @@ const GAMES: Record<string, string> = {
   "spider-solitaire": "Daily Spider",
   "spelling-hive": "Spelling Hive",
   "letter-box": "Letter Box",
+  groups: "Groups",
 };
 
 /**
@@ -110,6 +114,7 @@ export async function GET(request: Request) {
   const score = q.get("sc") === null ? null : int(q.get("sc"), 100_000);
   const words = q.get("w") === null ? null : int(q.get("w"), 999);
   const path = q.get("p") ?? "";
+  const found = int(q.get("f") ?? "4", 4);
   if (
     !GAMES[game] ||
     !DATE_RE.test(date) ||
@@ -120,7 +125,8 @@ export async function GET(request: Request) {
     hints === null ||
     (q.get("mv") !== null && moves === null) ||
     !LABEL_RE.test(label) ||
-    (map && !/^[0-4]{81}$/.test(map)) ||
+    (map && game !== "groups" && !/^[0-4]{81}$/.test(map)) ||
+    (game === "groups" && (!/^[1-4]{4,32}$/.test(map) || map.length % 4 !== 0 || found === null)) ||
     (q.get("sc") !== null && score === null) ||
     (q.get("w") !== null && words === null) ||
     (path && !/^[0-9ab]{2,80}$/.test(path))
@@ -132,9 +138,13 @@ export async function GET(request: Request) {
   const day = new Date(`${date}T00:00:00Z`);
   const dateLabel = `${day.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })} · ${day.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
   const lines = [
-    top !== null ? `Top ${Math.max(1, top)}% today` : "First to finish today",
+    game === "groups" && found !== null && found < 4
+      ? `Found ${found} of 4 groups`
+      : top !== null
+        ? `Top ${Math.max(1, top)}% today`
+        : "First to finish today",
     streak > 0 ? `${streak}-day streak` : null,
-    game === "sudoku"
+    game === "sudoku" || game === "groups"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
       : game === "minesweeper"
         ? `${mistakes ? `${mistakes} mine${mistakes === 1 ? "" : "s"} hit` : "No mines hit"} · ${hints} hint${hints === 1 ? "" : "s"}`
@@ -146,8 +156,20 @@ export async function GET(request: Request) {
   ].filter(Boolean) as string[];
   const headline = game === "spelling-hive" ? `${score ?? 0} pts` : formatTime(time);
 
+  const rows = game === "groups" ? map.match(/.{4}/g) ?? [] : [];
+  const cell = Math.min(72, Math.floor((400 - (rows.length - 1) * 10) / Math.max(1, rows.length)));
   const board =
-    game === "minesweeper" ? (
+    game === "groups" ? (
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", width: 432, height: 432, padding: 16, gap: 10, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {rows.map((row, r) => (
+          <div key={r} style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+            {row.split("").map((c, i) => (
+              <div key={i} style={{ width: cell * 1.2, height: cell, borderRadius: 12, background: LEVEL_COLOR[Number(c) as Level], border: "3px solid #111111" }} />
+            ))}
+          </div>
+        ))}
+      </div>
+    ) : game === "minesweeper" ? (
       <div
         style={{
           display: "flex",

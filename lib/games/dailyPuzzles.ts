@@ -19,6 +19,7 @@ import { generateHive } from "@/lib/games/hive/generate";
 import type { HivePuzzle } from "@/lib/games/hive";
 import { generateLetterBox } from "@/lib/games/letterbox/generate";
 import type { LetterBoxPuzzle } from "@/lib/games/letterbox";
+import { bankPuzzleFor, type GroupsPuzzle } from "@/lib/games/groups";
 import { all, batch, first, parseJson } from "@/lib/db";
 
 export interface DailySudoku {
@@ -79,6 +80,13 @@ export interface DailyHive extends HivePuzzle {
 /** Letter Box: the row ships its playable word list (lib/games/letterbox). */
 export interface DailyLetterBox extends LetterBoxPuzzle {
   date: string;
+}
+
+export interface DailyGroups {
+  date: string;
+  /** "ai": generated and validated by lib/cron/content/groups.ts; "bank": the fallback bank. */
+  source: "ai" | "bank";
+  puzzle: GroupsPuzzle;
 }
 
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
@@ -161,6 +169,20 @@ export async function getDailyHive(date: string): Promise<DailyHive> {
 
 export async function getDailyLetterBox(date: string): Promise<DailyLetterBox> {
   return (await readRow<DailyLetterBox>("letter-box", date, "")) ?? generateDailyLetterBox(date);
+}
+
+/**
+ * The fallback Groups daily: a bank puzzle picked by date. Groups rows are
+ * written by lib/cron/content/groups.ts (not ensureDailyPuzzles), which
+ * stores exactly this fallback for any day that is already live without a
+ * row, so a page that served it never changes puzzle mid-day.
+ */
+export function generateDailyGroups(date: string): DailyGroups {
+  return { date, source: "bank", puzzle: bankPuzzleFor(date) };
+}
+
+export async function getDailyGroups(date: string): Promise<DailyGroups> {
+  return (await readRow<DailyGroups>("groups", date, "")) ?? generateDailyGroups(date);
 }
 
 export async function getDailySudoku(date: string): Promise<DailySudoku> {

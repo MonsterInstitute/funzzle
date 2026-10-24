@@ -44,6 +44,7 @@ export function HeadToHead({ challenge }: { challenge: Challenge }) {
             <span className="font-mono text-sm">
               {resultHeadline(challenge.game, e, formatTime)}
               <span className="ml-2 text-muted-2">
+                {challenge.game === "groups" ? `${e.mistakes} mistake${e.mistakes === 1 ? "" : "s"} · ` : ""}
                 {e.hints} hint{e.hints === 1 ? "" : "s"}
               </span>
             </span>

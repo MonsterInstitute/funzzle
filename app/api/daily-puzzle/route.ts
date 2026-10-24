@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isValidISODate, todayISO } from "@/lib/dates";
-import { getDailyFreeCell, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
+import { getDailyFreeCell, getDailyGroups, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
 import { generateHive } from "@/lib/games/hive/generate";
 import { generateLetterBox } from "@/lib/games/letterbox/generate";
 
@@ -30,6 +30,7 @@ const LOADERS: Record<string, (date: string, draw: 1 | 3, suits: 1 | 2 | 4) => P
   "spider-solitaire": (date, _draw, suits) => (suits === 1 ? getDailySpider(date) : getStoredDailySpider(date, suits)),
   "spelling-hive": (date) => getDailyHive(date),
   "letter-box": (date) => getDailyLetterBox(date),
+  groups: (date) => getDailyGroups(date),
 };
 
 export async function GET(request: Request) {
