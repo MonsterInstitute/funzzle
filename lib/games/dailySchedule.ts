@@ -34,3 +34,12 @@ export const SUDOKU_PUZZLE_RATING: Record<SudokuDifficulty, number> = {
 };
 
 export const SOLITAIRE_PUZZLE_RATING = { 1: 1250, 3: 1550 } as const;
+
+/** Mahjong Solitaire by layout: more tiles and taller stacks rate higher. */
+export const MAHJONG_PUZZLE_RATING = {
+  quick: 1000,
+  bridge: 1150,
+  fortress: 1250,
+  pyramid: 1300,
+  turtle: 1400,
+} as const;

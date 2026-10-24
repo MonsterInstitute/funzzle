@@ -96,6 +96,35 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  mahjong: {
+    name: "Mahjong Solitaire",
+    genre: "Puzzle",
+    summary:
+      "Mahjong Solitaire is a free tile-matching game: clear the board by removing pairs of matching tiles that are free. Today's deal is a 144-tile Turtle that's the same for everyone, generated so it can be cleared, and practice offers four more layouts, including a 72-tile board for phones. The coach shows a match and says why it's a good one.",
+    description: "Free daily Mahjong Solitaire: a 144-tile Turtle that can always be cleared, with a coach, reshuffles and practice layouts.",
+    qa: [
+      {
+        q: "How do you play Mahjong Solitaire?",
+        a: "Tap two matching tiles that are both free to remove them. Keep matching pairs until the board is empty. Tiles are stacked in layers, so each match can free the tiles under it or beside it; the skill is choosing which pair to take when more than one is open.",
+      },
+      {
+        q: "Which tiles are free in Mahjong Solitaire?",
+        a: "A tile is free when no tile lies on top of it, even partly, and its left or right side is open: no tile touching it on that side in the same layer. Tiles that are blocked on both sides, or covered, can't be picked yet.",
+      },
+      {
+        q: "Do flowers and seasons match each other?",
+        a: "Any flower matches any other flower, and any season matches any other season, even though their pictures differ. A flower never matches a season. Every other tile only matches a tile with exactly the same face, such as two 5 Bamboo or two Red Dragons.",
+      },
+      {
+        q: "Is every Mahjong Solitaire deal solvable?",
+        a: "Not if tiles are placed at random: some random deals can't be cleared. Funzzle builds each deal by placing matching pairs backwards from an empty board, then replays the winning line to check it, so every daily and practice deal can be cleared. If you get stuck, undo or use a shuffle, which rearranges the remaining tiles into another clearable position.",
+      },
+      {
+        q: "What's the best strategy for Mahjong Solitaire?",
+        a: "Free the tall stacks and the long rows first; tiles on the edges can wait. When all four of a kind are free, any pairing is safe. When three are free, take the pair that frees the most and keep the third for the last one. The coach's suggested match follows these rules.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

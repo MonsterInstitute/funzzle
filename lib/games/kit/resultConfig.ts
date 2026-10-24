@@ -15,6 +15,9 @@ export interface ResultGame {
 export const RESULT_GAMES: Record<string, ResultGame> = {
   sudoku: { variants: [""], lo: 60_000, hi: 1_500_000, minMs: 15_000 },
   solitaire: { variants: ["draw1", "draw3"], lo: 60_000, hi: 900_000, minMs: 20_000 },
+  // Daily Mahjong is always the 144-tile Turtle (variant = layout id): 72
+  // matches take a quick player about 4 minutes, most players 6–20.
+  mahjong: { variants: ["turtle"], lo: 120_000, hi: 1_500_000, minMs: 45_000 },
 };
 
 export const HISTOGRAM_BUCKETS = 14;

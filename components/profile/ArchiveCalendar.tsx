@@ -5,14 +5,16 @@ import { useSyncExternalStore } from "react";
 import { getDayStatus, shiftDay } from "@/lib/games/kit/daily";
 import { readJson } from "@/lib/games/kit/storage";
 
-/** First day with a daily Sudoku and Solitaire. */
+/** First day with a daily Sudoku, Solitaire and Mahjong. */
 export const ARCHIVE_START = "2026-10-01";
 
 const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const subscribe = () => () => {};
 const today = () => new Date().toISOString().slice(0, 10);
 
-function doneOn(date: string, game: "sudoku" | "solitaire", isToday: boolean): boolean {
+function doneOn(date: string, game: "sudoku" | "solitaire" | "mahjong", isToday: boolean): boolean {
+  // Mahjong isn't in the Daily Set, so its saved game says whether it was cleared.
+  if (game === "mahjong") return [`fz:mahjong:daily:${date}`, `fz:mahjong:archive:${date}`].some((k) => !!readJson<{ done?: unknown } | null>(k, null)?.done);
   if (isToday) return getDayStatus(date)[game]?.state === "done";
   const keys = game === "sudoku" ? [`fz:sudoku:archive:${date}`] : [`fz:solitaire:archive:daily1:${date}`, `fz:solitaire:archive:daily3:${date}`];
   return keys.some((k) => !!readJson<{ done?: unknown } | null>(k, null)?.done) || getDayStatus(date)[game]?.state === "done";
@@ -63,6 +65,7 @@ export default function ArchiveCalendar() {
                 }
                 const sudoku = doneOn(d, "sudoku", isToday);
                 const solitaire = doneOn(d, "solitaire", isToday);
+                const mahjong = doneOn(d, "mahjong", isToday);
                 const q = isToday ? "" : `?date=${d}`;
                 return (
                   <div key={d} className={`flex min-h-[64px] flex-col gap-1 rounded-xl p-1.5 ${isToday ? "bg-violet-tint" : "bg-soft"}`}>
@@ -82,6 +85,14 @@ export default function ArchiveCalendar() {
                       style={{ background: solitaire ? "#7FD6A0" : "transparent", border: "1px solid #7FD6A0" }}
                     >
                       Cards
+                    </Link>
+                    <Link
+                      href={`/play/mahjong${q}`}
+                      aria-label={`Mahjong, ${d}${mahjong ? ", cleared" : ""}`}
+                      className="rounded-md px-1 py-0.5 text-center text-[11px] font-semibold text-[#111111] no-underline"
+                      style={{ background: mahjong ? "#F6A6A1" : "transparent", border: "1px solid #F6A6A1" }}
+                    >
+                      Tiles
                     </Link>
                   </div>
                 );

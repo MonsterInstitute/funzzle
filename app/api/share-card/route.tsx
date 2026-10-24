@@ -16,7 +16,7 @@ import { bricolage800, geist500, geist700, geistMono600 } from "@/lib/games/kit/
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const LABEL_RE = /^[A-Za-z0-9 ·-]{0,20}$/;
-const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire" };
+const GAMES: Record<string, string> = { sudoku: "Daily Sudoku", solitaire: "Daily Solitaire", mahjong: "Daily Mahjong" };
 const SUITS = [
   { s: "S", red: false },
   { s: "H", red: true },
@@ -36,6 +36,32 @@ function int(value: string | null, max: number): number | null {
   const n = Number(value);
   return n <= max ? n : null;
 }
+
+/** Four original tile faces for the Mahjong card: dots, bamboo, a dragon, a flower. */
+const MAHJONG_TILES = [
+  <g key="dots" fill="#2456A6">
+    <circle cx="31" cy="22" r="7" />
+    <circle cx="31" cy="40" r="7" />
+    <circle cx="31" cy="58" r="7" />
+  </g>,
+  <g key="bamboo" fill="#1F7A4D">
+    <rect x="17" y="16" width="7" height="48" rx="3.5" />
+    <rect x="27.5" y="16" width="7" height="48" rx="3.5" />
+    <rect x="38" y="16" width="7" height="48" rx="3.5" />
+  </g>,
+  <g key="dragon">
+    <circle cx="31" cy="40" r="19" fill="#C8102E" />
+    <circle cx="31" cy="40" r="9" fill="#FFFDF7" />
+  </g>,
+  <g key="flower" fill="#C2378A">
+    <circle cx="31" cy="27" r="8" />
+    <circle cx="43" cy="36" r="8" />
+    <circle cx="38" cy="50" r="8" />
+    <circle cx="24" cy="50" r="8" />
+    <circle cx="19" cy="36" r="8" />
+    <circle cx="31" cy="40" r="6" fill="#F2B233" />
+  </g>,
+];
 
 const SHADES = ["#111111", "#FFFFFF", "rgba(255,255,255,0.72)", "rgba(255,255,255,0.45)", "rgba(255,255,255,0.22)"];
 
@@ -74,11 +100,25 @@ export async function GET(request: Request) {
     streak > 0 ? `${streak}-day streak` : null,
     game === "sudoku"
       ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
-      : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
+      : game === "mahjong"
+        ? `${moves ?? 0} pairs · ${hints} hint${hints === 1 ? "" : "s"}`
+        : `${moves ?? 0} moves · ${hints} hint${hints === 1 ? "" : "s"}`,
   ].filter(Boolean) as string[];
 
   const board =
-    game === "sudoku" && map ? (
+    game === "mahjong" ? (
+      <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 28, gap: 24, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
+        {MAHJONG_TILES.map((face, i) => (
+          <div key={i} style={{ width: 176, height: 176, display: "flex", justifyContent: "center" }}>
+            <svg width="140" height="176" viewBox="0 0 70 88">
+              <rect x="6" y="6" width="62" height="80" rx="9" fill="#C9746E" />
+              <rect x="0" y="0" width="62" height="80" rx="9" fill="#FFFDF7" stroke="#E9DCCB" strokeWidth="1.5" />
+              {face}
+            </svg>
+          </div>
+        ))}
+      </div>
+    ) : game === "sudoku" && map ? (
       <div style={{ display: "flex", flexWrap: "wrap", width: 432, height: 432, padding: 16, gap: 6, borderRadius: 36, background: "rgba(17,17,17,0.08)" }}>
         {map.split("").map((c, i) => (
           <div key={i} style={{ width: 38, height: 38, borderRadius: 8, background: SHADES[Number(c)] }} />

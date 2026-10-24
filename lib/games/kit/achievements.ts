@@ -105,6 +105,18 @@ export const SKILL_TREES: Record<string, { title: string; skills: Skill[] }> = {
       { id: "draw-3-unaided", name: "Draw 3 unaided", tier: 3, what: "Win draw 3 without the coach" },
     ],
   },
+  mahjong: {
+    title: "Mahjong skills",
+    skills: [
+      { id: "clear-quick", name: "Quick board", tier: 0, what: "Clear the 72-tile Quick board" },
+      { id: "clear-turtle", name: "Turtle", tier: 0, what: "Clear the 144-tile Turtle" },
+      { id: "no-hint", name: "Unaided", tier: 1, what: "Clear a board without the coach" },
+      { id: "no-shuffle", name: "No reshuffle", tier: 1, what: "Clear a board without shuffling" },
+      { id: "fast", name: "Quick eyes", tier: 2, what: "Clear the Turtle in under 8 minutes" },
+      { id: "turtle-unaided", name: "Turtle unaided", tier: 2, what: "Clear the Turtle with no hints or shuffles" },
+      { id: "all-layouts", name: "Every layout", tier: 3, what: "Clear all five layouts" },
+    ],
+  },
 };
 
 export function skillProgress(game: string): { skill: Skill; count: number; mastered: boolean }[] {

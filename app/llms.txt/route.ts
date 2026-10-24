@@ -21,6 +21,7 @@ Key facts:
 - Everything is free; ads never show during play.
 - Daily Sudoku difficulty follows the week: Monday Easy, Tuesday/Wednesday/Sunday Medium, Thursday/Friday Hard, Saturday Expert.
 - Daily Solitaire deals (Klondike, draw 1 or 3) are verified winnable by a solver.
+- Mahjong Solitaire deals (tile matching) are generated so the board can be cleared, and the winning line is replayed to check it.
 - Answer pages show graded hints first and the answer only on request.
 
 ## Daily puzzles
@@ -28,6 +29,7 @@ Key facts:
 - [Today's Daily Set](${SITE_URL}/#today): Daily Sudoku, Daily Solitaire, Daily Word and the Mini Crossword
 - [Daily Sudoku](${SITE_URL}/play/sudoku): one 9×9 grid for everyone, with a step-by-step coach and unlimited practice
 - [Daily Solitaire](${SITE_URL}/play/solitaire): Klondike draw 1 or draw 3, a winnable deal every day, with a best-move coach
+- [Mahjong Solitaire](${SITE_URL}/play/mahjong): match free tiles to clear the 144-tile Turtle, a new deal every day, plus practice on five layouts
 
 ## Games
 
