@@ -19,6 +19,9 @@ on:
       - "**/*.test.*"
       - "**/*.spec.*"
       - ".github/workflows/daily-content.yml"
+      - ".github/workflows/gsc-report.yml"
+      - "scripts/gsc-report.mjs"
+      - "reports/**"
       - ".claude/**"
       - ".vscode/**"
   workflow_dispatch:

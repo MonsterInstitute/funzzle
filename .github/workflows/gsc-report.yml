@@ -1,0 +1,49 @@
+name: Search Console Report
+
+# Weekly Search Console snapshot (scripts/gsc-report.mjs) committed to
+# reports/gsc/YYYY-MM-DD.md so search trends can be compared over time. The
+# commit is Markdown only, so it doesn't deploy (deploy-cloudflare.yml ignores
+# **.md; pushes made with GITHUB_TOKEN don't start workflows anyway).
+#
+# Needs repository secret GSC_SERVICE_ACCOUNT_JSON: the key of
+# gsc-reader@funzzle-gsc.iam.gserviceaccount.com, which must be a user on the
+# funzzle.com Search Console property.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays
+  workflow_dispatch:
+
+concurrency:
+  group: gsc-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No npm ci: the script has no dependencies.
+      - name: Generate report
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/gsc-report.mjs
+
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/gsc
+          if git diff --cached --quiet; then
+            echo "No changes"; exit 0
+          fi
+          git commit -m "Search Console report $(date -u +%F)"
+          git pull --rebase
+          git push
