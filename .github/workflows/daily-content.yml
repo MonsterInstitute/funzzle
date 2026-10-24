@@ -82,6 +82,21 @@ jobs:
           node scripts/revalidate-site.mjs --last="$BACKFILL_LAST" || status=1
           exit $status
 
+      # AI Coach text for the daily Sudoku (today + tomorrow), cached in
+      # coach_explanations so a hint never calls an LLM at play time. Optional:
+      # without it the game shows the solver's own explanation, so a DeepSeek
+      # outage only warns.
+      - name: Coach explanations
+        if: ${{ github.event.inputs.backfill_last == '' }}
+        continue-on-error: true
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          npx esbuild scripts/generate-coach.ts --bundle --platform=node --format=esm --packages=external --outfile=node_modules/.cache/generate-coach.mjs
+          node node_modules/.cache/generate-coach.mjs
+
       - name: Generate Reddit posts (logged for manual posting)
         if: ${{ always() && github.event.inputs.backfill_last == '' }}
         env:

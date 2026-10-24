@@ -53,3 +53,10 @@ scripts/trending-opportunities.json
 .open-next
 .wrangler
 .dev.vars*
+
+# Playwright
+/test-results/
+/playwright-report/
+
+# Supabase CLI state
+/supabase/.temp/
