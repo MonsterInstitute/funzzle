@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isValidISODate, todayISO } from "@/lib/dates";
-import { getDaily2048, getDailyBlock, getDailyChess, getDailyCrossword, getDailyJigsaw, getDailyFreeCell, getDailyGroups, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMini, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getDailyWord, getDailyWordHunt, getDailyWordSearch, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
+import { getDaily2048, getDailyBlock, getDailyChess, getDailyCrossword, getDailyJigsaw, getDailyKakuro, getDailyNonogram, getDailyFreeCell, getDailyGroups, getDailyHive, getDailyLetterBox, getDailyMahjong, getDailyMini, getDailyMinesweeper, getDailySolitaire, getDailySpider, getDailySudoku, getDailyWord, getDailyWordHunt, getDailyWordSearch, getStoredDailySpider, MAHJONG_DAILY_LAYOUT } from "@/lib/games/dailyPuzzles";
 import { generateHive } from "@/lib/games/hive/generate";
 import { generateLetterBox } from "@/lib/games/letterbox/generate";
 import { WORD_MODES, type WordMode } from "@/lib/games/word";
@@ -41,6 +41,8 @@ const LOADERS: Record<string, (date: string, draw: 1 | 3, suits: 1 | 2 | 4, mode
   jigsaw: (date) => getDailyJigsaw(date),
   "word-search": (date) => getDailyWordSearch(date),
   crossword: (date) => getDailyCrossword(date),
+  nonogram: (date) => getDailyNonogram(date),
+  kakuro: (date) => getDailyKakuro(date),
 };
 
 export async function GET(request: Request) {

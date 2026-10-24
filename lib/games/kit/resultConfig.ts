@@ -66,6 +66,8 @@ export const RESULT_GAMES: Record<string, ResultGame> = {
   jigsaw: { variants: [""], lo: 60_000, hi: 1_200_000, minMs: 20_000 },
   "word-search": { variants: [""], lo: 60_000, hi: 900_000, minMs: 20_000 },
   crossword: { variants: [""], lo: 120_000, hi: 2_700_000, minMs: 45_000 },
+  nonogram: { variants: [""], lo: 30_000, hi: 900_000, minMs: 10_000 },
+  kakuro: { variants: [""], lo: 60_000, hi: 1_800_000, minMs: 20_000 },
 };
 
 /** Highest score accepted from a score game; anything above isn't a real game. */

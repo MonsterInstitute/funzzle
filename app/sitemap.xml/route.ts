@@ -46,6 +46,8 @@ export function GET() {
     { path: "/play/jigsaw", priority: 0.9, lastmod: today },
     { path: "/play/word-search", priority: 0.9, lastmod: today },
     { path: "/play/crossword", priority: 0.9, lastmod: today },
+    { path: "/play/nonogram", priority: 0.9, lastmod: today },
+    { path: "/play/kakuro", priority: 0.9, lastmod: today },
     { path: "/play/mini", priority: 0.8, lastmod: today },
     { path: "/wordle-answer/today", priority: 0.8, lastmod: today },
     { path: "/clue", priority: 0.6, lastmod: today },

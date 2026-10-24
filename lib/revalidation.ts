@@ -30,6 +30,8 @@ export const TODAY_PATHS = [
   "/play/jigsaw",
   "/play/word-search",
   "/play/crossword",
+  "/play/nonogram",
+  "/play/kakuro",
   "/play/wordle",
   "/play/mini",
   "/play/groups",

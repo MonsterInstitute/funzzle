@@ -603,6 +603,64 @@ export const GAME_GUIDES = {
       },
     ],
   },
+  nonogram: {
+    name: "Daily Nonogram",
+    genre: "Puzzle",
+    summary:
+      "Daily Nonogram is a free 10×10 picture logic puzzle that's the same for everyone today: use the number clues beside each row and above each column to fill in cells and reveal a hidden picture or pattern. Every puzzle is solvable one line at a time with no guessing, and the coach names the technique for the next step.",
+    description: "Free daily nonogram (paint by numbers) with a step-by-step coach, plus 5×5, 10×10 and 15×15 practice puzzles.",
+    qa: [
+      {
+        q: "How do you play a nonogram?",
+        a: "Each number is a block of filled cells in that row or column, in order, with at least one empty cell between blocks. A clue of 3 1 means a block of three, a gap, then a single cell. Fill the cells the clues prove, cross off the ones that must stay empty, and the picture appears.",
+      },
+      {
+        q: "What is the best way to start a nonogram?",
+        a: "Start with the biggest clues. Push a block as far left as it can go, then as far right: the cells it covers both times must be filled (simple boxes). A clue of 0 or a finished line lets you cross off the rest (simple spaces). Then use the filled cells near the edges to pin blocks down (edge logic).",
+      },
+      {
+        q: "Does every nonogram have only one answer?",
+        a: "Not every nonogram in the wild does, but every Funzzle nonogram is checked by a line solver before it's published: it can be finished one row or column at a time, so it has exactly one solution and never needs a guess.",
+      },
+      {
+        q: "How do mistakes and hints work?",
+        a: "Filling a cell that should be empty, or crossing off one that should be filled, counts as a mistake and shows in red so you can fix it. The coach gives three hints per puzzle in steps: which line to look at, which rule cracks it, then exactly which cells.",
+      },
+      {
+        q: "Can I play bigger or smaller nonograms?",
+        a: "Yes. The daily puzzle is 10×10. Practice gives unlimited new puzzles at 5×5 for a quick game, 10×10, or 15×15 for a longer one.",
+      },
+    ],
+  },
+  kakuro: {
+    name: "Daily Kakuro",
+    genre: "Puzzle",
+    summary:
+      "Daily Kakuro is a free number crossword that's the same 8×8 grid for everyone today: fill each white cell with a digit from 1 to 9 so every across and down run adds up to its clue, with no digit repeated inside a run. Every grid has exactly one solution, and the coach explains the next step, from unique sums to crossing elimination.",
+    description: "Free daily kakuro with a step-by-step coach, plus easy, medium and hard practice grids.",
+    qa: [
+      {
+        q: "How do you play kakuro?",
+        a: "Each black cell's number is the sum of the white cells to its right (across) or below it (down). Fill every white cell with a digit from 1 to 9 so each run adds up to its clue, and never use the same digit twice in one run.",
+      },
+      {
+        q: "What are unique sums in kakuro?",
+        a: "Sums that can only be made one way. A 3 in two cells is always 1 + 2, a 4 in two cells is 1 + 3, a 16 in two cells is 7 + 9 and a 17 is 8 + 9; a 6 in three cells is 1 + 2 + 3 and a 24 in three cells is 7 + 8 + 9. They're the best place to start.",
+      },
+      {
+        q: "How do you solve a hard kakuro?",
+        a: "Write down the combinations each sum allows and cross off digits no combination uses: 10 in two cells never uses 5. Where an across run meets a down run, the cell can only take a digit both allow. When that runs out, check each combination against what the crossing runs allow and rule out the ones that can't fit.",
+      },
+      {
+        q: "Does every kakuro have one solution?",
+        a: "Every Funzzle kakuro does: each grid is checked by an exact solver to have exactly one solution, and by a step-by-step solver to be finishable with logic alone, no guessing.",
+      },
+      {
+        q: "How hard is today's Daily Kakuro?",
+        a: "The daily grid is 8×8 and medium: it needs sum combinations and some crossing elimination. Practice offers easy 6×6, medium 8×8 and hard 10×10 grids.",
+      },
+    ],
+  },
 } as const;
 
 export type GameGuideSlug = keyof typeof GAME_GUIDES;

@@ -31,6 +31,8 @@ import { bankIdForDate, bankPuzzle } from "@/lib/games/wordhunt/server";
 import { daily2048, type Daily2048 } from "@/lib/games/t2048";
 import { dailyBlock, type DailyBlock } from "@/lib/games/block";
 import { dailyJigsaw, type DailyJigsaw } from "@/lib/games/jigsaw";
+import { generateNonogram, type Clues } from "@/lib/games/nonogram";
+import { generateKakuro, type Difficulty as KakuroDifficulty } from "@/lib/games/kakuro";
 import { all, batch, first, parseJson } from "@/lib/db";
 import { fallbackDailyWordSearch, type WordSearchPuzzle } from "@/lib/games/wordsearch";
 import { fallbackDailyCrossword, type CrosswordPuzzle } from "@/lib/games/crossword";
@@ -157,6 +159,25 @@ export async function getDailyCrossword(date: string): Promise<DailyCrossword> {
   return (await readRow<DailyCrossword>("crossword", date, "")) ?? generateDailyCrossword(date);
 }
 
+export interface DailyNonogram {
+  date: string;
+  size: 10;
+  solution: number[];
+  clues: Clues;
+  /** Hand-drawn picture's name, or null for a generated pattern. */
+  name: string | null;
+}
+
+export interface DailyKakuro {
+  date: string;
+  difficulty: KakuroDifficulty;
+  size: number;
+  layout: string;
+  solution: number[];
+  across: number[];
+  down: number[];
+}
+
 async function readRow<T>(game: string, date: string, variant: string): Promise<T | null> {
   const row = await first<{ data: string }>(
     "SELECT data FROM daily_puzzles WHERE game = ? AND puzzle_date = ? AND variant = ?",
@@ -281,6 +302,24 @@ export async function getDailyWordHunt(date: string): Promise<DailyWordHunt> {
   return (await readRow<DailyWordHunt>("word-hunt", date, "")) ?? generateDailyWordHunt(date);
 }
 
+export function generateDailyNonogram(date: string): DailyNonogram {
+  const p = generateNonogram(`nonogram:${date}`, 10);
+  return { date, size: 10, solution: p.solution, clues: p.clues, name: p.name };
+}
+
+export function generateDailyKakuro(date: string): DailyKakuro {
+  const p = generateKakuro(`kakuro:${date}`, "medium");
+  return { date, difficulty: p.difficulty, size: p.size, layout: p.layout, solution: p.solution, across: p.across, down: p.down };
+}
+
+export async function getDailyNonogram(date: string): Promise<DailyNonogram> {
+  return (await readRow<DailyNonogram>("nonogram", date, "")) ?? generateDailyNonogram(date);
+}
+
+export async function getDailyKakuro(date: string): Promise<DailyKakuro> {
+  return (await readRow<DailyKakuro>("kakuro", date, "")) ?? generateDailyKakuro(date);
+}
+
 export async function getDailySudoku(date: string): Promise<DailySudoku> {
   return (await readRow<DailySudoku>("sudoku", date, "")) ?? generateDailySudoku(date);
 }
@@ -314,6 +353,8 @@ function generateRow(game: string, date: string, variant: string): object {
   if (game === "2048") return daily2048(date);
   if (game === "block-puzzle") return dailyBlock(date);
   if (game === "jigsaw") return dailyJigsaw(date);
+  if (game === "nonogram") return generateDailyNonogram(date);
+  if (game === "kakuro") return generateDailyKakuro(date);
   return generateDailySolitaire(date, variant === "draw3" ? 3 : 1);
 }
 
@@ -372,6 +413,8 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
     { game: "2048", date, variant: "" },
     { game: "block-puzzle", date, variant: "" },
     { game: "jigsaw", date, variant: "" },
+    { game: "nonogram", date, variant: "" },
+    { game: "kakuro", date, variant: "" },
   ]);
   const existing = await all<{ game: string; puzzle_date: string; variant: string }>(
     `SELECT game, puzzle_date, variant FROM daily_puzzles WHERE puzzle_date IN (${dates.map(() => "?").join(", ")})`,

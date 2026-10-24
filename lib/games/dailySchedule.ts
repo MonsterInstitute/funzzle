@@ -91,3 +91,8 @@ export const WORD_SEARCH_PUZZLE_RATING: Record<number, number> = { 10: 1000, 12:
 
 /** Crossword ratings by grid size (11×11 Mon–Wed, 13×13 Thu–Fri, 15×15 weekends). */
 export const CROSSWORD_PUZZLE_RATING: Record<number, number> = { 11: 1300, 13: 1500, 15: 1700 };
+/** Nonogram by grid size (the daily is always 10 × 10). */
+export const NONOGRAM_PUZZLE_RATING = { 5: 900, 10: 1250, 15: 1600 } as const;
+
+/** Kakuro by grade (easy 6 × 6, medium 8 × 8, hard 10 × 10; the daily is medium). */
+export const KAKURO_PUZZLE_RATING = { easy: 1100, medium: 1400, hard: 1700 } as const;

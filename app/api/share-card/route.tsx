@@ -53,7 +53,11 @@ const GAMES: Record<string, string> = {
   jigsaw: "Daily Jigsaw",
   "word-search": "Word Search",
   crossword: "Daily Crossword",
+  nonogram: "Daily Nonogram",
+  kakuro: "Daily Kakuro",
 };
+/** Games whose card shows mistakes and hints, with the game glyph as a spoiler-free board. */
+const GLYPH_BOARD = new Set(["nonogram", "kakuro"]);
 /** 2048 tile colors by exponent (lib/games/t2048 uses the same ramp). */
 const TILE_BG = [
   "#FFF4DD",
@@ -228,7 +232,10 @@ export async function GET(request: Request) {
               ? `Top ${Math.max(1, top)}% today`
               : "First to finish today",
           streak > 0 ? `${streak}-day streak` : null,
-          game === "sudoku" || game === "groups" || game === "chess"
+          game === "sudoku" ||
+          game === "groups" ||
+          game === "chess" ||
+          GLYPH_BOARD.has(game)
             ? `${mistakes} mistake${mistakes === 1 ? "" : "s"} · ${hints} hint${hints === 1 ? "" : "s"}`
             : game === "2048"
               ? `${bestTile ? `Best tile ${bestTile} · ` : ""}${moves ?? 0} moves`
@@ -676,6 +683,29 @@ export async function GET(request: Request) {
             }}
           />
         ))}
+      </div>
+    ) : GLYPH_BOARD.has(game) ? (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 432,
+          height: 432,
+          borderRadius: 36,
+          background: "rgba(17,17,17,0.08)",
+        }}
+      >
+        <svg width="340" height="340" viewBox="0 0 48 48">
+          <path
+            d={GAME_BY_SLUG[game].glyph}
+            fill="none"
+            stroke="#111111"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
     ) : (
       <div

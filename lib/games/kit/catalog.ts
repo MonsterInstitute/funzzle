@@ -62,8 +62,8 @@ const ROWS: Row[] = [
   ["letter-box", "Letter Box", "Words", "Chain words around the square to use every letter.", "#FF9E9E", "#FFECEC", "box", "/play/letter-box"],
   ["2048", "2048", "Logic", "Slide, merge, and chase the big tile.", "#FFC857", "#FFF4DD", "t2048", "/play/2048"],
   ["block-puzzle", "Block Puzzle", "Logic", "Fit the pieces, clear the lines.", "#FFA978", "#FFEFE6", "block", "/play/block-puzzle"],
-  ["nonogram", "Nonogram", "Logic", "Paint by numbers to reveal the picture.", "#D8B4FE", "#F6EEFF", "nonogram", null],
-  ["kakuro", "Kakuro", "Logic", "A crossword made of sums.", "#FFB8DA", "#FFEEF6", "kakuro", null],
+  ["nonogram", "Nonogram", "Logic", "Paint by numbers to reveal the picture.", "#D8B4FE", "#F6EEFF", "nonogram", "/play/nonogram"],
+  ["kakuro", "Kakuro", "Logic", "A crossword made of sums.", "#FFB8DA", "#FFEEF6", "kakuro", "/play/kakuro"],
   ["jigsaw", "Jigsaw", "Casual", "A new picture every day, from 12 to 96 pieces.", "#A9CBFF", "#ECF3FF", "jigsaw", "/play/jigsaw"],
   ["chess", "Chess", "Strategy", "Beginner to master, plus a daily puzzle.", "#DCCDB2", "#F7F3EC", "chess", "/play/chess"],
 ];

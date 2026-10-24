@@ -50,6 +50,8 @@ export interface RecapProps {
   details?: ReactNode;
   /** Rank wording: "Faster" (default) or "Better" for games ranked by moves first (Funzzle Word). */
   rankWord?: string;
+  /** Optional block under the time card, e.g. the finished nonogram picture. */
+  showcase?: ReactNode;
 }
 
 const SET_LABEL: Record<string, string> = { sudoku: "Sudoku", solitaire: "Solitaire", word: "Word", "mini-crossword": "Mini" };
@@ -154,6 +156,8 @@ export default function Recap(props: RecapProps) {
             </>
           )}
         </section>
+
+        {props.showcase && <div className="mx-4">{props.showcase}</div>}
 
         <div className="mx-4 grid grid-cols-3 gap-2">
           {tiles.map((t) => (
