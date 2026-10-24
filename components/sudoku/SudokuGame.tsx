@@ -587,8 +587,8 @@ function SudokuRecap({
       const when = state.placedAt[placement.cell];
       const where = `row ${R(placement.cell) + 1}, column ${C(placement.cell) + 1}`;
       keyMove = coached
-        ? `the ${placement.digit} at ${where} needed a ${guide.title.toLowerCase()}. The coach helped there; try spotting it yourself next time.`
-        : `${when ? `at ${formatTime(when)} ` : ""}you found the ${placement.digit} at ${where}. It took a ${guide.title.toLowerCase()}, the hardest step in this grid.`;
+        ? `the ${placement.digit} at ${where} needed ${guide.phrase}. The coach helped there; try spotting it yourself next time.`
+        : `${when ? `at ${formatTime(when)} ` : ""}you found the ${placement.digit} at ${where}. It took ${guide.phrase}, the hardest step in this grid.`;
     } else {
       keyMove = "you worked through the whole grid one logical step at a time.";
     }
@@ -644,7 +644,7 @@ function SudokuRecap({
       extraActions={
         onPractice && (
           <button type="button" onClick={() => onPractice(game.difficulty)} className="min-h-[52px] rounded-full border border-line-strong text-[15px] font-semibold text-ink">
-            Play a {label.toLowerCase()} practice puzzle
+            Play {game.difficulty === "easy" || game.difficulty === "expert" ? "an" : "a"} {label.toLowerCase()} practice puzzle
           </button>
         )
       }
