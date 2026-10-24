@@ -10,6 +10,8 @@ export interface DayStats {
   buckets: number[];
   lo: number;
   hi: number;
+  /** What the buckets measure: times (ms) or scores (points). */
+  histogram?: "time" | "score";
 }
 
 export interface SubmitResult extends DayStats {

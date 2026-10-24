@@ -12,15 +12,23 @@ export interface ResultGame {
   minMs: number;
   /** How results rank (default "time"); see ResultOrder. */
   order?: ResultOrder;
+  /**
+   * What the recap histogram buckets (default "time", lo/hi in ms). "score":
+   * the `moves` value, lo/hi in points — for games where time doesn't matter.
+   */
+  histogram?: "time" | "score";
 }
 
 /**
- * How a game's results rank. "time": faster wins. "score": higher `moves`
- * (the game's score) wins, ties go to the faster time. "fewest": fewer
- * `moves` (e.g. words used) wins, ties go to the faster time. Score games
- * store their number in the existing `moves` column, so no schema change.
+ * How a game's results rank — the single source of truth for /api/results
+ * percentiles, challenge head-to-heads and league boards.
+ *   "time"      faster wins.
+ *   "score"     higher `moves` (the game's score) wins; ties: faster.
+ *   "fewest"    fewer `moves` (words, guesses) wins; ties: faster.
+ *   "mistakes"  fewer mistakes, then fewer hints, then faster.
+ * Scores/counts live in the existing `moves` column: no schema change.
  */
-export type ResultOrder = "time" | "score" | "fewest";
+export type ResultOrder = "time" | "score" | "fewest" | "mistakes";
 
 export const RESULT_GAMES: Record<string, ResultGame> = {
   sudoku: { variants: [""], lo: 60_000, hi: 1_500_000, minMs: 15_000 },
@@ -50,22 +58,43 @@ export function resultOrder(game: string): ResultOrder {
 export interface RankedResult {
   timeMs: number;
   moves?: number | null;
+  mistakes?: number;
+  hints?: number;
 }
 
 /** Negative when `a` ranks ahead of `b`. */
 export function compareResults(game: string, a: RankedResult, b: RankedResult): number {
   const order = resultOrder(game);
-  if (order !== "time") {
+  if (order === "mistakes") {
+    const d = (a.mistakes ?? 0) - (b.mistakes ?? 0) || (a.hints ?? 0) - (b.hints ?? 0);
+    if (d) return d;
+  } else if (order !== "time") {
     const d = (a.moves ?? 0) - (b.moves ?? 0);
     if (d) return order === "score" ? -d : d;
   }
   return a.timeMs - b.timeMs;
 }
 
-/** SQL ORDER BY for challenge entries / results of `game` (columns moves, time_ms). */
+/** SQL ORDER BY for challenge entries / results of `game` (columns moves, mistakes, hints, time_ms). */
 export function resultOrderSql(game: string): string {
   const order = resultOrder(game);
-  return order === "score" ? "moves DESC, time_ms" : order === "fewest" ? "moves, time_ms" : "time_ms";
+  if (order === "score") return "moves DESC, time_ms";
+  if (order === "fewest") return "moves, time_ms";
+  if (order === "mistakes") return "mistakes, hints, time_ms";
+  return "time_ms";
+}
+
+/**
+ * SQL condition: result `r` ranks below result `me` (both rows of
+ * game_results). Used to count the players a result beat.
+ */
+export function beatenSql(game: string): string {
+  const order = resultOrder(game);
+  if (order === "score") return "(r.moves < me.moves OR (r.moves = me.moves AND r.time_ms > me.time_ms))";
+  if (order === "fewest") return "(r.moves > me.moves OR (r.moves = me.moves AND r.time_ms > me.time_ms))";
+  if (order === "mistakes")
+    return "(r.mistakes > me.mistakes OR (r.mistakes = me.mistakes AND (r.hints > me.hints OR (r.hints = me.hints AND r.time_ms > me.time_ms))))";
+  return "r.time_ms > me.time_ms";
 }
 
 /** The headline number of a result: "142 pts", "2 words" or the time. */
@@ -74,5 +103,6 @@ export function resultHeadline(game: string, r: RankedResult, formatTime: (ms: n
   const n = r.moves ?? 0;
   if (order === "score") return `${n} pt${n === 1 ? "" : "s"}`;
   if (order === "fewest") return `${n} word${n === 1 ? "" : "s"} · ${formatTime(r.timeMs)}`;
+  if (order === "mistakes") return `${r.mistakes ?? 0} mistake${r.mistakes === 1 ? "" : "s"} · ${formatTime(r.timeMs)}`;
   return formatTime(r.timeMs);
 }

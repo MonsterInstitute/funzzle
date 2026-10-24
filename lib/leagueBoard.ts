@@ -15,6 +15,8 @@ export interface MemberResult {
   timeMs: number;
   /** Score / words used, for score-ranked games. */
   moves?: number | null;
+  mistakes?: number;
+  hints?: number;
 }
 
 export interface BoardRow {

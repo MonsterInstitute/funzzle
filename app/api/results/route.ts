@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { shiftISODate, todayISO } from "@/lib/dates";
-import { HISTOGRAM_BUCKETS, RESULT_GAMES } from "@/lib/games/kit/resultConfig";
+import { beatenSql, HISTOGRAM_BUCKETS, RESULT_GAMES } from "@/lib/games/kit/resultConfig";
 import { exec, first } from "@/lib/db";
 
 /**
@@ -38,11 +38,13 @@ function isOpenDate(date: string): boolean {
  * the Postgres version did. CAST: D1 binds JS numbers as REAL.
  */
 async function dayStats(game: string, date: string, variant: string) {
-  const { lo, hi } = RESULT_GAMES[game];
+  const { lo, hi, histogram } = RESULT_GAMES[game];
+  // The bucketed value: the time, or the score for histogram "score" games.
+  const v = histogram === "score" ? "coalesce(moves, 0)" : "time_ms";
   const row = await first<{ count: number; buckets: string | null }>(
     `SELECT sum(n) AS count, json_group_array(json_array(b, n)) AS buckets FROM (
-       SELECT CASE WHEN time_ms < ?1 THEN 1 WHEN time_ms >= ?2 THEN ?3
-                   ELSE CAST((time_ms - ?1) * ?3 / (?2 - ?1) AS INTEGER) + 1 END AS b,
+       SELECT CASE WHEN ${v} < ?1 THEN 1 WHEN ${v} >= ?2 THEN ?3
+                   ELSE CAST((${v} - ?1) * ?3 / (?2 - ?1) AS INTEGER) + 1 END AS b,
               count(*) AS n
        FROM game_results WHERE game = ?4 AND puzzle_date = ?5 AND variant = ?6
        GROUP BY b)`,
@@ -60,7 +62,7 @@ async function dayStats(game: string, date: string, variant: string) {
   ][]) {
     if (b !== null) buckets[b - 1] = n;
   }
-  return { count: row?.count ?? 0, buckets, lo, hi };
+  return { count: row?.count ?? 0, buckets, lo, hi, histogram: histogram ?? "time" };
 }
 
 export async function GET(request: Request) {
@@ -110,8 +112,8 @@ export async function POST(request: Request) {
     mistakes === null ||
     hints === null ||
     (body.moves !== undefined && moves === null) ||
-    // Score-ranked games need their score.
-    ((config.order ?? "time") !== "time" && moves === null)
+    // Score/count-ranked games need their number.
+    ((config.order ?? "time") !== "time" && (config.order ?? "time") !== "mistakes" && moves === null)
   ) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
@@ -130,29 +132,15 @@ export async function POST(request: Request) {
       moves,
     );
     // Percentile against everyone else, using the stored (first) result.
-    const order = config.order ?? "time";
-    const mine =
-      order === "time"
-        ? await first<{ slower: number }>(
-            `SELECT count(*) AS slower FROM game_results
-       WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3
-         AND time_ms > (SELECT time_ms FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4)`,
-            game,
-            date,
-            variant,
-            clientId,
-          )
-        : // Score games: a better score wins, an equal score goes to the faster time.
-          await first<{ slower: number }>(
-            `SELECT count(*) AS slower FROM game_results r,
-         (SELECT time_ms AS t, moves AS m FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4) me
-       WHERE r.game = ?1 AND r.puzzle_date = ?2 AND r.variant = ?3
-         AND (r.moves ${order === "score" ? "<" : ">"} me.m OR (r.moves = me.m AND r.time_ms > me.t))`,
-            game,
-            date,
-            variant,
-            clientId,
-          );
+    const mine = await first<{ slower: number }>(
+      `SELECT count(*) AS slower FROM game_results r,
+         (SELECT time_ms, moves, mistakes, hints FROM game_results WHERE game = ?1 AND puzzle_date = ?2 AND variant = ?3 AND client_id = ?4) me
+       WHERE r.game = ?1 AND r.puzzle_date = ?2 AND r.variant = ?3 AND ${beatenSql(game)}`,
+      game,
+      date,
+      variant,
+      clientId,
+    );
     const slower = mine?.slower ?? 0;
 
     const stats = await dayStats(game, date, variant);
