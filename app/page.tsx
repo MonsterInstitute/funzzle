@@ -16,7 +16,9 @@ import {
 import { DIFFICULTY_LABEL, sudokuDifficultyFor } from "@/lib/games/dailySchedule";
 import { connectionsHints, miniAnswer, miniHints, wordleHints } from "@/lib/nytHints";
 import { todayISO } from "@/lib/dates";
-import { pageMetadata, websiteJsonLd } from "@/lib/seo";
+import { organizationJsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
+import QandA from "@/components/seo/QandA";
+import { HOME_QA } from "@/lib/aeo";
 import { SITE_DESCRIPTION } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
@@ -81,7 +83,7 @@ export default async function HomePage() {
 
   return (
     <div data-kit className="flex min-h-full flex-col">
-      <JsonLd data={websiteJsonLd()} />
+      <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
       <Header />
       <main className="flex-1">
         <DailySetHero dateLabel={dateLabel} cards={cards} />
@@ -108,6 +110,10 @@ export default async function HomePage() {
         </section>
 
         <ProfileSection />
+
+        <div className="mx-auto max-w-[880px] px-4 pb-16 sm:px-8">
+          <QandA items={HOME_QA} title="Questions about Funzzle" className="[&_h2]:font-display [&_h2]:text-[28px] [&_h2]:font-extrabold" />
+        </div>
       </main>
       <Footer />
     </div>

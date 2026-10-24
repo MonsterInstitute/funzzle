@@ -48,15 +48,14 @@ export function websiteJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
     name: SITE_NAME,
+    alternateName: "Funzzle — The Daily Puzzle Playground",
     url: SITE_URL,
     description:
-      "Free alternative to NYT Games — Wordle, Mini Crossword, Connections, and more, with no paywall.",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${SITE_URL}/clue/{search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
+      "Free daily puzzles — Sudoku, Solitaire, word games and more — with a coach that explains the next move, plus hints and answers for the day's NYT puzzles.",
+    publisher: { "@id": `${SITE_URL}/#organization` },
+    inLanguage: "en",
   };
 }
 
@@ -64,8 +63,32 @@ export function organizationJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
     name: SITE_NAME,
     url: SITE_URL,
+    logo: `${SITE_URL}/icon.svg`,
+    email: "hello@funzzle.com",
+    description: "Funzzle makes free daily puzzle games that teach you how to solve them.",
+  };
+}
+
+/** A playable game page: VideoGame + WebApplication. */
+export function gameJsonLd({ name, description, path, genre }: { name: string; description: string; path: string; genre: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": ["VideoGame", "WebApplication"],
+    name,
+    description,
+    url: absoluteUrl(path),
+    genre,
+    gamePlatform: "Web browser",
+    applicationCategory: "GameApplication",
+    operatingSystem: "Any",
+    playMode: "SinglePlayer",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    publisher: { "@id": `${SITE_URL}/#organization` },
   };
 }
 

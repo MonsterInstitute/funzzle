@@ -5,6 +5,8 @@ import Footer from "@/components/Footer";
 import AdSlot from "@/components/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
+import QandA from "@/components/seo/QandA";
+import { HOW_TO_QA } from "@/lib/aeo";
 
 export const metadata: Metadata = pageMetadata({
   title: "How to Play — Rules, Strategies & Tips for Every Game",
@@ -130,12 +132,9 @@ export default function HowToPlayPage() {
           How to Play Every Funzzle Game
         </h1>
         <p className="mt-3 leading-relaxed text-gray-700">
-          Funzzle is a free home for the daily puzzles people love — the
-          crossword, Wordle, Connections, and more — with no paywall and no
-          account. New to one of them, or looking to solve faster? This guide
-          covers the rules, a quick example, and the strategies that actually
-          move the needle for every game on the site. Jump to whichever puzzle
-          you&apos;re playing today.
+          Every Funzzle game is free and plays in your browser: pick a game
+          below for its rules, a quick example and the strategies that help
+          most. New puzzles arrive every day at midnight UTC.
         </p>
 
         <nav className="mt-6 flex flex-wrap gap-2">
@@ -176,6 +175,7 @@ export default function HowToPlayPage() {
         ))}
 
         <AdSlot slot="rectangle" className="mt-12" />
+        <QandA items={HOW_TO_QA} className="text-[#111827]" />
       </main>
 
       <Footer />

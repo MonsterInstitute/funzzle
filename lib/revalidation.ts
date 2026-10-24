@@ -2,8 +2,9 @@ import { shiftISODate, todayISO } from "./dates";
 
 /**
  * Paths that change from one UTC day to the next — refreshed on demand by
- * app/api/revalidate (Cloudflare Cron Trigger just after midnight UTC, and the Daily
- * Content workflow after it writes answers) instead of hourly ISR.
+ * app/api/revalidate (the rollover Cron Trigger just after midnight UTC) and
+ * by the answers/explain crons after they write today's rows, instead of
+ * hourly ISR.
  */
 
 /** Pages that render "today" (today's puzzle, today's answers, sitemap). */

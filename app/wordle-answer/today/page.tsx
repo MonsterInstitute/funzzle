@@ -9,6 +9,8 @@ import JsonLd from "@/components/JsonLd";
 import { getAnswer, type WordleAnswerData } from "@/lib/getAnswers";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { todayISO, formatLongDate } from "@/lib/dates";
+import QandA, { Summary } from "@/components/seo/QandA";
+import { wordleAnswerCopy } from "@/lib/aeo";
 
 // Shows "today": refreshed on demand at the UTC day change and after the daily
 // content run (lib/revalidation.ts); the 6h window is only a fallback.
@@ -30,6 +32,7 @@ export default async function WordleAnswerPage() {
   const long = formatLongDate(today);
   const row = await getAnswer<WordleAnswerData>(today, "wordle");
   const data = row?.answer_data;
+  const copy = wordleAnswerCopy(long, data);
 
   return (
     <>
@@ -47,6 +50,7 @@ export default async function WordleAnswerPage() {
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
           Today&apos;s Wordle Answer — {long}
         </h1>
+        <Summary className="text-gray-700">{copy.summary}</Summary>
 
         {data ? (
           <div className="mt-6">
@@ -111,6 +115,8 @@ export default async function WordleAnswerPage() {
             day, completely free and with no account required.
           </p>
         </section>
+
+        <QandA items={copy.qa} className="text-[#111827]" />
       </main>
 
       <Footer />

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import QandA, { Summary } from "@/components/seo/QandA";
+import { connectionsAnswerCopy } from "@/lib/aeo";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import HintLadder from "@/components/kit/HintLadder";
@@ -66,6 +68,7 @@ export default async function ConnectionsAnswersPage({
 
   const row = await getAnswer<ConnectionsAnswerData>(date, "connections");
   const groups = row?.answer_data?.groups ?? [];
+  const copy = connectionsAnswerCopy(long, row?.answer_data);
 
   return (
     <>
@@ -90,6 +93,7 @@ export default async function ConnectionsAnswersPage({
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
           NYT Connections Answers — {long}
         </h1>
+        <Summary className="text-gray-700">{copy.summary}</Summary>
 
         {/* Breadcrumb */}
         <nav className="mt-3 text-sm text-gray-500" aria-label="Breadcrumb">
@@ -167,6 +171,8 @@ export default async function ConnectionsAnswersPage({
             three easier groups first and the last four words fall into place.
           </p>
         </section>
+
+        <QandA items={copy.qa} className="text-[#111827]" />
 
         {/* Prev / Next nav */}
         <nav className="mt-10 flex items-center justify-between border-t border-[#e5e7eb] pt-6 text-sm font-medium">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GameGuide from "@/components/seo/GameGuide";
 import SolitaireGame from "@/components/solitaire/SolitaireGame";
 import { getDailySolitaire } from "@/lib/games/dailyPuzzles";
 import { todayISO } from "@/lib/dates";
@@ -18,5 +19,10 @@ export const revalidate = 21600;
 export default async function SolitairePage() {
   const today = todayISO();
   const [daily1, daily3] = await Promise.all([getDailySolitaire(today, 1), getDailySolitaire(today, 3)]);
-  return <SolitaireGame date={today} daily1={daily1} daily3={daily3} />;
+  return (
+    <>
+      <SolitaireGame date={today} daily1={daily1} daily3={daily3} />
+      <GameGuide slug="solitaire" path="/play/solitaire" />
+    </>
+  );
 }

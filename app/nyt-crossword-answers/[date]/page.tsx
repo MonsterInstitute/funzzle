@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import QandA, { Summary } from "@/components/seo/QandA";
+import { miniAnswerCopy } from "@/lib/aeo";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import HintLadder from "@/components/kit/HintLadder";
@@ -78,6 +80,7 @@ export default async function CrosswordAnswersPage({
     ? answerIntro(long, mini?.summary ?? null, miniClues)
     : null;
   const facts = answerFacts(miniClues);
+  const copy = miniAnswerCopy(long, mini?.answer_data);
 
   return (
     <>
@@ -96,6 +99,7 @@ export default async function CrosswordAnswersPage({
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827] sm:text-4xl">
           NYT Mini Crossword Answers — {long}
         </h1>
+        <Summary className="text-gray-700">{copy.summary}</Summary>
 
         {/* Breadcrumb */}
         <nav className="mt-3 text-sm text-gray-500" aria-label="Breadcrumb">
@@ -201,6 +205,8 @@ export default async function CrosswordAnswersPage({
             Play Today&apos;s Free Mini →
           </Link>
         </div>
+
+        <QandA items={copy.qa} className="text-[#111827]" />
 
         {/* Prev / Next nav */}
         <nav className="mt-10 flex items-center justify-between border-t border-[#e5e7eb] pt-6 text-sm font-medium">

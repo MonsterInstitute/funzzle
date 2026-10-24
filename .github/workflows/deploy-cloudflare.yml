@@ -24,7 +24,6 @@ on:
       - "reports/**"
       - "design/**"
       - ".github/workflows/test.yml"
-      - ".github/workflows/sync-worker-secrets.yml"
       - ".claude/**"
       - ".vscode/**"
   workflow_dispatch:

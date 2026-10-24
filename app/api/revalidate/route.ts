@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { isValidISODate } from "@/lib/dates";
 import { pathsToRevalidate } from "@/lib/revalidation";
 import { logRun } from "@/lib/cron/runLog";
+import { todayISO } from "@/lib/dates";
+import { changedUrls, submitIndexNow } from "@/lib/indexnow";
 import { isCronRequest, secretMatches } from "@/lib/secret";
 
 /**
@@ -46,6 +48,8 @@ export async function GET(request: Request) {
   }
   const startedAt = new Date().toISOString();
   const res = run([]);
-  await logRun("rollover", startedAt, true, { revalidated: pathsToRevalidate([]).length });
+  // Today's pages just changed: tell IndexNow engines (Bing & co.) to recrawl.
+  const indexNow = await submitIndexNow(changedUrls(todayISO()));
+  await logRun("rollover", startedAt, true, { revalidated: pathsToRevalidate([]).length, indexNow });
   return res;
 }

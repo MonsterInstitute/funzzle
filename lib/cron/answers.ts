@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { all, exec } from "@/lib/db";
 import { shiftISODate, todayISO } from "@/lib/dates";
 import { ensureDailyPuzzles } from "@/lib/games/dailyPuzzles";
+import { changedUrls, submitIndexNow } from "@/lib/indexnow";
 import { pathsToRevalidate } from "@/lib/revalidation";
 import { fetchConnections, fetchMini, fetchWordle } from "@/scripts/fetch-public-answers.mjs";
 
@@ -80,7 +81,10 @@ export async function runAnswersCron(): Promise<AnswersRun> {
 
   // Tomorrow's rows need no refresh now: the 00:01 UTC revalidation publishes them.
   const wroteToday = results.some((r) => r.status === "written" && r.date === today);
-  if (wroteToday) for (const p of pathsToRevalidate()) revalidatePath(p);
+  if (wroteToday) {
+    for (const p of pathsToRevalidate()) revalidatePath(p);
+    await submitIndexNow(changedUrls(today));
+  }
 
   // Funzzle's own daily puzzles (Sudoku grid, Solitaire deals): stored ahead
   // of time so everyone gets the stored puzzle. Pages generate the same puzzle

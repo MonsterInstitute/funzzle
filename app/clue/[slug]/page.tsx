@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import QandA, { Summary } from "@/components/seo/QandA";
+import { clueAnswerCopy } from "@/lib/aeo";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -61,6 +63,7 @@ export default async function CluePage({
 
   const related = await getRelatedClues(slug, clue.answer);
   const sections = buildClueSections(clue);
+  const copy = clueAnswerCopy(clue.clue_text, clue.answer);
 
   return (
     <>
@@ -88,11 +91,7 @@ export default async function CluePage({
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#111827]">
           Crossword Clue: {clue.clue_text}
         </h1>
-        <p className="mt-2 text-gray-600">
-          Here&apos;s the answer to the{" "}
-          <strong>{clue.clue_text}</strong> crossword clue, with an explanation
-          and where it has appeared.
-        </p>
+        <Summary className="text-gray-700">{copy.summary}</Summary>
 
         {/* Answer reveal */}
         <div className="mt-6">
@@ -232,6 +231,7 @@ export default async function CluePage({
         </div>
 
         <AdSlot slot="rectangle" className="mt-10" />
+        <QandA items={copy.qa} className="text-[#111827]" />
       </main>
 
       <Footer />

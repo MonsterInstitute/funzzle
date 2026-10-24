@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GameGuide from "@/components/seo/GameGuide";
 import SudokuGame from "@/components/sudoku/SudokuGame";
 import { getDailySudoku } from "@/lib/games/dailyPuzzles";
 import { todayISO } from "@/lib/dates";
@@ -18,5 +19,10 @@ export const revalidate = 21600;
 export default async function SudokuPage() {
   const today = todayISO();
   const daily = await getDailySudoku(today);
-  return <SudokuGame date={today} daily={{ difficulty: daily.difficulty, puzzle: daily.puzzle, solution: daily.solution }} />;
+  return (
+    <>
+      <SudokuGame date={today} daily={{ difficulty: daily.difficulty, puzzle: daily.puzzle, solution: daily.solution }} />
+      <GameGuide slug="sudoku" path="/play/sudoku" />
+    </>
+  );
 }
