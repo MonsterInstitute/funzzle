@@ -7,5 +7,7 @@ export default defineConfig({
   test: {
     include: ["lib/**/*.test.ts", "tests/unit/**/*.test.ts"],
     environment: "node",
+    // Solver/generator tests run a few seconds locally; CI runners are slower.
+    testTimeout: 30_000,
   },
 });
