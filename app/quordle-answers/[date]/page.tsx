@@ -1,77 +1,75 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import AdSlot from "@/components/ads/AdSlot";
-import JsonLd from "@/components/JsonLd";
-import RevealBox from "@/components/RevealBox";
-import { wordsForDate } from "@/lib/quordle";
-import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
-import { isValidISODate, formatLongDate, recentDates } from "@/lib/dates";
+import DailyAnswerPage from "@/components/answers/DailyAnswerPage";
+import { getAnswer, type QuordleAnswerData } from "@/lib/getAnswers";
+import { quordleAnswerCopy } from "@/lib/aeo";
+import { quordleHints } from "@/lib/nytHints";
+import { pageMetadata } from "@/lib/seo";
+import { FIRST_ANSWER_DATE, formatLongDate, isServedAnswerDate, recentAnswerDates } from "@/lib/dates";
 
 type Params = { date: string };
-// Each date's puzzle is computed from bundled data — static until the next deploy.
+
+// The real Quordle daily words, stored by the answers cron (lib/cron/answers.ts).
+// Static once written; refreshed on demand (lib/revalidation.ts), not on a timer.
 export const revalidate = false;
-export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return recentDates(30).map((date) => ({ date }));
+  return recentAnswerDates(30).map((date) => ({ date }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { date } = await params;
-  if (!isValidISODate(date)) return { title: "Quordle Answers" };
+  if (!isServedAnswerDate(date)) return { title: "Quordle Answers" };
   const long = formatLongDate(date);
   return pageMetadata({
-    title: `Quordle Answers ${long} — All 4 Words`,
-    description: `All four Quordle answers for ${long}, revealed. Plus play unlimited free Quordle on Funzzle.`,
+    title: `Quordle Answers ${long} — Hints & All Four Words`,
+    description: `Today's Quordle hints and answers for ${long}: graded hints for the daily Quordle, then all four words.`,
     path: `/quordle-answers/${date}`,
+    keywords: [`quordle answers ${long}`, "quordle answers today", "quordle hints"],
   });
 }
 
 export default async function QuordleAnswersPage({ params }: { params: Promise<Params> }) {
   const { date } = await params;
-  if (!isValidISODate(date)) notFound();
+  if (!isServedAnswerDate(date)) notFound();
   const long = formatLongDate(date);
-  const words = wordsForDate(date);
+  const row = await getAnswer<QuordleAnswerData>(date, "quordle");
+  const data = row?.answer_data;
+  const copy = quordleAnswerCopy(long, data);
 
   return (
-    <>
-      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Quordle Answers", path: `/quordle-answers/${date}` }])} />
-      <Header />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
-          Quordle Answers — {long}
-        </h1>
-        <p className="mt-3 text-gray-600">
-          All four words for the {long} Quordle. Tap a card to reveal each answer.
-        </p>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          {words.map((w, i) => (
-            <div key={i}>
-              <p className="mb-1 text-sm font-semibold text-gray-500">Word {i + 1}</p>
-              <RevealBox answer={w} />
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-6 text-gray-700">
-          Quordle asks you to solve four five-letter words at once with nine
-          guesses. A vowel-rich opener like AUDIO or RAISE, followed by a
-          consonant-heavy second guess, is the fastest way to narrow all four
-          boards at the same time.
-        </p>
-
-        <div className="mt-8 text-center">
-          <Link href="/play/word/quad" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play Funzzle Word · Quad →
-          </Link>
-        </div>
-        <AdSlot slot="in-content" className="mt-10" />
-      </main>
-      <Footer />
-    </>
+    <DailyAnswerPage
+      game="quordle"
+      label="Quordle"
+      title={`Quordle Answers — ${long}`}
+      basePath="/quordle-answers"
+      date={date}
+      firstDate={FIRST_ANSWER_DATE}
+      summary={copy.summary}
+      hints={data ? quordleHints(data) : null}
+      hintsTitle="Quordle hints"
+      answer={data && <strong>{data.words.join(", ")}</strong>}
+      pendingText="Today's Quordle answers will be posted soon. Check back later!"
+      source={
+        data && (
+          <>
+            Daily Quordle #{data.number} (Merriam-Webster), boards top left, top right, bottom left, bottom right. The
+            words are worked out exactly as the official game does, from its own word list.
+          </>
+        )
+      }
+      play={{ href: "/play/word/quad", label: "Play Word · Quad, free →" }}
+      howTo={{
+        title: "How to play Quordle",
+        body: (
+          <p className="mt-3">
+            Quordle is four Wordles at once. Each guess is entered on all four boards, and the tiles turn green for the
+            right letter in the right spot and yellow for a letter in the wrong spot. You have nine guesses to solve all
+            four five-letter words, so pick early guesses that cover many common letters.
+          </p>
+        ),
+      }}
+      qa={copy.qa}
+    />
   );
 }

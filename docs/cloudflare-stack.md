@@ -132,7 +132,7 @@ All schedules are UTC. Each schedule maps to one route in `worker.ts`
 | Cron | Route | Job |
 |---|---|---|
 | `1 0 * * *` | `/api/revalidate` | rollover: revalidate today's pages after midnight UTC |
-| `5 2,3,6,14,22,23 * * *` | `/api/cron/answers` | fetch missing NYT answers (today + tomorrow), store daily puzzles |
+| `5 2,3,6,14,22,23 * * *` | `/api/cron/answers` | fetch missing real answers (Wordle, Connections, Mini, Strands, Quordle, Worldle, Nerdle: today + tomorrow; Letter Boxed: yesterday + today), store daily puzzles |
 | `20 3,7,15,23 * * *` | `/api/cron/explain` | DeepSeek: answer explanations, Sudoku coach text, and the daily content for Groups, Mini Crossword, Word Hunt, Word Search and Crossword (clues/categories/themes, validated in code; each falls back to a hand-written bank) |
 | `0 13 * * *` | `/api/cron/reminders` | daily reminder: email (Email Sending) + web push (VAPID, `lib/webpush.ts`), one per channel per day |
 

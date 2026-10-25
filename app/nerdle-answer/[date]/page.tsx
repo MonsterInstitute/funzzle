@@ -1,74 +1,75 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import AdSlot from "@/components/ads/AdSlot";
-import RevealBox from "@/components/RevealBox";
-import JsonLd from "@/components/JsonLd";
-import { equationForDate } from "@/lib/nerdle";
-import { EQUATIONS } from "@/lib/content/equations";
-import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
-import { isValidISODate, formatLongDate, recentDates } from "@/lib/dates";
+import DailyAnswerPage from "@/components/answers/DailyAnswerPage";
+import { getAnswer, type NerdleAnswerData } from "@/lib/getAnswers";
+import { nerdleAnswerCopy } from "@/lib/aeo";
+import { nerdleHints } from "@/lib/nytHints";
+import { pageMetadata } from "@/lib/seo";
+import { FIRST_ANSWER_DATE, formatLongDate, isServedAnswerDate, recentAnswerDates } from "@/lib/dates";
 
 type Params = { date: string };
-// Each date's puzzle is computed from bundled data — static until the next deploy.
+
+// The real classic Nerdle answer, stored by the answers cron (lib/cron/answers.ts).
+// Static once written; refreshed on demand (lib/revalidation.ts), not on a timer.
 export const revalidate = false;
-export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return recentDates(30).map((date) => ({ date }));
+  return recentAnswerDates(30).map((date) => ({ date }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { date } = await params;
-  if (!isValidISODate(date)) return { title: "Nerdle Answer" };
+  if (!isServedAnswerDate(date)) return { title: "Nerdle Answer" };
   const long = formatLongDate(date);
   return pageMetadata({
-    title: `Nerdle Answer for ${long}: Equation Solved & Explained`,
-    description: `The Nerdle answer for ${long}, with how each part of the equation works so the next one is easier. Then play free Nerdle on Funzzle.`,
+    title: `Nerdle Answer ${long} — Hints & Equation`,
+    description: `Today's classic Nerdle hints and answer for ${long}: two graded hints, then the full equation.`,
     path: `/nerdle-answer/${date}`,
+    keywords: [`nerdle answer ${long}`, "nerdle answer today", "nerdle hint"],
   });
 }
 
 export default async function NerdleAnswerPage({ params }: { params: Promise<Params> }) {
   const { date } = await params;
-  if (!isValidISODate(date)) notFound();
+  if (!isServedAnswerDate(date)) notFound();
   const long = formatLongDate(date);
-  const eq = equationForDate(date);
-  const [lhs, rhs] = eq.split("=");
-  const known = EQUATIONS.find((e) => e.equation === eq);
+  const row = await getAnswer<NerdleAnswerData>(date, "nerdle");
+  const data = row?.answer_data;
+  const copy = nerdleAnswerCopy(long, data);
 
   return (
-    <>
-      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Nerdle Answer", path: `/nerdle-answer/${date}` }])} />
-      <Header />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
-          Nerdle Answer — {long}
-        </h1>
-        <p className="mt-3 text-gray-600">Today&apos;s eight-character equation, revealed:</p>
-
-        <div className="mt-6">
-          <RevealBox answer={eq} />
-        </div>
-
-        <section className="mt-8">
-          <h2 className="text-xl font-bold text-[#111827]">How it works</h2>
-          <p className="mt-2 text-gray-700">
-            {known?.explanation ??
-              `The left side, ${lhs}, evaluates to ${rhs}. Nerdle follows standard order of operations, so multiplication and division are calculated before addition and subtraction.`}
+    <DailyAnswerPage
+      game="nerdle"
+      label="Nerdle"
+      title={`Nerdle Answer — ${long}`}
+      basePath="/nerdle-answer"
+      date={date}
+      firstDate={FIRST_ANSWER_DATE}
+      summary={copy.summary}
+      hints={data ? nerdleHints(data) : null}
+      hintsTitle="Nerdle hints"
+      answer={data && <strong className="font-mono text-lg tracking-[0.2em]">{data.equation}</strong>}
+      pendingText="Today's Nerdle answer will be posted soon. Check back later!"
+      source={
+        data && (
+          <>
+            Classic Nerdle{data.number ? ` #${data.number}` : ""}; the answer comes from nerdlegame.com&apos;s official
+            answer archive.
+          </>
+        )
+      }
+      play={{ href: "/play/word/math", label: "Play Word · Math, free →" }}
+      howTo={{
+        title: "How to play Nerdle",
+        body: (
+          <p className="mt-3">
+            Nerdle is a maths version of Wordle: guess an eight-character equation, such as 12+35=47, in six tries.
+            Green means the right character in the right place, purple means it belongs elsewhere, and black means it
+            isn&apos;t in the answer. Multiplication and division are worked out before addition and subtraction.
           </p>
-        </section>
-
-        <div className="mt-8 text-center">
-          <Link href="/play/word/math" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play Funzzle Word · Math →
-          </Link>
-        </div>
-        <AdSlot slot="in-content" className="mt-10" />
-      </main>
-      <Footer />
-    </>
+        ),
+      }}
+      qa={copy.qa}
+    />
   );
 }

@@ -1,7 +1,9 @@
 /**
  * Backfill REAL answers for a range of past dates with the same public-source
  * fetchers the answers cron uses, written to D1 over the REST API. Covers
- * Wordle, Connections and the NYT Mini. Rows are stored without DeepSeek
+ * Wordle, Connections, the NYT Mini, Strands, Quordle, Worldle, Nerdle and
+ * Letter Boxed (today and yesterday only: NYT has no Letter Boxed archive, so
+ * older dates are reported "n/a"). Rows are stored without DeepSeek
  * prose (summary NULL); the explain cron only covers today and tomorrow, so
  * backfilled pages show the answers and hints without the explanations.
  *
@@ -18,18 +20,51 @@
  *   node scripts/backfill-answers.mjs 2026-07-01 2026-07-02 ...
  *   node scripts/backfill-answers.mjs --last=8 --games=wordle,connections
  *   node scripts/backfill-answers.mjs --last=16 --games=nyt-mini --missing-only
+ *   node scripts/backfill-answers.mjs --from=2026-06-01 --games=strands,quordle,worldle,nerdle --missing-only
+ *   node scripts/backfill-answers.mjs --last=2 --games=letter-boxed --missing-only
+ * Without --missing-only an existing row is REPLACED (its explanation cleared),
+ * so prefer --missing-only unless a stored row is known to be wrong.
  * then refresh the pages: REVALIDATE_SECRET=… node scripts/revalidate-site.mjs --last=8
  *
  * Auth: CLOUDFLARE_API_TOKEN (D1 Edit) or a local `wrangler login`.
  */
 import { d1 } from "./lib/d1-rest.mjs";
-import { fetchConnections, fetchMini, fetchWordle } from "./fetch-public-answers.mjs";
+import {
+  fetchConnections,
+  fetchLetterBoxed,
+  fetchMini,
+  fetchNerdle,
+  fetchQuordle,
+  fetchStrands,
+  fetchWordle,
+  fetchWorldle,
+} from "./fetch-public-answers.mjs";
 
 const GAMES = [
   { key: "wordle", label: "Wordle", fetch: fetchWordle },
   { key: "connections", label: "Connections", fetch: fetchConnections },
   { key: "nyt-mini", label: "NYT Mini", fetch: fetchMini },
+  { key: "strands", label: "Strands", fetch: fetchStrands },
+  { key: "quordle", label: "Quordle", fetch: fetchQuordle },
+  { key: "worldle", label: "Worldle", fetch: fetchWorldle },
+  { key: "nerdle", label: "Nerdle", fetch: fetchNerdle },
+  { key: "letter-boxed", label: "Letter Boxed", fetch: fetchLetterBoxed },
 ];
+
+/** One-line summary of a fetched row, for the log. */
+function describe(type, d) {
+  switch (type) {
+    case "wordle": return d.answer;
+    case "connections": return `${d.groups.length} groups`;
+    case "nyt-mini": return `${d.across.length}A/${d.down.length}D`;
+    case "strands": return `${d.spangram} + ${d.words.length} words`;
+    case "quordle": return `#${d.number} ${d.words.join(" ")}`;
+    case "worldle": return d.country;
+    case "nerdle": return d.equation;
+    case "letter-boxed": return d.solution.join("-");
+    default: return "ok";
+  }
+}
 
 /** Replace the answers for (date, type), keeping the row's created_at. */
 async function upsertAnswer(row) {
@@ -50,6 +85,7 @@ function shiftISO(dateISO, days) {
 const args = process.argv.slice(2);
 const explicitDates = args.filter((a) => /^\d{4}-\d{2}-\d{2}$/.test(a));
 const lastArg = args.find((a) => a.startsWith("--last="));
+const fromArg = args.find((a) => a.startsWith("--from="));
 const gamesArg = args.find((a) => a.startsWith("--games="));
 const missingOnly = args.includes("--missing-only");
 
@@ -60,8 +96,20 @@ if (lastArg) {
   // today and the previous n-1 days, oldest first
   dates = Array.from({ length: n }, (_, i) => shiftISO(today, -(n - 1 - i)));
 }
+if (fromArg) {
+  const from = fromArg.slice("--from=".length);
+  const today = new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || from > today) {
+    console.error("--from must be a YYYY-MM-DD date, not after today");
+    process.exit(1);
+  }
+  dates = [];
+  for (let d = from; d <= today; d = shiftISO(d, 1)) dates.push(d);
+}
 if (dates.length === 0) {
-  console.error("Usage: backfill-answers.mjs (--last=N | <YYYY-MM-DD>...) [--games=wordle,connections,nyt-mini] [--missing-only]");
+  console.error(
+    `Usage: backfill-answers.mjs (--last=N | --from=YYYY-MM-DD | <YYYY-MM-DD>...) [--games=${GAMES.map((g) => g.key).join(",")}] [--missing-only]`
+  );
   process.exit(1);
 }
 
@@ -77,8 +125,12 @@ if (unknown.length || games.length === 0) {
 
 let existing = new Set();
 if (missingOnly) {
-  const rows = await d1(`SELECT publish_date, type FROM answers WHERE publish_date IN (${dates.map(() => "?").join(", ")})`, dates);
-  existing = new Set(rows.map((r) => `${r.publish_date}|${r.type}`));
+  // D1 allows at most 100 bound parameters per statement.
+  for (let i = 0; i < dates.length; i += 90) {
+    const chunk = dates.slice(i, i + 90);
+    const rows = await d1(`SELECT publish_date, type FROM answers WHERE publish_date IN (${chunk.map(() => "?").join(", ")})`, chunk);
+    for (const r of rows) existing.add(`${r.publish_date}|${r.type}`);
+  }
 }
 
 console.log(
@@ -93,16 +145,16 @@ for (const date of dates) {
       results[date][game.key] = "present";
       continue;
     }
+    // NYT's Letter Boxed page only carries today's and yesterday's box.
+    if (game.key === "letter-boxed" && date < shiftISO(new Date().toISOString().slice(0, 10), -1)) {
+      results[date][game.key] = "n/a";
+      continue;
+    }
     try {
       const { answer_data, source } = await game.fetch(date);
       const row = { publish_date: date, type: game.key, answer_data };
       await upsertAnswer(row);
-      const detail =
-        game.key === "wordle"
-          ? row.answer_data.answer
-          : game.key === "connections"
-          ? `${row.answer_data.groups.length} groups`
-          : `${row.answer_data.across.length}A/${row.answer_data.down.length}D`;
+      const detail = describe(game.key, row.answer_data);
       results[date][game.key] = `ok (${source}): ${detail}`;
       console.log(`✅ ${date} ${game.label}: ${detail}  [${source}]`);
     } catch (err) {
@@ -115,7 +167,7 @@ for (const date of dates) {
 // Summary matrix
 console.log("\n===== BACKFILL SUMMARY =====");
 const pad = (s, n) => String(s).padEnd(n);
-const mark = (v) => (v.startsWith("ok") ? "✓" : v === "present" ? "· exists" : "✗ FAIL");
+const mark = (v) => (v.startsWith("ok") ? "✓" : v === "present" ? "· exists" : v === "n/a" ? "– n/a" : "✗ FAIL");
 console.log(pad("date", 12) + games.map((g) => pad(g.key, 14)).join(""));
 for (const date of dates) {
   console.log(pad(date, 12) + games.map((g) => pad(mark(results[date][g.key]), 14)).join(""));

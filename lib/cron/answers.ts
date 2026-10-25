@@ -4,29 +4,58 @@ import { shiftISODate, todayISO } from "@/lib/dates";
 import { ensureDailyPuzzles, spiderDaysStored } from "@/lib/games/dailyPuzzles";
 import { changedUrls, submitIndexNow } from "@/lib/indexnow";
 import { pathsToRevalidate } from "@/lib/revalidation";
-import { fetchConnections, fetchMini, fetchWordle } from "@/scripts/fetch-public-answers.mjs";
+import {
+  fetchConnections,
+  fetchLetterBoxed,
+  fetchMini,
+  fetchNerdle,
+  fetchQuordle,
+  fetchStrands,
+  fetchWordle,
+  fetchWorldle,
+} from "@/scripts/fetch-public-answers.mjs";
 
 /**
  * Fills in any missing answer rows for today and tomorrow (UTC) straight from
  * the public sources — no LLM, so it is fast and cheap — and stores Funzzle's
  * own daily puzzles. Cron "5 2,3,6,14,22,23 * * *":
  *
- *   22:05, 23:05 UTC  tomorrow's Wordle + Connections (NYT publishes them days
- *                     ahead) and weekend Minis (released 18:00 ET) land BEFORE
- *                     the date begins; the 00:01 revalidation publishes them.
+ *   22:05, 23:05 UTC  tomorrow's Wordle, Connections, Strands, Quordle, Worldle
+ *                     and Nerdle (all published ahead) and weekend Minis
+ *                     (released 18:00 ET) land BEFORE the date begins; the
+ *                     00:01 revalidation publishes them.
  *   02:05, 03:05 UTC  weekday Minis, released 22:00 ET (02:00 UTC in EDT,
  *                     03:00 UTC in EST) — the earliest they exist anywhere.
- *   06:05, 14:05 UTC  retries.
+ *   06:05, 14:05 UTC  retries. Letter Boxed changes at 3 a.m. ET (07:00/08:00
+ *                     UTC) and is never published ahead, so 14:05 is the first
+ *                     run that can store the UTC day's box; the page's
+ *                     "yesterday" block lets a later run fill a missed day.
  *
  * Existing rows are never overwritten: the explain cron later adds DeepSeek
  * explanations to these rows in place.
  */
 
-const GAMES = [
-  { type: "wordle", fetch: fetchWordle },
-  { type: "connections", fetch: fetchConnections },
-  { type: "nyt-mini", fetch: fetchMini },
-] as const;
+type Fetched = { answer_data: unknown; source: string };
+interface Game {
+  type: string;
+  fetch: (date: string) => Promise<Fetched>;
+  /** Days relative to today (UTC) to fill. */
+  days: readonly number[];
+  /** UTC hour from which today's row missing is a failure (alert). */
+  todayDueHour: number;
+}
+
+const AHEAD = [0, 1] as const;
+const GAMES: Game[] = [
+  { type: "wordle", fetch: fetchWordle, days: AHEAD, todayDueHour: 0 },
+  { type: "connections", fetch: fetchConnections, days: AHEAD, todayDueHour: 0 },
+  { type: "nyt-mini", fetch: fetchMini, days: AHEAD, todayDueHour: 0 },
+  { type: "strands", fetch: fetchStrands, days: AHEAD, todayDueHour: 0 },
+  { type: "quordle", fetch: fetchQuordle, days: AHEAD, todayDueHour: 0 },
+  { type: "worldle", fetch: fetchWorldle, days: AHEAD, todayDueHour: 0 },
+  { type: "nerdle", fetch: fetchNerdle, days: AHEAD, todayDueHour: 0 },
+  { type: "letter-boxed", fetch: fetchLetterBoxed, days: [-1, 0], todayDueHour: 9 },
+];
 
 type Result = { date: string; type: string } & (
   | { status: "present" }
@@ -47,16 +76,18 @@ export interface AnswersRun {
 export async function runAnswersCron(): Promise<AnswersRun> {
   const today = todayISO();
   const dates = [today, shiftISODate(today, 1)];
+  const queried = [shiftISODate(today, -1), ...dates];
 
   const existing = await all<{ publish_date: string; type: string }>(
-    "SELECT publish_date, type FROM answers WHERE publish_date IN (?, ?)",
-    ...dates
+    "SELECT publish_date, type FROM answers WHERE publish_date IN (?, ?, ?)",
+    ...queried
   );
   const present = new Set(existing.map((r) => `${r.publish_date}|${r.type}`));
 
   const results: Result[] = await Promise.all(
-    dates.flatMap((date) =>
-      GAMES.map(async (game): Promise<Result> => {
+    GAMES.flatMap((game) =>
+      game.days.map(async (offset): Promise<Result> => {
+        const date = shiftISODate(today, offset);
         if (present.has(`${date}|${game.type}`)) return { date, type: game.type, status: "present" };
         try {
           const { answer_data, source } = await game.fetch(date);
@@ -82,7 +113,9 @@ export async function runAnswersCron(): Promise<AnswersRun> {
   }
 
   // Tomorrow's rows need no refresh now: the 00:01 UTC revalidation publishes them.
-  const wroteToday = results.some((r) => r.status === "written" && r.date === today);
+  // A Letter Boxed row for yesterday is a live page too (pathsToRevalidate
+  // covers yesterday's answer pages).
+  const wroteToday = results.some((r) => r.status === "written" && r.date <= today);
   if (wroteToday) {
     for (const p of pathsToRevalidate()) revalidatePath(p);
     await submitIndexNow(changedUrls(today));
@@ -109,8 +142,14 @@ export async function runAnswersCron(): Promise<AnswersRun> {
   const spiderLow = spiderDays !== null && spiderDays < 30;
 
   // Today's answers should always exist by now; a gap is a failure (alert).
-  // Tomorrow's Mini is routinely unreleased until 22:00 ET, so tomorrow's gaps aren't.
-  const todayMissing = results.some((r) => r.status === "missing" && r.date === today);
+  // Tomorrow's Mini is routinely unreleased until 22:00 ET, so tomorrow's gaps
+  // aren't; nor is today's Letter Boxed before NYT's 3 a.m. ET changeover
+  // (todayDueHour), nor yesterday's (best effort: it may have rotated off).
+  const hour = new Date().getUTCHours();
+  const dueHour = new Map(GAMES.map((g) => [g.type, g.todayDueHour]));
+  const todayMissing = results.some(
+    (r) => r.status === "missing" && r.date === today && hour >= (dueHour.get(r.type) ?? 0)
+  );
   return {
     ok: !todayMissing && !("error" in puzzles) && !spiderLow,
     today,

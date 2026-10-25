@@ -1,7 +1,7 @@
 /**
  * Funzzle Word Math: guess an 8-character equation (digits and + - * / =).
  * Evaluation and validation carry over the rules of the original equation
- * game (lib/nerdle.ts): normal operator precedence, whole numbers only, and
+ * game Funzzle used to ship: normal operator precedence, whole numbers only, and
  * every division must come out exact.
  *
  * Answers are enumerated, not hand-picked: every "a op b = c" or

@@ -6,7 +6,6 @@ import Footer from "@/components/Footer";
 import AdSlot from "@/components/ads/AdSlot";
 import JsonLd from "@/components/JsonLd";
 import { COUNTRIES } from "@/lib/content/countries";
-import { WORLDLE_DAILY } from "@/lib/worldle";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -35,8 +34,6 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
   const { slug } = await params;
   const c = bySlug.get(slug);
   if (!c) notFound();
-
-  const isWorldle = WORLDLE_DAILY.some((d) => d.slug === slug);
 
   return (
     <>
@@ -78,16 +75,6 @@ export default async function CountryPage({ params }: { params: Promise<Params> 
         )}
 
         <AdSlot slot="in-content" className="my-8" />
-
-        {isWorldle && (
-          <p className="rounded-xl bg-green-50 p-4 text-sm text-[#111827]">
-            🌍 {c.name} is one of the countries featured in{" "}
-            <Link href="/play/word/geo" className="font-semibold text-[#16a34a] hover:underline">
-              Funzzle Worldle
-            </Link>{" "}
-            — guess it from its silhouette!
-          </p>
-        )}
 
         <div className="mt-8 text-center">
           <Link href="/play/word/geo" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">

@@ -5,7 +5,16 @@
  * closed until tapped.
  */
 import type { QA } from "@/components/seo/QandA";
-import type { ConnectionsAnswerData, CrosswordAnswerData, WordleAnswerData } from "@/lib/getAnswers";
+import type {
+  ConnectionsAnswerData,
+  CrosswordAnswerData,
+  LetterBoxedAnswerData,
+  NerdleAnswerData,
+  QuordleAnswerData,
+  StrandsAnswerData,
+  WordleAnswerData,
+  WorldleAnswerData,
+} from "@/lib/getAnswers";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const vowelsIn = (w: string) => (w.match(/[aeiou]/gi) ?? []).length;
@@ -781,6 +790,145 @@ const MINI_GENERAL: QA[] = [
     q: "How long does the Mini Crossword take?",
     a: "Most people finish the 5×5 Mini in one to three minutes. Saturday's Mini is often a larger grid and takes a little longer.",
   },
+];
+
+// ---------------------------------------------------------------------------
+// Other publishers' daily puzzles (Strands, Letter Boxed: NYT; Quordle:
+// Merriam-Webster; Worldle: teuteuf; Nerdle: nerdlegame.com). Always the real
+// answer from the publisher — never Funzzle's own puzzles.
+// ---------------------------------------------------------------------------
+
+const NOT_FUNZZLE =
+  "No. Funzzle is independent. These are the real answers to that day's official puzzle, taken from the publisher's own game data; Funzzle's own word games are separate puzzles with their own answers.";
+
+export function strandsAnswerCopy(long: string, data: StrandsAnswerData | undefined) {
+  if (!data) {
+    return {
+      summary: `The NYT Strands answers for ${long} go up just after midnight UTC: hints first, then the spangram and every theme word.`,
+      qa: STRANDS_GENERAL,
+    };
+  }
+  return {
+    summary: `Today's Strands (${long}) has the theme clue “${data.clue}”, ${plural(data.words.length, "theme word")} and a ${data.spangram.length}-letter spangram. Start with the hints below, or reveal the answers when you're ready.`,
+    qa: [
+      { q: `What is the Strands spangram today, ${long}?`, a: `The spangram for ${long} is ${data.spangram}.` },
+      { q: `What are today's Strands answers, ${long}?`, a: `Theme words: ${data.words.join(", ")}. Spangram: ${data.spangram}.` },
+      { q: "What is today's Strands theme?", a: `NYT's theme clue for ${long} is “${data.clue}”.` },
+      ...STRANDS_GENERAL,
+    ],
+  };
+}
+
+const STRANDS_GENERAL: QA[] = [
+  {
+    q: "How does Strands work?",
+    a: "Strands is a New York Times word search on a 6×8 letter grid. Every letter belongs to exactly one answer: the theme words, plus a spangram that names the theme and touches two opposite sides of the board.",
+  },
+  { q: "Is this Funzzle's own puzzle?", a: NOT_FUNZZLE },
+];
+
+export function letterBoxedAnswerCopy(long: string, data: LetterBoxedAnswerData | undefined) {
+  if (!data) {
+    return {
+      summary: `NYT's Letter Boxed solution for ${long} goes up once the day's box is live (3 a.m. Eastern), with hints first.`,
+      qa: LETTER_BOXED_GENERAL,
+    };
+  }
+  const sol = data.solution.join(" → ");
+  return {
+    summary: `Today's Letter Boxed (${long}) uses the sides ${data.sides.join(", ")}. NYT's own solution takes ${plural(data.solution.length, "word")}${data.par ? `; par is ${data.par}` : ""}. Try the hints below first.`,
+    qa: [
+      { q: `What is the Letter Boxed solution today, ${long}?`, a: `NYT's solution for ${long} is ${sol}.` },
+      { q: "What letters are in today's Letter Boxed?", a: `The four sides are ${data.sides.join(", ")}.` },
+      ...LETTER_BOXED_GENERAL,
+    ],
+  };
+}
+
+const LETTER_BOXED_GENERAL: QA[] = [
+  {
+    q: "How does Letter Boxed work?",
+    a: "Twelve letters sit three to a side of a square. Make words by joining letters, never two from the same side in a row; each new word starts with the last letter of the previous one. Use every letter, ideally within par.",
+  },
+  {
+    q: "Is NYT's solution the only answer?",
+    a: "No. Any chain of valid words that uses all twelve letters solves the puzzle. NYT publishes its own short solution the next day, and that is the one shown here.",
+  },
+  { q: "Is this Funzzle's own puzzle?", a: NOT_FUNZZLE },
+];
+
+export function quordleAnswerCopy(long: string, data: QuordleAnswerData | undefined) {
+  if (!data) {
+    return {
+      summary: `The Quordle answers for ${long} go up just after midnight UTC, with hints before the four words.`,
+      qa: QUORDLE_GENERAL,
+    };
+  }
+  return {
+    summary: `Today's Quordle (#${data.number}, ${long}) hides four five-letter words, starting with ${data.words.map((w) => w[0]).join(", ")}. Work through the hints, or reveal all four.`,
+    qa: [
+      { q: `What are today's Quordle answers, ${long}?`, a: `The Quordle #${data.number} answers are ${data.words.join(", ")}.` },
+      { q: "What letters do today's Quordle words start with?", a: `${data.words.map((w) => w[0]).join(", ")}.` },
+      ...QUORDLE_GENERAL,
+    ],
+  };
+}
+
+const QUORDLE_GENERAL: QA[] = [
+  {
+    q: "How does Quordle work?",
+    a: "Quordle, from Merriam-Webster, is four Wordles at once: every guess goes on all four boards, and you have nine guesses to find all four five-letter words.",
+  },
+  { q: "Is this Funzzle's own puzzle?", a: NOT_FUNZZLE },
+];
+
+export function worldleAnswerCopy(long: string, data: WorldleAnswerData | undefined) {
+  if (!data) {
+    return {
+      summary: `The Worldle country for ${long} goes up just after midnight UTC, with hints before the answer.`,
+      qa: WORLDLE_GENERAL,
+    };
+  }
+  return {
+    summary: `Today's Worldle (${long}) is a country or territory in the ${data.lat >= 0 ? "Northern" : "Southern"} Hemisphere whose name starts with ${data.country[0]}. Use the hints below, or reveal the answer.`,
+    qa: [
+      { q: `What is the Worldle answer today, ${long}?`, a: `The Worldle answer for ${long} is ${data.country}.` },
+      ...WORLDLE_GENERAL,
+    ],
+  };
+}
+
+const WORLDLE_GENERAL: QA[] = [
+  {
+    q: "How does Worldle work?",
+    a: "Worldle (worldle.teuteuf.fr) shows the outline of a country or territory. You have six guesses; after each one it tells you the distance and direction to the answer.",
+  },
+  { q: "Is this Funzzle's own puzzle?", a: NOT_FUNZZLE },
+];
+
+export function nerdleAnswerCopy(long: string, data: NerdleAnswerData | undefined) {
+  if (!data) {
+    return {
+      summary: `The Nerdle answer for ${long} goes up just after midnight UTC, with hints before the equation.`,
+      qa: NERDLE_GENERAL,
+    };
+  }
+  const right = data.equation.split("=")[1];
+  return {
+    summary: `Today's Nerdle${data.number ? ` (#${data.number})` : ""} for ${long} is an eight-character equation whose result is ${right}. Try the hints, or reveal the full equation.`,
+    qa: [
+      { q: `What is the Nerdle answer today, ${long}?`, a: `The classic Nerdle answer for ${long} is ${data.equation}.` },
+      ...NERDLE_GENERAL,
+    ],
+  };
+}
+
+const NERDLE_GENERAL: QA[] = [
+  {
+    q: "How does Nerdle work?",
+    a: "Nerdle is Wordle with maths: guess an eight-character equation such as 12+35=47 in six tries. Tiles turn green, purple or black, and normal operator precedence applies.",
+  },
+  { q: "Is this Funzzle's own puzzle?", a: NOT_FUNZZLE },
 ];
 
 export function clueAnswerCopy(clue: string, answer: string) {
