@@ -11,6 +11,7 @@ import { ensureMiniPuzzles } from "@/lib/cron/content/mini";
 import { ensureWordHuntPuzzles } from "@/lib/cron/content/wordhunt";
 import { ensureWordSearchPuzzles } from "@/lib/cron/content/wordsearch";
 import { crosswordDatesAhead, ensureCrosswordPuzzles } from "@/lib/cron/content/crossword";
+import { isRejectionLine } from "@/lib/cron/content/rejections";
 
 /**
  * Explain cron ("20 3,7,15,23 * * *", worker.ts): DeepSeek explanations for
@@ -55,6 +56,7 @@ export async function GET(request: Request) {
 
   // LLM-written daily content (clues, categories, themes), validated in code.
   // Each job falls back to its hand-written bank, so a failure only alerts.
+  // A job also returns one line per date whose replies were rejected (why).
   const content: Record<string, string[]> = {};
   const jobs: [string, string, (dates: string[]) => Promise<string[]>][] = [
     ["groups", "/play/groups", ensureGroupsPuzzles],
@@ -70,14 +72,15 @@ export async function GET(request: Request) {
     try {
       content[game] = await ensure(dates);
       // Today's row only changes a live page if it was written just now.
-      if (content[game].some((w) => w.includes(today))) revalidatePath(path);
+      if (content[game].some((w) => w.includes(today) && !isRejectionLine(w))) revalidatePath(path);
     } catch (err) {
       errors.push(`${game}: ${(err as Error).message}`);
     }
   }
 
   const ok = errors.length === 0;
-  const detail = { ok, answers, coach, content, errors };
+  // errors and content first: logRun keeps only the first 4000 chars.
+  const detail = { ok, errors, content, answers, coach };
   await logRun("explain", startedAt, ok, detail);
   return NextResponse.json(detail, { status: ok ? 200 : 502 });
 }

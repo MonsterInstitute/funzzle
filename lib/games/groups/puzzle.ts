@@ -53,7 +53,7 @@ export const LEVEL_NAME: Record<Level, string> = {
 /** Comparison key for a word: case and spacing don't make two words different. */
 export const wordKey = (w: string) => w.toLowerCase().replace(/[^a-z]/g, "");
 
-const WORD_RE = /^[A-Za-z](?:[A-Za-z' -]*[A-Za-z])?$/;
+export const WORD_RE = /^[A-Za-z](?:[A-Za-z' -]*[A-Za-z])?$/;
 
 /**
  * Shape checks every puzzle must pass (also run in the browser on archive

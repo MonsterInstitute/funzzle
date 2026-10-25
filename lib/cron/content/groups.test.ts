@@ -12,10 +12,23 @@ vi.mock("@/lib/db", () => ({
 
 import { shiftISODate, todayISO } from "@/lib/dates";
 import { bankPuzzleFor, BANK } from "@/lib/games/groups";
-import { ATTEMPTS, ensureGroupsPuzzles, generateGroups, parseGenerated, parseProblems } from "./groups";
+import {
+  CHECK_ROUNDS,
+  GEN_ATTEMPTS,
+  ensureGroupsPuzzles,
+  generateGroups,
+  generationPrompt,
+  normalizeWord,
+  parseCandidates,
+  parseGenerated,
+  parseProblems,
+  repair,
+} from "./groups";
 
-const reply = (mutate?: (g: { level: number; title: string; hint: string; words: string[] }[]) => void) => {
-  const groups = BANK[4].groups.map((g) => ({ level: g.level, title: g.title, hint: g.hint, words: [...g.words] }));
+type G = { level: number; title: string; hint: string; words: string[] };
+
+const reply = (mutate?: (g: G[]) => void) => {
+  const groups = BANK[4].groups.map((g) => ({ level: g.level as number, title: g.title, hint: g.hint, words: [...g.words] as string[] }));
   mutate?.(groups);
   return { groups };
 };
@@ -44,16 +57,21 @@ describe("groups content generation", () => {
   });
 
   it.each([
-    ["a blocked word", (g: { words: string[] }[]) => (g[0].words[0] = "porn")],
-    ["a made-up word", (g: { words: string[] }[]) => (g[0].words[0] = "flurbix")],
-    ["a word over 14 chars", (g: { words: string[] }[]) => (g[1].words[1] = "extraordinarily")],
-    ["a duplicate word", (g: { words: string[] }[]) => (g[1].words[0] = g[0].words[0].toUpperCase())],
-    ["three words in a group", (g: { words: string[] }[]) => g[2].words.pop()],
-    ["a long title", (g: { title: string }[]) => (g[3].title = "A very long title that goes on and on forever")],
-    ["a hint that gives a word away", (g: { hint: string; words: string[] }[]) => (g[0].hint = `Think ${g[0].words[2]}`)],
-    ["a missing level", (g: { level: number }[]) => (g[3].level = 3)],
-  ])("rejects %s", (_name, mutate) => {
-    expect(() => parseGenerated(reply(mutate as never), "2026-11-01")).toThrow();
+    ["a blocked word", (g: G[]) => (g[0].words[0] = "porn")],
+    ["a made-up word", (g: G[]) => (g[0].words[0] = "flurbix")],
+    ["a word over 14 chars", (g: G[]) => (g[1].words[1] = "extraordinarily")],
+    ["a duplicate word", (g: G[]) => (g[1].words[0] = g[0].words[0].toUpperCase())],
+    ["three words in a group", (g: G[]) => g[2].words.pop()],
+    ["a long title", (g: G[]) => (g[3].title = "A very long title that goes on and on forever")],
+    ["a hint that gives a word away", (g: G[]) => (g[0].hint = `Think ${g[0].words[2]}`)],
+  ])("rejects %s when the group has no spare word", (_name, mutate) => {
+    expect(() => parseGenerated(reply(mutate), "2026-11-01")).toThrow();
+  });
+
+  it("assigns levels by order when the reply's levels aren't 1–4 once each", () => {
+    const p = parseGenerated(reply((g) => (g[3].level = 3)), "2026-11-01");
+    expect(p.groups.map((g) => g.level)).toEqual([1, 2, 3, 4]);
+    expect(p.groups[3].title).toBe(BANK[4].groups[3].title);
   });
 
   it("allows capitalized proper nouns but checks lowercase words against the lexicon", () => {
@@ -62,29 +80,98 @@ describe("groups content generation", () => {
     expect(() => parseGenerated(reply((g) => (g[0].words[0] = "hOt")), "2026-11-01")).toThrow();
   });
 
+  it("drops bad candidates one by one and keeps the rest as spares", () => {
+    const r = reply((g) => {
+      g[0].words.unshift("flurbix", "PORN"); // not a word; blocked (in ALL CAPS)
+      g[0].words.push("SPARE");
+      g[1].words.push(g[2].words[0]); // listed in two groups: dropped from both
+      g[2].words.push("extra", "another");
+    });
+    const { puzzle, spares, dropped } = parseCandidates(r, "2026-11-01");
+    expect(puzzle.groups[0].words).toEqual(BANK[4].groups[0].words);
+    expect(spares[0]).toEqual(["spare"]);
+    expect(puzzle.groups[2].words).toEqual([...BANK[4].groups[2].words.slice(1), "extra"]);
+    expect(spares[2]).toEqual(["another"]);
+    expect(dropped.join(" ")).toMatch(/flurbix/);
+    expect(dropped.join(" ")).toMatch(/in two groups/);
+  });
+
+  it("normalizes spacing, curly quotes and ALL CAPS", () => {
+    expect(normalizeWord("  HOT   DOG ")).toBe("hot dog");
+    expect(normalizeWord("PARIS")).toBe("Paris");
+    expect(normalizeWord("it’s")).toBe("it's");
+  });
+
+  it("the prompt's own example passes every check", () => {
+    const json = generationPrompt("2026-11-01", []).match(/\{"groups":[\s\S]*?\]\}\n/)![0];
+    const { puzzle, spares } = parseCandidates(JSON.parse(json), "2026-11-01");
+    expect(puzzle.groups).toHaveLength(4);
+    expect(spares.map((s) => s.length)).toEqual([2, 2, 2, 2]);
+  });
+
+  it("swaps a flagged word for a spare from its group", () => {
+    const { puzzle, spares } = parseCandidates(reply((g) => g[1].words.push("spare")), "2026-11-01");
+    const flagged = puzzle.groups[1].words[2];
+    const fixed = repair(puzzle, spares, [{ words: [flagged], why: "fits group 1 too" }]);
+    expect(typeof fixed).toBe("object");
+    expect((fixed as typeof puzzle).groups[1].words).toContain("spare");
+    expect((fixed as typeof puzzle).groups[1].words).not.toContain(flagged);
+    // No spares left, or a flag that names no board word: can't be fixed.
+    expect(repair(puzzle, [[], [], [], []], [{ words: [puzzle.groups[0].words[0]], why: "x" }])).toMatch(/unfixable/);
+    expect(repair(puzzle, spares, [{ words: ["nothere"], why: "x" }])).toMatch(/unfixable/);
+  });
+
   it("fails closed on an unreadable ambiguity check", () => {
     expect(() => parseProblems({})).toThrow();
     expect(parseProblems({ problems: [] })).toEqual([]);
     expect(parseProblems({ problems: [{ words: ["king"], why: "also a chess piece" }] })).toHaveLength(1);
   });
 
-  it("retries when the check finds another grouping, then gives up", async () => {
+  it("repairs a flagged word with a spare, then re-checks", async () => {
     let n = 0;
     const { ask, calls } = fakeAsk(
-      () => reply(),
-      () => ({ problems: n++ === 0 ? [{ words: ["desk", "globe", "king", "queen"], why: "all in a palace classroom" }] : [] })
+      () => reply((g) => g[0].words.push("spare")),
+      () => ({ problems: n++ === 0 ? [{ words: [BANK[4].groups[0].words[1]], why: "also fits level 2" }] : [] })
     );
-    expect((await generateGroups("2026-11-01", [], ask))?.id).toBe("ai-2026-11-01");
-    expect(calls).toEqual(["content:groups", "content:groups-check", "content:groups", "content:groups-check"]);
+    const r = await generateGroups("2026-11-01", [], ask);
+    expect(r.puzzle?.groups[0].words).toContain("spare");
+    expect(calls).toEqual(["content:groups", "content:groups-check", "content:groups-check"]);
+    expect(r.reasons).toHaveLength(1);
+    expect(r.calls).toBe(3);
+  });
 
-    const bad = fakeAsk(() => reply(), () => ({ problems: [{ words: ["x"], why: "y" }] }));
-    expect(await generateGroups("2026-11-01", [], bad.ask)).toBeNull();
-    expect(bad.calls).toHaveLength(ATTEMPTS * 2);
+  it("gives up after GEN_ATTEMPTS when flags can't be fixed, with every reason", async () => {
+    const bad = fakeAsk(() => reply(), () => ({ problems: [{ words: [BANK[4].groups[0].words[0]], why: "y" }] }));
+    const r = await generateGroups("2026-11-01", [], bad.ask);
+    expect(r.puzzle).toBeNull();
+    expect(bad.calls).toHaveLength(GEN_ATTEMPTS * 2);
+    expect(r.reasons.filter((x) => x.startsWith("gen")).join()).toMatch(/unfixable/);
+  });
+
+  it("stops after CHECK_ROUNDS checks per generation", async () => {
+    let k = 0;
+    const { ask, calls } = fakeAsk(
+      // Plenty of spares: BANK[7]'s words.
+      () => reply((g) => g.forEach((x, i) => x.words.push(...BANK[7].groups[i].words))),
+      () => ({ problems: [{ words: [BANK[4].groups[0].words[k++ % 4]], why: "y" }] })
+    );
+    const r = await generateGroups("2026-11-01", [], ask);
+    expect(r.calls).toBeLessThanOrEqual(GEN_ATTEMPTS * (1 + CHECK_ROUNDS));
+    expect(calls.filter((c) => c === "content:groups-check").length).toBeLessThanOrEqual(GEN_ATTEMPTS * CHECK_ROUNDS);
+  });
+
+  it("fails closed on an unreadable check reply", async () => {
+    const { ask } = fakeAsk(() => reply(), () => ({}));
+    const r = await generateGroups("2026-11-01", [], ask);
+    expect(r.puzzle).toBeNull();
+    expect(r.reasons.join()).toMatch(/no problems list/);
   });
 
   it("rejects a puzzle that repeats a recent link", async () => {
     const { ask } = fakeAsk(() => reply(), () => ({ problems: [] }));
-    expect(await generateGroups("2026-11-01", [BANK[4].groups[2].title], ask)).toBeNull();
+    const r = await generateGroups("2026-11-01", [BANK[4].groups[2].title], ask);
+    expect(r.puzzle).toBeNull();
+    expect(r.reasons[0]).toMatch(/repeats a recent link/);
   });
 
   it("stores the bank fallback for a live day, a generated puzzle for a future one, and skips stored days", async () => {
@@ -98,5 +185,14 @@ describe("groups content generation", () => {
     const stored = db.written.map((s) => JSON.parse(s[2] as string));
     expect(stored[0].puzzle.id).toBe(bankPuzzleFor(today).id);
     expect(stored[1].puzzle.id).toBe(`ai-${tomorrow}`);
+  });
+
+  it("reports why a future date failed, in the returned lines", async () => {
+    const tomorrow = shiftISODate(todayISO(), 1);
+    const { ask } = fakeAsk(() => ({ groups: [] }), () => ({ problems: [] }));
+    const wrote = await ensureGroupsPuzzles([tomorrow], ask);
+    expect(wrote).toHaveLength(1);
+    expect(wrote[0]).toMatch(`groups ${tomorrow} failed, 2 rejected (2 calls): 1) gen 1: reply needs 4 groups`);
+    expect(db.written).toHaveLength(0);
   });
 });
