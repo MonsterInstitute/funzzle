@@ -11,7 +11,7 @@ import { HOW_TO_QA } from "@/lib/aeo";
 export const metadata: Metadata = pageMetadata({
   title: "How to Play — Rules, Strategies & Tips for Every Game",
   description:
-    "Complete how-to-play guide for Funzzle's free games: Mini Crossword, Wordle, Connections, Spelling Bee, Strands, Letter Boxed, Quordle, Worldle, and Nerdle. Rules, strategies, and tips.",
+    "Complete how-to-play guide for Funzzle's free games: Mini Crossword, Word, Groups, Spelling Hive, Word Hunt, Letter Box, and Word · Quad, Geo and Math. Rules, strategies, and tips.",
   path: "/how-to-play",
 });
 

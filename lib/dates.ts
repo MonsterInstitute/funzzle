@@ -62,10 +62,21 @@ export const FIRST_ANSWER_DATE = "2026-06-01";
  * walk (and cache) an endless chain of empty pages. Future dates come into
  * range via the daily on-demand revalidation (see lib/revalidation.ts).
  */
-export function isServedAnswerDate(iso: string): boolean {
+export function isServedAnswerDate(iso: string, firstDate: string = FIRST_ANSWER_DATE): boolean {
   return (
     isValidISODate(iso) &&
-    iso >= FIRST_ANSWER_DATE &&
+    iso >= firstDate &&
     iso <= shiftISODate(todayISO(), 1)
   );
+}
+
+/**
+ * Letter Boxed has no public archive (only today's and yesterday's box are
+ * on NYT's page), so its stored answers start when the answers cron did.
+ */
+export const FIRST_LETTER_BOXED_DATE = "2026-10-23";
+
+/** The last `count` days that are served answer dates (newest first). */
+export function recentAnswerDates(count: number, firstDate: string = FIRST_ANSWER_DATE): string[] {
+  return recentDates(count).filter((d) => d >= firstDate);
 }

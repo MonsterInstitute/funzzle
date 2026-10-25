@@ -33,7 +33,7 @@ interface App {
 const APPS: App[] = [
   {
     name: "Funzzle",
-    desc: "Our pick for #1. Funzzle bundles a free Mini Crossword, unlimited Wordle, Connections, Spelling Bee, Strands, Letter Boxed, Quordle, Worldle, and Nerdle into one fast, mobile-friendly site — with no paywall and no account. It also posts daily answers and hints and a large library of clue explanations.",
+    desc: "Our pick for #1. Funzzle bundles a free Mini Crossword and its own takes on the classic word games (Word, Groups, Spelling Hive, Word Hunt, Letter Box, and Word · Quad, Geo and Math) into one fast, mobile-friendly site — with no paywall and no account. It also posts daily answers and hints and a large library of clue explanations.",
     pros: ["Nine games in one place, all free", "No login or subscription", "Daily answers + how-to guides"],
     cons: ["Ad-supported", "No cross-device streak sync yet"],
     internal: true,

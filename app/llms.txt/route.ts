@@ -44,7 +44,17 @@ Coming soon: ${soon.map((g) => g.name).join(", ")}.
 - [Wordle answer today](${SITE_URL}/wordle-answer/today): three hints, then the answer
 - Connections answers, one page per date at ${SITE_URL}/connections-answers/YYYY-MM-DD: hints per group, then all four groups
 - NYT Mini Crossword answers, one page per date at ${SITE_URL}/nyt-crossword-answers/YYYY-MM-DD: hints, then every answer with an explanation
+- NYT Strands answers, one page per date at ${SITE_URL}/strands-answers/YYYY-MM-DD: hints, then the spangram and theme words
+- NYT Letter Boxed answers, one page per date at ${SITE_URL}/letter-boxed-answers/YYYY-MM-DD: the box, hints, then NYT's own solution
 - [Crossword clue answers](${SITE_URL}/clue): answers and explanations for common crossword clues
+
+## Hints and answers for other daily games
+
+The real answers to each publisher's official puzzle (never Funzzle's own games):
+
+- Quordle (Merriam-Webster) answers at ${SITE_URL}/quordle-answers/YYYY-MM-DD: hints, then all four words
+- Worldle (worldle.teuteuf.fr) answers at ${SITE_URL}/worldle-answer/YYYY-MM-DD: hints, then the country
+- Nerdle (nerdlegame.com, classic) answers at ${SITE_URL}/nerdle-answer/YYYY-MM-DD: hints, then the equation
 
 ## Guides
 

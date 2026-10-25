@@ -46,7 +46,15 @@ export const TODAY_PATHS = [
  * Date pages backed by the answers table: they show "posted soon" until the
  * day's row exists, and 404 beyond tomorrow (isServedAnswerDate).
  */
-export const ANSWER_DATE_ROUTES = ["/connections-answers", "/nyt-crossword-answers"];
+export const ANSWER_DATE_ROUTES = [
+  "/connections-answers",
+  "/nyt-crossword-answers",
+  "/strands-answers",
+  "/letter-boxed-answers",
+  "/quordle-answers",
+  "/worldle-answer",
+  "/nerdle-answer",
+];
 
 /**
  * Every path to refresh for a run: today's pages + the answer pages for

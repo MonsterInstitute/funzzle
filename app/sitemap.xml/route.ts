@@ -1,5 +1,11 @@
 import { SITE_URL } from "@/lib/site";
-import { recentDates, todayISO } from "@/lib/dates";
+import {
+  FIRST_ANSWER_DATE,
+  FIRST_LETTER_BOXED_DATE,
+  recentAnswerDates,
+  recentDates,
+  todayISO,
+} from "@/lib/dates";
 import { CLUE_CONTENT } from "@/lib/content/clues";
 import { BLOG_POSTS } from "@/lib/blog";
 import { COUNTRIES } from "@/lib/content/countries";
@@ -85,17 +91,19 @@ export function GET() {
     });
   }
 
-  // Daily answer/hint pages for the newer games (recent 90 days each).
-  const answerRoutes = [
-    "/strands-answers",
-    "/letter-boxed-answers",
-    "/quordle-answers",
-    "/worldle-answer",
-    "/nerdle-answer",
+  // Real answers for other publishers' daily puzzles (answers cron), the same
+  // last-30-days window the routes prerender. Letter Boxed rows start later:
+  // NYT has no archive to backfill from.
+  const answerRoutes: [string, string][] = [
+    ["/strands-answers", FIRST_ANSWER_DATE],
+    ["/letter-boxed-answers", FIRST_LETTER_BOXED_DATE],
+    ["/quordle-answers", FIRST_ANSWER_DATE],
+    ["/worldle-answer", FIRST_ANSWER_DATE],
+    ["/nerdle-answer", FIRST_ANSWER_DATE],
   ];
-  for (const route of answerRoutes) {
-    for (const date of recentDates(90)) {
-      entries.push({ path: `${route}/${date}`, priority: 0.5, lastmod: date });
+  for (const [route, firstDate] of answerRoutes) {
+    for (const date of recentAnswerDates(30, firstDate)) {
+      entries.push({ path: `${route}/${date}`, priority: 0.6, lastmod: date });
     }
   }
 

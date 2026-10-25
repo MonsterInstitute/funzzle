@@ -1,0 +1,73 @@
+[
+ {
+  "code": "AR",
+  "name": "Argentina",
+  "longitude": -63.616672,
+  "latitude": -38.416097,
+  "names": {
+   "fr": "Argentine",
+   "hu": "Argentína",
+   "nl": "Argentinië",
+   "pl": "Argentyna",
+   "de": "Argentinien",
+   "ja": "アルゼンチン",
+   "ie": "An Airgintín"
+  }
+ },
+ {
+  "code": "FR",
+  "name": "France",
+  "longitude": 2.213749,
+  "latitude": 46.227638,
+  "names": {
+   "hu": "Franciaország",
+   "nl": "Frankrijk",
+   "pl": "Francja",
+   "de": "Frankreich",
+   "ja": "フランス",
+   "co": "Francia",
+   "es": "Francia",
+   "pt": "França",
+   "eu": "Frantzia",
+   "ie": "An Fhrainc"
+  }
+ },
+ {
+  "code": "SE",
+  "name": "Sweden",
+  "longitude": 18.643501,
+  "latitude": 60.128161,
+  "names": {
+   "fr": "Suède",
+   "hu": "Svédország",
+   "nl": "Zweden",
+   "pl": "Szwecja",
+   "de": "Schweden",
+   "ja": "スウェーデン",
+   "co": "Svezia",
+   "es": "Suecia",
+   "pt": "Suécia",
+   "eu": "Suedia",
+   "ie": "An tSualainn"
+  }
+ },
+ {
+  "code": "AE",
+  "name": "United Arab Emirates",
+  "longitude": 53.847818,
+  "latitude": 23.424076,
+  "names": {
+   "fr": "Émirats arabes unis",
+   "hu": "Egyesült Arab Emírségek",
+   "nl": "Verenigde Arabische Emiraten",
+   "pl": "Zjednoczone Emiraty Arabskie",
+   "de": "Vereinigte Arabische Emirate",
+   "ja": "アラブ首長国連邦",
+   "co": "Emirati Arabbi Uniti",
+   "es": "Emiratos Árabes Unidos",
+   "pt": "Emirados Árabes Unidos",
+   "eu": "Arabiar Emirerri Batuak",
+   "ie": "Aontas na nÉimíríochtaí Arabacha"
+  }
+ }
+]

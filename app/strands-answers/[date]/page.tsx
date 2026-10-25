@@ -1,80 +1,85 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import AdSlot from "@/components/ads/AdSlot";
-import JsonLd from "@/components/JsonLd";
-import { puzzleForDate } from "@/lib/strands";
-import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
-import { isValidISODate, formatLongDate, recentDates } from "@/lib/dates";
+import DailyAnswerPage from "@/components/answers/DailyAnswerPage";
+import { getAnswer, type StrandsAnswerData } from "@/lib/getAnswers";
+import { strandsAnswerCopy } from "@/lib/aeo";
+import { strandsHints } from "@/lib/nytHints";
+import { pageMetadata } from "@/lib/seo";
+import { FIRST_ANSWER_DATE, formatLongDate, isServedAnswerDate, recentAnswerDates } from "@/lib/dates";
 
 type Params = { date: string };
-// Each date's puzzle is computed from bundled data — static until the next deploy.
+
+// The real NYT Strands answers, stored by the answers cron (lib/cron/answers.ts).
+// A day's answers never change once written; new rows are picked up through
+// on-demand revalidation (lib/revalidation.ts), not a timer.
 export const revalidate = false;
-export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return recentDates(30).map((date) => ({ date }));
+  return recentAnswerDates(30).map((date) => ({ date }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { date } = await params;
-  if (!isValidISODate(date)) return { title: "Strands Answers" };
+  if (!isServedAnswerDate(date)) return { title: "Strands Answers" };
   const long = formatLongDate(date);
-  const p = puzzleForDate(date);
   return pageMetadata({
-    title: `Strands Answers ${long} — Theme & Words`,
-    description: `Today's Strands theme is "${p.theme}". All hidden words and the spangram for ${long}, revealed and explained.`,
+    title: `NYT Strands Answers ${long} — Hints & Spangram`,
+    description: `Today's NYT Strands hints and answers for ${long}: the theme clue, graded hints, the spangram and every theme word.`,
     path: `/strands-answers/${date}`,
+    keywords: [`strands answers ${long}`, "strands hint today", "strands spangram today"],
   });
 }
 
 export default async function StrandsAnswersPage({ params }: { params: Promise<Params> }) {
   const { date } = await params;
-  if (!isValidISODate(date)) notFound();
+  if (!isServedAnswerDate(date)) notFound();
   const long = formatLongDate(date);
-  const p = puzzleForDate(date);
+  const row = await getAnswer<StrandsAnswerData>(date, "strands");
+  const data = row?.answer_data;
+  const copy = strandsAnswerCopy(long, data);
 
   return (
-    <>
-      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Strands Answers", path: `/strands-answers/${date}` }])} />
-      <Header />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
-          Strands Answers — {long}
-        </h1>
-        <p className="mt-3 text-gray-600">
-          The Strands theme for {long} is <strong>&ldquo;{p.theme}&rdquo;</strong>.
-          Below are all the themed words and the spangram — the word that spans the
-          grid. Scroll only if you want the solution!
-        </p>
-
-        <section className="mt-6 rounded-xl border border-[#e5e7eb] p-5">
-          <h2 className="text-lg font-bold text-[#111827]">Spangram</h2>
-          <p className="mt-1 text-xl font-bold uppercase text-[#eab308]">{p.spangram}</p>
-          <h2 className="mt-4 text-lg font-bold text-[#111827]">Theme words</h2>
-          <ul className="mt-2 grid grid-cols-2 gap-1 text-[#3b82f6]">
-            {p.words.map((w) => (
-              <li key={w} className="font-semibold uppercase">{w}</li>
-            ))}
-          </ul>
-        </section>
-
-        <p className="mt-6 text-gray-700">
-          Every word in a Strands puzzle connects to the day&apos;s theme, and the
-          spangram touches two opposite sides of the board. Once you spot the
-          spangram, the remaining words usually fall into place around it.
-        </p>
-
-        <div className="mt-8 text-center">
-          <Link href="/play/word-hunt" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play Word Hunt →
-          </Link>
-        </div>
-        <AdSlot slot="in-content" className="mt-10" />
-      </main>
-      <Footer />
-    </>
+    <DailyAnswerPage
+      game="strands"
+      label="Strands"
+      title={`NYT Strands Answers — ${long}`}
+      basePath="/strands-answers"
+      date={date}
+      firstDate={FIRST_ANSWER_DATE}
+      summary={copy.summary}
+      hints={data ? strandsHints(data) : null}
+      hintsTitle="Strands hints"
+      answer={
+        data && (
+          <>
+            <strong>Spangram:</strong> {data.spangram}
+            <br />
+            <strong>Theme words:</strong> {data.words.join(", ")}
+          </>
+        )
+      }
+      pendingText="Today's Strands answers will be posted soon. Check back later!"
+      source={
+        data && (
+          <>
+            NYT Strands{data.puzzle_id ? ` #${data.puzzle_id}` : ""}, theme “{data.clue}”
+            {data.constructors ? `, by ${data.constructors}` : ""}
+            {data.editor ? `, edited by ${data.editor}` : ""}. Answers from The New York Times&apos; own puzzle data.
+          </>
+        )
+      }
+      play={{ href: "/play/word-hunt", label: "Play Word Hunt, free →" }}
+      howTo={{
+        title: "How to play Strands",
+        body: (
+          <p className="mt-3">
+            Strands hides a set of theme words in a 6×8 grid of letters. Words are traced through adjacent letters in
+            any direction, every letter is used exactly once, and the spangram — the word or phrase that names the
+            theme — runs between two opposite sides of the board. Finding three non-theme words earns a hint.
+          </p>
+        ),
+      }}
+      qa={copy.qa}
+    />
   );
 }

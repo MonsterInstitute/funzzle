@@ -1,91 +1,88 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import AdSlot from "@/components/ads/AdSlot";
-import JsonLd from "@/components/JsonLd";
-import RevealBox from "@/components/RevealBox";
-import { countryForDate } from "@/lib/worldle";
+import DailyAnswerPage from "@/components/answers/DailyAnswerPage";
+import { getAnswer, type WorldleAnswerData } from "@/lib/getAnswers";
 import { COUNTRIES } from "@/lib/content/countries";
-import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
-import { isValidISODate, formatLongDate, recentDates } from "@/lib/dates";
+import { worldleAnswerCopy } from "@/lib/aeo";
+import { worldleHints } from "@/lib/nytHints";
+import { pageMetadata } from "@/lib/seo";
+import { FIRST_ANSWER_DATE, formatLongDate, isServedAnswerDate, recentAnswerDates } from "@/lib/dates";
 
 type Params = { date: string };
-// Each date's puzzle is computed from bundled data — static until the next deploy.
+
+// The real Worldle country, stored by the answers cron (lib/cron/answers.ts).
+// Static once written; refreshed on demand (lib/revalidation.ts), not on a timer.
 export const revalidate = false;
-export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return recentDates(30).map((date) => ({ date }));
+  return recentAnswerDates(30).map((date) => ({ date }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { date } = await params;
-  if (!isValidISODate(date)) return { title: "Worldle Answer" };
+  if (!isServedAnswerDate(date)) return { title: "Worldle Answer" };
   const long = formatLongDate(date);
-  const c = countryForDate(date);
   return pageMetadata({
-    title: `Worldle Answer ${long} — ${c.name}`,
-    description: `Today's Worldle country for ${long} is ${c.name}. See the answer, plus facts about ${c.name}.`,
+    title: `Worldle Answer ${long} — Hints & Country`,
+    description: `Today's Worldle hints and answer for ${long}: two graded hints, then the country or territory.`,
     path: `/worldle-answer/${date}`,
+    keywords: [`worldle answer ${long}`, "worldle answer today", "worldle country today"],
   });
 }
 
+const byName = new Map(COUNTRIES.map((c) => [c.name.toLowerCase(), c]));
+
 export default async function WorldleAnswerPage({ params }: { params: Promise<Params> }) {
   const { date } = await params;
-  if (!isValidISODate(date)) notFound();
+  if (!isServedAnswerDate(date)) notFound();
   const long = formatLongDate(date);
-  const daily = countryForDate(date);
-  const info = COUNTRIES.find((c) => c.slug === daily.slug);
+  const row = await getAnswer<WorldleAnswerData>(date, "worldle");
+  const data = row?.answer_data;
+  const copy = worldleAnswerCopy(long, data);
+  const info = data ? byName.get(data.country.toLowerCase()) : undefined;
 
   return (
-    <>
-      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Worldle Answer", path: `/worldle-answer/${date}` }])} />
-      <Header />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
-          Worldle Answer — {long}
-        </h1>
-        <p className="mt-3 text-gray-600">Today&apos;s mystery country, revealed:</p>
-
-        <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row">
-          <svg viewBox="0 0 100 100" className="h-32 w-32 flex-shrink-0" aria-label="Country silhouette">
-            <path d={daily.svg} fill="#111827" />
-          </svg>
-          <div className="w-full">
-            <RevealBox answer={daily.name} />
-          </div>
-        </div>
-
-        {info && (
-          <section className="mt-8">
-            <h2 className="text-xl font-bold text-[#111827]">About {info.name}</h2>
-            <p className="mt-2 text-gray-700">{info.description}</p>
-            <ul className="mt-3 space-y-1 text-sm text-gray-700">
-              <li><strong>Capital:</strong> {info.capital}</li>
-              <li><strong>Region:</strong> {info.region}</li>
-              <li><strong>Population:</strong> {info.population.toLocaleString()}</li>
-              {info.neighbors.length > 0 && (
-                <li><strong>Borders:</strong> {info.neighbors.join(", ")}</li>
-              )}
-            </ul>
-            <p className="mt-3">
-              <Link href={`/country/${info.slug}`} className="text-[#16a34a] hover:underline">
-                More facts about {info.name} →
-              </Link>
-            </p>
-          </section>
-        )}
-
-        <div className="mt-8 text-center">
-          <Link href="/play/word/geo" className="inline-flex rounded-lg bg-[#16a34a] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#15803d]">
-            Play Funzzle Word · Geo →
-          </Link>
-        </div>
-        <AdSlot slot="in-content" className="mt-10" />
-      </main>
-      <Footer />
-    </>
+    <DailyAnswerPage
+      game="worldle"
+      label="Worldle"
+      title={`Worldle Answer — ${long}`}
+      basePath="/worldle-answer"
+      date={date}
+      firstDate={FIRST_ANSWER_DATE}
+      summary={copy.summary}
+      hints={data ? worldleHints(data) : null}
+      hintsTitle="Worldle hints"
+      answer={
+        data && (
+          <>
+            <strong>{data.country}</strong>
+            {info && (
+              <>
+                {" "}
+                — capital {info.capital}, in {info.region}.{" "}
+                <Link href={`/country/${info.slug}`} className="text-[#0369a1] hover:underline">
+                  More about {info.name} →
+                </Link>
+              </>
+            )}
+          </>
+        )
+      }
+      pendingText="Today's Worldle answer will be posted soon. Check back later!"
+      source="The daily Worldle at worldle.teuteuf.fr; the answer comes from the game's own daily data."
+      play={{ href: "/play/word/geo", label: "Play Word · Geo, free →" }}
+      howTo={{
+        title: "How to play Worldle",
+        body: (
+          <p className="mt-3">
+            Worldle shows the silhouette of a country or territory. You have six guesses; after each one the game tells
+            you how far away the answer is, in which direction, and how close you are as a percentage. Start with a
+            large, central country to narrow the region down fast.
+          </p>
+        ),
+      }}
+      qa={copy.qa}
+    />
   );
 }

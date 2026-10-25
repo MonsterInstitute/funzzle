@@ -3,7 +3,57 @@ import { DAILY_CONTENT } from "./content/dailyAnswers";
 import { getLocalWordle } from "./content/wordleAnswers";
 import { todayISO } from "./dates";
 
-export type AnswerType = "nyt-mini" | "nyt-daily" | "wordle" | "connections";
+export type AnswerType =
+  | "nyt-mini"
+  | "nyt-daily"
+  | "wordle"
+  | "connections"
+  | "strands"
+  | "letter-boxed"
+  | "quordle"
+  | "worldle"
+  | "nerdle";
+
+/** NYT Strands (nytimes.com/svc/strands/v2). */
+export interface StrandsAnswerData {
+  /** NYT's theme clue, e.g. "Re-fresh-ing". */
+  clue: string;
+  spangram: string;
+  words: string[];
+  puzzle_id: number | null;
+  editor: string | null;
+  constructors: string | null;
+}
+
+/** NYT Letter Boxed: the box and NYT's own solution. */
+export interface LetterBoxedAnswerData {
+  /** Four sides of three letters, in NYT's order. */
+  sides: string[];
+  solution: string[];
+  par: number | null;
+  puzzle_id: number | null;
+  editor: string | null;
+}
+
+/** Quordle (Merriam-Webster): the four words, in board order. */
+export interface QuordleAnswerData {
+  number: number;
+  words: string[];
+}
+
+/** Worldle (teuteuf.fr): the day's country or territory. */
+export interface WorldleAnswerData {
+  country_code: string;
+  country: string;
+  lat: number;
+  lng: number;
+}
+
+/** Nerdle (classic, nerdlegame.com). */
+export interface NerdleAnswerData {
+  equation: string;
+  number: number | null;
+}
 
 export interface CrosswordClue {
   number: number;
