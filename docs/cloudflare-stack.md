@@ -118,10 +118,16 @@ Postgres → SQLite notes from the Supabase move:
 **D1 binds JS numbers as REAL**: integer division on bound parameters gives
 fractions, so `CAST(… AS INTEGER)` where an integer is meant.
 
-Copying data: `scripts/migrate-supabase-to-d1.mjs` upserts every row over the
+Copying data: `scripts/migrate-supabase-to-d1.mjs` (removed after the move;
+see git history, commit before "Retire Supabase") upserts every row over the
 REST API and then compares row counts and a content fingerprint per table. It
 is idempotent: run it once, then again right before the deploy that switches
 reads, to pick up rows written in between.
+
+Before deleting the old project, back up every table (all schemas) via the
+Supabase Management API SQL endpoint to a gitignored `backups/` folder and a
+private R2 bucket (`funzzle-backups`), export twice and compare hashes, and
+check every row exists in D1.
 
 ## Cron layout
 

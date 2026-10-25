@@ -67,3 +67,6 @@ scripts/.wordlists-cache/
 
 # raw country boundaries (scripts/gen-geo-shapes.mjs)
 scripts/.geo-cache/
+
+# Local data backups (never commit)
+/backups/

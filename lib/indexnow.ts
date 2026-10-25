@@ -20,8 +20,21 @@ export function changedUrls(date: string): string[] {
 
 export async function submitIndexNow(urls: string[]): Promise<{ ok: boolean; status?: number; error?: string }> {
   if (!urls.length) return { ok: true };
+  // The shared api.indexnow.org endpoint rate-limits Workers' egress IPs (429);
+  // any participating engine forwards to the rest, so fall back to Bing's.
+  let last: { ok: boolean; status?: number; error?: string } = { ok: false };
+  for (const endpoint of ENDPOINTS) {
+    last = await post(endpoint, urls);
+    if (last.ok || (last.status && last.status !== 429 && last.status < 500)) return last;
+  }
+  return last;
+}
+
+const ENDPOINTS = ["https://api.indexnow.org/indexnow", "https://www.bing.com/indexnow"];
+
+async function post(endpoint: string, urls: string[]): Promise<{ ok: boolean; status?: number; error?: string }> {
   try {
-    const res = await fetch("https://api.indexnow.org/indexnow", {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify({ host: new URL(SITE_URL).host, key: KEY, keyLocation: `${SITE_URL}/${KEY}.txt`, urlList: urls }),
@@ -29,8 +42,8 @@ export async function submitIndexNow(urls: string[]): Promise<{ ok: boolean; sta
     });
     // 200 = accepted, 202 = accepted, key validation pending.
     if (res.ok) return { ok: true, status: res.status };
-    return { ok: false, status: res.status, error: (await res.text()).slice(0, 200) };
+    return { ok: false, status: res.status, error: `${new URL(endpoint).host}: ${(await res.text()).slice(0, 200)}` };
   } catch (err) {
-    return { ok: false, error: (err as Error).message };
+    return { ok: false, error: `${new URL(endpoint).host}: ${(err as Error).message}` };
   }
 }
