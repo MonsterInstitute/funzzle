@@ -20,7 +20,7 @@ vi.mock("@/lib/db", () => ({
   parseJson: (v: string) => JSON.parse(v),
 }));
 
-const { ensureWordSearchPuzzles, themeFromModel } = await import("@/lib/cron/content/wordsearch");
+const { cleanTitle, dailyGridFor, ensureWordSearchPuzzles, prompt, themeFromModel, themesFromReply, wordSearchFor } = await import("@/lib/cron/content/wordsearch");
 const { clueGrid, ensureCrosswordPuzzles } = await import("@/lib/cron/content/crossword");
 const { entriesOf, entryText, BANK } = await import("@/lib/games/crossword");
 const { puzzleProblems } = await import("@/lib/games/wordsearch");
@@ -51,7 +51,9 @@ describe("word search themes", () => {
     const today = todayISO();
     const tomorrow = shiftISODate(today, 1);
     const written = await ensureWordSearchPuzzles([today, tomorrow]);
-    expect(written).toHaveLength(2);
+    expect(written).toHaveLength(3);
+    // The rejected first reply is reported, with why.
+    expect(written[2]).toBe(`word-search ${tomorrow} ok after 1 rejected (2 calls): 1) call 1: "Bad": only 0 usable words`);
     const rows = stored.map((r) => ({ date: r.params[1], data: JSON.parse(r.params[2] as string) }));
     const t = rows.find((r) => r.date === tomorrow)!.data;
     expect(t.source).toBe("llm");
@@ -59,6 +61,38 @@ describe("word search themes", () => {
     expect(puzzleProblems(t)).toEqual([]);
     expect(rows.find((r) => r.date === today)!.data.source).toBe("bank");
     expect(deepSeekJson).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses the second theme of a reply when the first can't be used", async () => {
+    deepSeekJson.mockResolvedValueOnce({ themes: [{ title: "Ocean Life", words: THEME.words }, { ...THEME, title: "Rainy Day!" }] });
+    const r = await wordSearchFor("2030-01-01", ["Ocean Life"]);
+    expect(r.puzzle?.title).toBe("Rainy Day");
+    expect(r.calls).toBe(1);
+    expect(r.reasons).toEqual(['call 1: "Ocean Life": repeats a recent theme']);
+  });
+
+  it("cleans titles", () => {
+    expect(cleanTitle("  Rainy  Day! ")).toBe("Rainy Day");
+    expect(cleanTitle("Kids’ Corner")).toBe("Kids' Corner");
+    expect(cleanTitle("100 Things")).toBe("Things");
+    expect(cleanTitle(7)).toBe("");
+  });
+
+  it("the prompt's own example makes a valid grid", () => {
+    const example = JSON.parse(prompt("2030-01-01", []).match(/Example of one theme \(pick others\): (\{.*\})/)![1]);
+    const [{ theme, problems }] = themesFromReply(example, []);
+    expect(problems).toEqual([]);
+    expect(theme.words).toHaveLength(22);
+    expect(dailyGridFor("2030-01-01", theme)).not.toBeNull();
+  });
+
+  it("reports every rejection when no theme works", async () => {
+    deepSeekJson.mockRejectedValueOnce(new Error("DeepSeek reply cut off at 2000 tokens")).mockResolvedValue({ themes: [{ title: "Thin", words: ["cat"] }] });
+    const r = await wordSearchFor("2030-01-01", []);
+    expect(r.puzzle).toBeNull();
+    expect(r.calls).toBe(3);
+    expect(r.reasons[0]).toBe("call 1: DeepSeek reply cut off at 2000 tokens");
+    expect(r.reasons[1]).toMatch(/"Thin": only 1 usable words/);
   });
 });
 

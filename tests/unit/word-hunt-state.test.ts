@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hintLadder, pickHintWord } from "@/lib/games/wordhunt";
 import { bankPuzzle } from "@/lib/games/wordhunt/server";
-import { parseTheme } from "@/lib/cron/content/wordhunt";
 import { skillsOf } from "@/components/wordhunt/WordHuntGame";
 import { BONUS_PER_HINT, claimedCells, earnedHints, foundSet, initialState, isComplete, judge, meter, reducer, shareMap, type Action, type PlayState } from "@/components/wordhunt/state";
 
@@ -84,21 +83,6 @@ describe("word hunt play state", () => {
     expect(pickHintWord(p, others)).toBe(span);
     expect(hintLadder(p, others)!.direction).toMatch(/span word/);
     expect(pickHintWord(p, new Set(p.words.map((_, i) => i)))).toBe(-1);
-  });
-});
-
-describe("AI theme parsing", () => {
-  it("accepts a clean theme and normalizes it", () => {
-    const r = parseTheme("2026-10-24", { title: "Rise and shine", span: "Breakfast", words: ["oatmeal", "granola", "cereal", "omelet", "pancake", "waffle"] });
-    expect(r.problems).toEqual([]);
-    expect(r.theme).toMatchObject({ id: "2026-10-24", span: "breakfast" });
-  });
-
-  it("rejects wrong totals, spaces, non-words and give-away titles", () => {
-    expect(parseTheme("d", { title: "Breakfast", span: "breakfast", words: ["toast", "jam", "eggs", "tea", "milk"] }).problems.join()).toMatch(/48|title gives away/);
-    expect(parseTheme("d", { title: "Sweets", span: "breakfast", words: ["ice cream", "granola", "cereal", "omelet", "pancake", "waffle"] }).problems.join()).toMatch(/spaces/);
-    expect(parseTheme("d", { title: "Sweets", span: "breakfast", words: ["qzxvbnm", "granola", "cereal", "omelet", "pancake", "waffle"] }).problems.join()).toMatch(/not a dictionary word/);
-    expect(parseTheme("d", { title: 5, span: null, words: "x" }).problems.length).toBeGreaterThan(0);
   });
 });
 

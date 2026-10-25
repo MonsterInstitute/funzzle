@@ -1,4 +1,4 @@
-import { exec } from "./db";
+import { exec } from "@/lib/db";
 
 /**
  * DeepSeek chat completions for the explain cron, with every call's token
@@ -48,7 +48,7 @@ export async function deepSeekJson<T = Record<string, unknown>>(job: string, pro
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`DeepSeek ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const body = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: Usage; model?: string };
+  const body = (await res.json()) as { choices?: { message?: { content?: string }; finish_reason?: string }[]; usage?: Usage; model?: string };
 
   const u = body.usage ?? {};
   const hit = u.prompt_cache_hit_tokens ?? 0;
@@ -67,9 +67,15 @@ export async function deepSeekJson<T = Record<string, unknown>>(job: string, pro
     cost
   ).catch((err) => console.warn(`llm_usage write: ${(err as Error).message}`));
 
-  const text = body.choices?.[0]?.message?.content ?? "";
+  const choice = body.choices?.[0];
+  if (choice?.finish_reason === "length") throw new Error(`DeepSeek reply cut off at ${maxTokens} tokens`);
+  const text = choice?.message?.content ?? "";
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("DeepSeek reply has no JSON object");
-  return JSON.parse(text.slice(start, end + 1)) as T;
+  try {
+    return JSON.parse(text.slice(start, end + 1)) as T;
+  } catch {
+    throw new Error("DeepSeek reply is not valid JSON");
+  }
 }
