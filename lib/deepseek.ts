@@ -68,14 +68,37 @@ export async function deepSeekJson<T = Record<string, unknown>>(job: string, pro
   ).catch((err) => console.warn(`llm_usage write: ${(err as Error).message}`));
 
   const choice = body.choices?.[0];
-  if (choice?.finish_reason === "length") throw new Error(`DeepSeek reply cut off at ${maxTokens} tokens`);
   const text = choice?.message?.content ?? "";
+  const cutOff = choice?.finish_reason === "length";
+  const parsed = parseJsonObject<T>(text);
+  if (parsed !== undefined) return parsed;
+  // JSON mode sometimes finishes the object and then pads with whitespace or
+  // repeats until max_tokens; a complete object above is still used.
+  const tail = JSON.stringify(text.slice(-80));
+  if (cutOff) throw new Error(`DeepSeek reply cut off at ${maxTokens} tokens (${text.length} chars, ends ${tail})`);
+  throw new Error(text.includes("{") ? `DeepSeek reply is not valid JSON (ends ${tail})` : "DeepSeek reply has no JSON object");
+}
+
+/** The first complete top-level JSON object in `text`, or undefined. */
+export function parseJsonObject<T>(text: string): T | undefined {
   const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("DeepSeek reply has no JSON object");
-  try {
-    return JSON.parse(text.slice(start, end + 1)) as T;
-  } catch {
-    throw new Error("DeepSeek reply is not valid JSON");
+  if (start === -1) return undefined;
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) {
+      try {
+        return JSON.parse(text.slice(start, i + 1)) as T;
+      } catch {
+        return undefined;
+      }
+    }
   }
+  return undefined;
 }
