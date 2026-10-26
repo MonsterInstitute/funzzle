@@ -41,12 +41,14 @@ const CANDIDATES = 6;
 const TIER = "valid";
 // Generous: billing is per token actually written, and a cut-off reply is a wasted call.
 const GEN_TOKENS = 3000;
-const CHECK_TOKENS = 1200;
+const CHECK_TOKENS = 8000;
 
 type Ask = <T>(job: string, prompt: string, maxTokens?: number, opts?: AskOptions) => Promise<T>;
-// With thinking on, deepseek-flash spent the whole token budget reasoning and
-// returned no content on every Groups call (2026-10-24/25); the code checks
-// and the ambiguity pass do the verifying instead.
+// With thinking on, deepseek-flash spent the whole generation budget reasoning
+// and returned no content on every Groups call (2026-10-24/25), so generation
+// runs without it. The check keeps thinking (its reply is tiny, and without it
+// a "Hidden numbers" group of tonight/wisdom/forgive/canyon passed): it gets
+// CHECK_TOKENS room to reason, and an empty reply fails closed.
 const NO_THINKING: AskOptions = { thinking: false };
 
 export function generationPrompt(date: string, avoid: string[]): string {
@@ -89,8 +91,9 @@ ${groups}
 Report a problem only when a careful solver would clearly agree:
 (a) a word fits another group's link just as well as its own (not a loose association), or
 (b) four of the words, taken from different groups, share a different clear link, so the board could be split another way, or
-(c) a link is wrong, rude or unclear.
-For each problem, "words" lists only the word or words that should be replaced. Most well-made puzzles have no problems.
+(c) a link is wrong, rude or unclear, or
+(d) a word does not actually fit its own group's link. Check every word one by one: for hidden-word, sound-alike or ___-before/after links, spell the word out letter by letter and confirm the hidden part or the compound really exists.
+For each problem, "words" lists only the word or words that should be replaced. Do not invent problems, but do not pass a word you have not checked.
 
 Return ONLY JSON: {"problems":[{"words":["..."],"why":"<one sentence>"}]}, with "problems": [] if the puzzle is fair.`;
 }
@@ -250,7 +253,7 @@ export async function generateGroups(date: string, avoid: string[], ask: Ask = d
       let puzzle = first;
       for (let round = 1; round <= CHECK_ROUNDS; round++) {
         calls++;
-        const problems = parseProblems(await ask("content:groups-check", ambiguityPrompt(puzzle), CHECK_TOKENS, NO_THINKING));
+        const problems = parseProblems(await ask("content:groups-check", ambiguityPrompt(puzzle), CHECK_TOKENS));
         if (!problems.length) return { puzzle, reasons, calls };
         reasons.push(`check ${attempt}.${round}: ${problems.map(describe).join(" | ")}`);
         if (round === CHECK_ROUNDS) throw new Error("still flagged after the last check");
