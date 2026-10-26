@@ -31,8 +31,13 @@ interface Usage {
   completion_tokens?: number;
 }
 
+export interface AskOptions {
+  /** false turns off the model's thinking phase (on by default), which otherwise counts against maxTokens. */
+  thinking?: boolean;
+}
+
 /** One JSON-mode completion; returns the parsed JSON object. Throws on any failure. */
-export async function deepSeekJson<T = Record<string, unknown>>(job: string, prompt: string, maxTokens = 2048): Promise<T> {
+export async function deepSeekJson<T = Record<string, unknown>>(job: string, prompt: string, maxTokens = 2048, opts: AskOptions = {}): Promise<T> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new Error("DEEPSEEK_API_KEY is not set");
   const started = new Date();
@@ -44,6 +49,7 @@ export async function deepSeekJson<T = Record<string, unknown>>(job: string, pro
       max_tokens: maxTokens,
       response_format: { type: "json_object" },
       messages: [{ role: "user", content: prompt }],
+      ...(opts.thinking === false ? { thinking: { type: "disabled" } } : {}),
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });

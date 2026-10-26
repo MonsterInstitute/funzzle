@@ -1,6 +1,6 @@
 import { all, batch } from "@/lib/db";
 import { isValidISODate, shiftISODate, todayISO } from "@/lib/dates";
-import { deepSeekJson, hasDeepSeek } from "@/lib/deepseek";
+import { deepSeekJson, hasDeepSeek, type AskOptions } from "@/lib/deepseek";
 import { generateDailyGroups, type DailyGroups } from "@/lib/games/dailyPuzzles";
 import { MAX_HINT_CHARS, MAX_TITLE_CHARS, MAX_WORD_CHARS, WORD_RE, wordKey, type Group, type GroupsPuzzle, type Level } from "@/lib/games/groups";
 import { puzzleErrors, wordErrors } from "@/lib/games/groups/validate";
@@ -43,7 +43,11 @@ const TIER = "valid";
 const GEN_TOKENS = 3000;
 const CHECK_TOKENS = 1200;
 
-type Ask = <T>(job: string, prompt: string, maxTokens?: number) => Promise<T>;
+type Ask = <T>(job: string, prompt: string, maxTokens?: number, opts?: AskOptions) => Promise<T>;
+// With thinking on, deepseek-flash spent the whole token budget reasoning and
+// returned no content on every Groups call (2026-10-24/25); the code checks
+// and the ambiguity pass do the verifying instead.
+const NO_THINKING: AskOptions = { thinking: false };
 
 export function generationPrompt(date: string, avoid: string[]): string {
   return `Write one original word-grouping puzzle for ${date}, for a family-friendly daily puzzle site. Players see 16 words and must sort them into 4 groups of 4 that share a hidden link.
@@ -240,13 +244,13 @@ export async function generateGroups(date: string, avoid: string[], ask: Ask = d
   for (let attempt = 1; attempt <= GEN_ATTEMPTS; attempt++) {
     try {
       calls++;
-      const { puzzle: first, spares } = parseCandidates(await ask("content:groups", generationPrompt(date, avoid), GEN_TOKENS), date);
+      const { puzzle: first, spares } = parseCandidates(await ask("content:groups", generationPrompt(date, avoid), GEN_TOKENS, NO_THINKING), date);
       const repeat = first.groups.find((g) => seen.has(g.title.toLowerCase()));
       if (repeat) throw new Error(`repeats a recent link: ${repeat.title}`);
       let puzzle = first;
       for (let round = 1; round <= CHECK_ROUNDS; round++) {
         calls++;
-        const problems = parseProblems(await ask("content:groups-check", ambiguityPrompt(puzzle), CHECK_TOKENS));
+        const problems = parseProblems(await ask("content:groups-check", ambiguityPrompt(puzzle), CHECK_TOKENS, NO_THINKING));
         if (!problems.length) return { puzzle, reasons, calls };
         reasons.push(`check ${attempt}.${round}: ${problems.map(describe).join(" | ")}`);
         if (round === CHECK_ROUNDS) throw new Error("still flagged after the last check");
