@@ -106,7 +106,7 @@ describe("groups content generation", () => {
     const json = generationPrompt("2026-11-01", []).match(/\{"groups":[\s\S]*?\]\}\n/)![0];
     const { puzzle, spares } = parseCandidates(JSON.parse(json), "2026-11-01");
     expect(puzzle.groups).toHaveLength(4);
-    expect(spares.map((s) => s.length)).toEqual([2, 2, 2, 2]);
+    expect(spares.map((s) => s.length)).toEqual([4, 4, 4, 4]);
   });
 
   it("swaps a flagged word for a spare from its group", () => {
@@ -202,7 +202,7 @@ describe("groups content generation", () => {
     const { ask } = fakeAsk(() => ({ groups: [] }), () => ({ problems: [] }));
     const wrote = await ensureGroupsPuzzles([tomorrow], ask);
     expect(wrote).toHaveLength(1);
-    expect(wrote[0]).toMatch(`groups ${tomorrow} failed, 2 rejected (2 calls): 1) gen 1: reply needs 4 groups`);
+    expect(wrote[0]).toMatch(`groups ${tomorrow} failed, 3 rejected (3 calls): 1) gen 1: reply needs 4 groups`);
     expect(db.written).toHaveLength(0);
   });
 });

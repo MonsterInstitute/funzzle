@@ -34,9 +34,9 @@ import { clip, rejectionLine } from "./rejections";
  * puzzle never changes while people play it.
  */
 
-export const GEN_ATTEMPTS = 2;
+export const GEN_ATTEMPTS = 3;
 export const CHECK_ROUNDS = 3;
-const CANDIDATES = 6;
+const CANDIDATES = 8;
 /** Lexicon tier for lowercase words (see lib/games/groups/validate.ts). */
 const TIER = "valid";
 // Generous: billing is per token actually written, and a cut-off reply is a wasted call.
@@ -55,7 +55,8 @@ export function generationPrompt(date: string, avoid: string[]): string {
   return `Write one original word-grouping puzzle for ${date}, for a family-friendly daily puzzle site. Players see 16 words and must sort them into 4 groups of 4 that share a hidden link.
 
 Give 4 groups, levels 1 to 4:
-- 1 = the most direct link (a plain category), 2 and 3 = need a second thought, 4 = the trickiest (wordplay is welcome: hidden words, sound-alikes, a word that goes before or after, anagrams).
+- 1 = the most direct link (a plain category), 2 and 3 = need a second thought (a less obvious shared trait, or things found in one place), 4 = the trickiest: a word that goes before or after each word ("___ball", "fire___").
+- Do NOT use anagrams, hidden words, letter patterns or sound-alikes: they are too easy to get wrong.
 - For each group give ${CANDIDATES} candidate words, best first. We use the first 4 that pass our checks; the rest are spares.
 
 Every word must pass these checks, exactly as written:
@@ -71,10 +72,10 @@ Original: do not copy any puzzle from a newspaper, app or website, or the exampl
 
 Example of the format (a different puzzle):
 {"groups":[
-{"level":1,"title":"Kinds of pasta","hint":"Boil them, then add sauce","words":["spaghetti","macaroni","lasagna","ravioli","noodle","vermicelli"]},
-{"level":2,"title":"Things with bark","hint":"Not all of them are pets","words":["dog","tree","seal","fox","birch","oak"]},
-{"level":3,"title":"At a wedding","hint":"Before the honeymoon","words":["bride","veil","vow","toast","bouquet","ring"]},
-{"level":4,"title":"___light","hint":"Add something that shines","words":["flash","moon","spot","sun","candle","traffic"]}]}
+{"level":1,"title":"Fruit","hint":"Found in an orchard or a fruit bowl","words":["apple","pear","plum","peach","grape","cherry","mango","melon"]},
+{"level":2,"title":"Things with bark","hint":"Not all of them are pets","words":["dog","tree","seal","fox","birch","oak","pine","wolf"]},
+{"level":3,"title":"At a wedding","hint":"Before the honeymoon","words":["bride","veil","vow","toast","bouquet","ring","cake","usher"]},
+{"level":4,"title":"___light","hint":"Add something that shines","words":["flash","moon","spot","sun","candle","traffic","head","star"]}]}
 
 Return ONLY JSON in that shape.`;
 }
