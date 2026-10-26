@@ -41,14 +41,14 @@ const CANDIDATES = 6;
 const TIER = "valid";
 // Generous: billing is per token actually written, and a cut-off reply is a wasted call.
 const GEN_TOKENS = 3000;
-const CHECK_TOKENS = 8000;
+const CHECK_TOKENS = 2500;
 
 type Ask = <T>(job: string, prompt: string, maxTokens?: number, opts?: AskOptions) => Promise<T>;
 // With thinking on, deepseek-flash spent the whole generation budget reasoning
-// and returned no content on every Groups call (2026-10-24/25), so generation
-// runs without it. The check keeps thinking (its reply is tiny, and without it
-// a "Hidden numbers" group of tonight/wisdom/forgive/canyon passed): it gets
-// CHECK_TOKENS room to reason, and an empty reply fails closed.
+// and returned no content on every Groups call (2026-10-24/25), and the check
+// did the same with 8000 tokens, so both run without it. Instead the check
+// reasons in its JSON: a short "how it fits" per word before its verdict
+// (without that, a "Hidden numbers" group of tonight/wisdom/forgive/canyon passed).
 const NO_THINKING: AskOptions = { thinking: false };
 
 export function generationPrompt(date: string, avoid: string[]): string {
@@ -95,7 +95,9 @@ Report a problem only when a careful solver would clearly agree:
 (d) a word does not actually fit its own group's link. Check every word one by one: for hidden-word, sound-alike or ___-before/after links, spell the word out letter by letter and confirm the hidden part or the compound really exists.
 For each problem, "words" lists only the word or words that should be replaced. Do not invent problems, but do not pass a word you have not checked.
 
-Return ONLY JSON: {"problems":[{"words":["..."],"why":"<one sentence>"}]}, with "problems": [] if the puzzle is fair.`;
+First, in "checks", go through all 16 words in order: say in a few words how the word fits its own group's link (for hidden or sound-alike links, name the exact letters), then "fits": true or false.
+
+Return ONLY JSON: {"checks":[{"word":"...","how":"<a few words>","fits":true}],"problems":[{"words":["..."],"why":"<one sentence>"}]}, with "problems": [] if the puzzle is fair.`;
 }
 
 const tidy = (s: unknown) => (typeof s === "string" ? s.trim().replace(/[’‘]/g, "'").replace(/\s+/g, " ") : "");
@@ -194,10 +196,22 @@ export interface Problem {
 export function parseProblems(raw: unknown): Problem[] {
   const problems = (raw as { problems?: unknown })?.problems;
   if (!Array.isArray(problems)) throw new Error("ambiguity check reply has no problems list");
-  return problems.map((p) => ({
+  const out: Problem[] = problems.map((p) => ({
     words: Array.isArray(p?.words) ? p.words.filter((w: unknown) => typeof w === "string") : [],
     why: typeof p?.why === "string" ? p.why : "flagged",
   }));
+  // A word the per-word pass marked as not fitting is a problem even if the
+  // summary list forgot it.
+  const checks = (raw as { checks?: unknown })?.checks;
+  if (Array.isArray(checks)) {
+    const listed = new Set(out.flatMap((p) => p.words.map(wordKey)));
+    for (const c of checks) {
+      if (c?.fits === false && typeof c.word === "string" && !listed.has(wordKey(c.word))) {
+        out.push({ words: [c.word], why: typeof c.how === "string" ? `doesn't fit: ${c.how}` : "doesn't fit its link" });
+      }
+    }
+  }
+  return out;
 }
 
 const describe = (p: Problem) => `${p.words.join(", ")}: ${p.why}`;
@@ -253,7 +267,7 @@ export async function generateGroups(date: string, avoid: string[], ask: Ask = d
       let puzzle = first;
       for (let round = 1; round <= CHECK_ROUNDS; round++) {
         calls++;
-        const problems = parseProblems(await ask("content:groups-check", ambiguityPrompt(puzzle), CHECK_TOKENS));
+        const problems = parseProblems(await ask("content:groups-check", ambiguityPrompt(puzzle), CHECK_TOKENS, NO_THINKING));
         if (!problems.length) return { puzzle, reasons, calls };
         reasons.push(`check ${attempt}.${round}: ${problems.map(describe).join(" | ")}`);
         if (round === CHECK_ROUNDS) throw new Error("still flagged after the last check");

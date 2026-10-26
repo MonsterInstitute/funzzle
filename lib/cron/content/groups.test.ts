@@ -127,6 +127,16 @@ describe("groups content generation", () => {
     expect(parseProblems({ problems: [{ words: ["king"], why: "also a chess piece" }] })).toHaveLength(1);
   });
 
+  it("treats a word the per-word checks mark as not fitting as a problem", () => {
+    const checks = [
+      { word: "tonight", how: "to(two)night", fits: true },
+      { word: "canyon", how: "no number inside", fits: false },
+      { word: "Wisdom", how: "no number", fits: false },
+    ];
+    const problems = parseProblems({ checks, problems: [{ words: ["wisdom"], why: "no hidden number" }] });
+    expect(problems.map((p) => p.words[0])).toEqual(["wisdom", "canyon"]);
+  });
+
   it("repairs a flagged word with a spare, then re-checks", async () => {
     let n = 0;
     const { ask, calls } = fakeAsk(
