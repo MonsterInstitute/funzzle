@@ -74,7 +74,8 @@ export function isServedAnswerDate(iso: string, firstDate: string = FIRST_ANSWER
  * Letter Boxed has no public archive (only today's and yesterday's box are
  * on NYT's page), so its stored answers start when the answers cron did.
  */
-export const FIRST_LETTER_BOXED_DATE = "2026-10-23";
+// 2026-10-24: the first day stored (NYT keeps no archive; 10-23 was never captured).
+export const FIRST_LETTER_BOXED_DATE = "2026-10-24";
 
 /** The last `count` days that are served answer dates (newest first). */
 export function recentAnswerDates(count: number, firstDate: string = FIRST_ANSWER_DATE): string[] {

@@ -57,13 +57,15 @@ export function GET() {
     { path: "/play/mini", priority: 0.8, lastmod: today },
     { path: "/wordle-answer/today", priority: 0.8, lastmod: today },
     { path: "/clue", priority: 0.6, lastmod: today },
-    { path: "/blog", priority: 0.7, lastmod: today },
-    { path: "/how-to-play", priority: 0.7, lastmod: today },
+    // The index changes only when a post is added.
+    { path: "/blog", priority: 0.7, lastmod: BLOG_POSTS.map((p) => p.datePublished).sort().at(-1) },
+    // Static pages: no lastmod rather than a made-up "today".
+    { path: "/how-to-play", priority: 0.7 },
     { path: "/archive", priority: 0.6, lastmod: today },
     { path: "/leagues", priority: 0.5 },
-    { path: "/about", priority: 0.4, lastmod: today },
-    { path: "/privacy", priority: 0.3, lastmod: today },
-    { path: "/terms", priority: 0.3, lastmod: today },
+    { path: "/about", priority: 0.4 },
+    { path: "/privacy", priority: 0.3 },
+    { path: "/terms", priority: 0.3 },
   ];
 
   // Blog posts (priority 0.7).
