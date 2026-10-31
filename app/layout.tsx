@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import VisitTracker from "@/components/VisitTracker";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_TAGLINE } from "@/lib/site";
 
 // design/DESIGN.md: Bricolage Grotesque for display, Geist for UI, Geist Mono
@@ -47,6 +48,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-white text-[#111827]">
         {children}
+        <VisitTracker />
       </body>
     </html>
   );

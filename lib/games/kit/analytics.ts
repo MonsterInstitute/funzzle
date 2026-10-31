@@ -21,6 +21,7 @@ export type AnalyticsEvent =
 
 export function track(event: AnalyticsEvent, game?: string, props: Record<string, string | number | boolean> = {}, ref?: string): void {
   if (game && (event === "game_start" || event === "game_complete")) stampPassport(game);
+  if (isInternal()) return;
   try {
     const body = JSON.stringify({ event, game, clientId: clientId(), props, ref });
     const blob = new Blob([body], { type: "application/json" });
@@ -30,6 +31,21 @@ export function track(event: AnalyticsEvent, game?: string, props: Record<string
   } catch {
     // Analytics never breaks a game.
   }
+}
+
+/**
+ * The owner's and test browsers: visiting any page once with ?fz_internal=1
+ * stops this browser's events (?fz_internal=0 turns them back on), so traffic
+ * reports count only real visitors.
+ */
+export function isInternal(): boolean {
+  try {
+    const flag = new URLSearchParams(location.search).get("fz_internal");
+    if (flag === "1" || flag === "0") writeString("fz:internal", flag);
+  } catch {
+    // No location (tests) or storage: count the event.
+  }
+  return readString("fz:internal") === "1";
 }
 
 const DAY_MS = 86_400_000;

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/kit/Icons";
 import { GameGlyph } from "@/components/kit/Icons";
-import { trackVisit } from "@/lib/games/kit/analytics";
 import { GAMES } from "@/lib/games/kit/catalog";
 import { getStreak } from "@/lib/games/kit/daily";
 import { useLocal } from "@/lib/games/kit/useLocal";
@@ -22,10 +21,6 @@ const readStreak = () => getStreak().current;
 export default function Header() {
   const streak = useLocal(readStreak, 0);
   const [searchOpen, setSearchOpen] = useState(false);
-
-  useEffect(() => {
-    trackVisit();
-  }, []);
 
   return (
     <header className="border-b border-line">
