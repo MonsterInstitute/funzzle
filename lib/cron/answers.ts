@@ -123,10 +123,11 @@ export async function runAnswersCron(): Promise<AnswersRun> {
 
   // Funzzle's own daily puzzles (Sudoku grid, Solitaire deals): stored ahead
   // of time so everyone gets the stored puzzle. Pages generate the same puzzle
-  // from the same seed until the row exists, so no refresh is needed.
+  // from the same seed until the row exists, so no refresh is needed. Two days
+  // ahead, so a day of failed runs never leaves a day unstored.
   let puzzles: AnswersRun["puzzles"];
   try {
-    puzzles = await ensureDailyPuzzles(dates);
+    puzzles = await ensureDailyPuzzles([...dates, shiftISODate(today, 2)]);
   } catch (err) {
     puzzles = { error: (err as Error).message };
   }

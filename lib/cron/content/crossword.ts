@@ -20,6 +20,7 @@ import { generateDailyCrossword, type DailyCrossword } from "@/lib/games/dailyPu
 import { fillDailyGrid } from "@/lib/games/crossword/generate";
 import { entriesOf, entryText, type Entry } from "@/lib/games/crossword/grid";
 import { clueProblems, crosswordProblems } from "@/lib/games/crossword/puzzle";
+import { rejectionLine } from "./rejections";
 import { recentRows, storedDates, storeRows } from "./store";
 
 const GAME = "crossword";
@@ -53,8 +54,15 @@ ${list}
 Return ONLY JSON: {${first ? `"title": "<2-4 word title for the puzzle>", ` : ""}"clues": {"<id>": "<clue>", ...}} with exactly one clue for every id above.`;
 }
 
-/** Clue every entry; returns the clue map or null when some entry still has no valid clue. */
-export async function clueGrid(grid: string, entries: Entry[]): Promise<{ title: string; clues: Record<string, string> } | null> {
+/**
+ * Clue every entry; returns the clue map or null when some entry still has no
+ * valid clue. Call failures and leftover entries are pushed onto `log` (if given).
+ */
+export async function clueGrid(
+  grid: string,
+  entries: Entry[],
+  log?: { reasons: string[]; calls: number }
+): Promise<{ title: string; clues: Record<string, string> } | null> {
   const clues: Record<string, string> = {};
   let title = "";
   let todo: Item[] = entries.map((e) => ({ id: e.id, answer: entryText(grid, e) }));
@@ -64,10 +72,12 @@ export async function clueGrid(grid: string, entries: Entry[]): Promise<{ title:
       const chunk = todo.slice(i, i + BATCH);
       const first = !title && i === 0;
       let out: { title?: unknown; clues?: Record<string, unknown> } = {};
+      if (log) log.calls++;
       try {
         out = await deepSeekJson<{ title?: unknown; clues?: Record<string, unknown> }>("content:crossword", cluePrompt(chunk, first), 4096);
       } catch (err) {
         console.warn(`crossword clues: ${(err as Error).message}`);
+        log?.reasons.push(`round ${round + 1}: ${(err as Error).message}`);
       }
       if (first && typeof out.title === "string" && /^[A-Za-z][A-Za-z' &,-]{2,40}$/.test(out.title.trim())) title = out.title.trim();
       for (const it of chunk) {
@@ -81,6 +91,7 @@ export async function clueGrid(grid: string, entries: Entry[]): Promise<{ title:
   }
   if (todo.length) {
     console.warn(`crossword clues: ${todo.length} entries without a valid clue (${todo.map((t) => t.id).join(", ")})`);
+    log?.reasons.push(`${todo.length} entries still unclued after ${ROUNDS} rounds`);
     return null;
   }
   return { title: title || "Daily Crossword", clues };
@@ -111,12 +122,17 @@ export async function ensureCrosswordPuzzles(dates: string[]): Promise<string[]>
     const t0 = Date.now();
     const filled = fillDailyGrid(date, avoid);
     const entries = entriesOf(filled.grid);
-    const clued = await clueGrid(filled.grid, entries);
-    if (!clued) continue;
+    const log = { reasons: [] as string[], calls: 0 };
+    const clued = await clueGrid(filled.grid, entries, log);
+    if (!clued) {
+      written.push(rejectionLine(GAME, date, log.reasons, log.calls, false));
+      continue;
+    }
     const puzzle: DailyCrossword = { date, source: "llm", title: clued.title, size: filled.size, grid: filled.grid, clues: clued.clues };
     const problems = crosswordProblems(puzzle);
     if (problems.length) {
       console.warn(`crossword ${date}: ${problems.slice(0, 5).join("; ")}`);
+      written.push(rejectionLine(GAME, date, problems.slice(0, 3), log.calls, false));
       continue;
     }
     // One row per date as it's ready: a later failure doesn't lose earlier days.

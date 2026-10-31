@@ -37,6 +37,9 @@ export async function GET(request: Request) {
   }
   const today = todayISO();
   const dates = [today, shiftISODate(today, 1)];
+  // Content jobs work two days ahead: a DeepSeek outage of a day still leaves
+  // tomorrow's AI puzzle in place.
+  const contentDates = [...dates, shiftISODate(today, 2)];
   const errors: string[] = [];
 
   let answers;
@@ -72,7 +75,7 @@ export async function GET(request: Request) {
   ];
   for (const [game, path, ensure] of jobs) {
     try {
-      content[game] = await ensure(dates);
+      content[game] = (await ensure(contentDates)).filter(Boolean);
       // Today's row only changes a live page if it was written just now.
       if (content[game].some((w) => w.includes(today) && !isRejectionLine(w))) revalidatePath(path);
     } catch (err) {

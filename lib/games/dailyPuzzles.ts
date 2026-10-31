@@ -396,6 +396,8 @@ export async function getDailyJigsaw(date: string): Promise<DailyJigsaw> {
  * Store the daily puzzles for `dates` that aren't stored yet. Existing rows are
  * never overwritten. Returns what it wrote.
  */
+const WRITE_BATCH = 5;
+
 export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
   const wanted = dates.flatMap((date) => [
     { game: "sudoku", date, variant: "" },
@@ -428,14 +430,19 @@ export async function ensureDailyPuzzles(dates: string[]): Promise<string[]> {
       data: generateRow(w.game, w.date, w.variant),
     }));
   if (!rows.length) return [];
-  await batch(
-    rows.map((r) => [
-      "INSERT INTO daily_puzzles (game, puzzle_date, variant, data) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
-      r.game,
-      r.date,
-      r.variant,
-      JSON.stringify(r.data),
-    ])
-  );
+  // Small batches: one batch of all 19 rows for a new day sometimes ran past
+  // lib/db's 8 s deadline (Oct 27 and 29). Each row is ON CONFLICT DO NOTHING,
+  // so a retry after a partial write is safe.
+  for (let i = 0; i < rows.length; i += WRITE_BATCH) {
+    await batch(
+      rows.slice(i, i + WRITE_BATCH).map((r) => [
+        "INSERT INTO daily_puzzles (game, puzzle_date, variant, data) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
+        r.game,
+        r.date,
+        r.variant,
+        JSON.stringify(r.data),
+      ])
+    );
+  }
   return rows.map((r) => `${r.game}${r.variant ? `/${r.variant}` : ""} ${r.date}`);
 }
