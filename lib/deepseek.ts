@@ -32,7 +32,12 @@ interface Usage {
 }
 
 export interface AskOptions {
-  /** false turns off the model's thinking phase (on by default), which otherwise counts against maxTokens. */
+  /**
+   * true turns on the model's thinking phase. Off by default for every job:
+   * thinking counts against maxTokens and repeatedly used the whole budget
+   * with no content (Groups, coach, Word Search, Oct 2026), and every output
+   * is validated in code anyway.
+   */
   thinking?: boolean;
 }
 
@@ -49,7 +54,7 @@ export async function deepSeekJson<T = Record<string, unknown>>(job: string, pro
       max_tokens: maxTokens,
       response_format: { type: "json_object" },
       messages: [{ role: "user", content: prompt }],
-      ...(opts.thinking === false ? { thinking: { type: "disabled" } } : {}),
+      thinking: { type: opts.thinking ? "enabled" : "disabled" },
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -107,4 +112,38 @@ export function parseJsonObject<T>(text: string): T | undefined {
     }
   }
   return undefined;
+}
+
+export interface DeepSeekBalance {
+  isAvailable: boolean;
+  currency: string;
+  total: number;
+  granted: number;
+  toppedUp: number;
+}
+
+/** GET /user/balance. Throws on any failure. */
+export async function deepSeekBalance(): Promise<DeepSeekBalance> {
+  const key = process.env.DEEPSEEK_API_KEY;
+  if (!key) throw new Error("DEEPSEEK_API_KEY is not set");
+  const res = await fetch("https://api.deepseek.com/user/balance", {
+    headers: { authorization: `Bearer ${key}`, accept: "application/json" },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`DeepSeek balance ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const body = (await res.json()) as {
+    is_available?: boolean;
+    balance_infos?: { currency?: string; total_balance?: string; granted_balance?: string; topped_up_balance?: string }[];
+  };
+  // Prefer the USD entry; an account may also hold CNY.
+  const infos = body.balance_infos ?? [];
+  const info = infos.find((b) => b.currency === "USD") ?? infos[0];
+  if (!info) throw new Error("DeepSeek balance reply has no balance_infos");
+  return {
+    isAvailable: Boolean(body.is_available),
+    currency: info.currency ?? "?",
+    total: Number(info.total_balance ?? 0),
+    granted: Number(info.granted_balance ?? 0),
+    toppedUp: Number(info.topped_up_balance ?? 0),
+  };
 }

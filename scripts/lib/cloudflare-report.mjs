@@ -220,6 +220,17 @@ async function cost(end, visits, aeWrites) {
       `→ estimated overage beyond the $${PLAN.base} plan: ${usd(accOver)}.`,
     ""
   );
+  // Latest balance the explain cron stored (lib/cron/deepseekBalance.ts).
+  const [bal] = await d1("SELECT day, currency, total, spend_7d_usd, days_left, is_available FROM deepseek_balance ORDER BY day DESC LIMIT 1", []).catch(() => []);
+  const weekUsd = sum(llm, (r) => r.usd);
+  lines.push(
+    bal
+      ? `**DeepSeek balance: ${Number(bal.total).toFixed(2)} ${bal.currency}** on ${bal.day}${bal.is_available ? "" : " (account NOT available)"}; ` +
+          `spent this week ${usd(weekUsd)}; ` +
+          (bal.days_left == null ? "no spend to project from." : `about ${fmt(Math.floor(bal.days_left))} days left at the last 7 days' rate${bal.days_left < 30 ? " ⚠️ top up soon" : ""}.`)
+      : `DeepSeek spent this week: ${usd(weekUsd)} (no balance recorded yet).`,
+    ""
+  );
   if (llm.length) {
     lines.push("<details><summary>DeepSeek by job (7 days)</summary>", "", ...table(["Job", "Calls", "Prompt tokens", "Cache hits", "Output tokens", "$"], llm.map((r) => [r.job, fmt(r.calls), fmt(r.prompt), fmt(r.hit), fmt(r.completion), usd(r.usd)])), "", "</details>", "");
   }

@@ -12,11 +12,13 @@ import { ensureWordHuntPuzzles } from "@/lib/cron/content/wordhunt";
 import { ensureWordSearchPuzzles } from "@/lib/cron/content/wordsearch";
 import { crosswordDatesAhead, ensureCrosswordPuzzles } from "@/lib/cron/content/crossword";
 import { isRejectionLine } from "@/lib/cron/content/rejections";
+import { checkDeepSeekBalance, type BalanceCheck } from "@/lib/cron/deepseekBalance";
 
 /**
  * Explain cron ("20 3,7,15,23 * * *", worker.ts): DeepSeek explanations for
  * today's and tomorrow's answers (lib/cron/explainAnswers.ts) and AI Coach
- * text for the daily Sudoku (lib/cron/coachText.ts). Each step runs even if
+ * text for the daily Sudoku (lib/cron/coachText.ts), the LLM content jobs, and
+ * the DeepSeek balance check (lib/cron/deepseekBalance.ts). Each step runs even if
  * another fails; any failure returns 502 so worker.ts emails an alert. Pages
  * work without either: answers show without prose, the coach falls back to
  * the solver's own explanation.
@@ -78,9 +80,18 @@ export async function GET(request: Request) {
     }
   }
 
+  // Balance after the calls above, so it reflects today's spend. Low balance
+  // emails its own warning (once a day); only a failed check fails the run.
+  let balance: BalanceCheck | undefined;
+  try {
+    balance = await checkDeepSeekBalance();
+  } catch (err) {
+    errors.push(`balance: ${(err as Error).message}`);
+  }
+
   const ok = errors.length === 0;
   // errors and content first: logRun keeps only the first 4000 chars.
-  const detail = { ok, errors, content, answers, coach };
+  const detail = { ok, errors, balance, content, answers, coach };
   await logRun("explain", startedAt, ok, detail);
   return NextResponse.json(detail, { status: ok ? 200 : 502 });
 }
