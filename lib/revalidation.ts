@@ -1,4 +1,5 @@
 import { shiftISODate, todayISO } from "./dates";
+import { ALL_VARIANTS, variantPath } from "./seo/variants";
 
 /**
  * Paths that change from one UTC day to the next — refreshed on demand by
@@ -39,6 +40,8 @@ export const TODAY_PATHS = [
   "/play/word/quad",
   "/play/word/geo",
   "/play/word/math",
+  // Variant pages (/play/sudoku/hard …): today's grid or deal in one variant.
+  ...ALL_VARIANTS.map(variantPath),
   "/sitemap.xml",
 ];
 

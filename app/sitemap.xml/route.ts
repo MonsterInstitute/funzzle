@@ -11,6 +11,7 @@ import { BLOG_POSTS } from "@/lib/blog";
 import { COUNTRIES } from "@/lib/content/countries";
 import { EQUATIONS } from "@/lib/content/equations";
 import { WORDS } from "@/lib/content/words";
+import { ALL_VARIANTS, variantPath } from "@/lib/seo/variants";
 
 // Shows "today": refreshed on demand at the UTC day change and after the daily
 // content run (lib/revalidation.ts); the 6h window is only a fallback.
@@ -67,6 +68,9 @@ export function GET() {
     { path: "/privacy", priority: 0.3 },
     { path: "/terms", priority: 0.3 },
   ];
+
+  // Variant pages: today's grid or deal in one variant, like their parent.
+  for (const v of ALL_VARIANTS) entries.push({ path: variantPath(v), priority: 0.8, lastmod: today });
 
   // Blog posts (priority 0.7).
   for (const post of BLOG_POSTS) {

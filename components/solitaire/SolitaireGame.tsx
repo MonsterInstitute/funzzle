@@ -78,8 +78,19 @@ function freshDaily(d: DailySolitaire, mode: Mode): Saved {
   return { key: `${d.date}:${d.seed}`, mode, seed: d.seed, verified: true, state: d.state, elapsed: 0, hints: 0 };
 }
 
-export default function SolitaireGame({ date, daily1, daily3 }: { date: string; daily1: DailySolitaire; daily3: DailySolitaire }) {
-  const [game, setGame] = useState<Saved>(() => freshDaily(daily1, "daily1"));
+export default function SolitaireGame({
+  date,
+  daily1,
+  daily3,
+  initialMode,
+}: {
+  date: string;
+  daily1: DailySolitaire;
+  daily3: DailySolitaire;
+  /** A draw page (/play/solitaire/turn-3): open that daily, not the last mode played. */
+  initialMode?: "daily1" | "daily3";
+}) {
+  const [game, setGame] = useState<Saved>(() => (initialMode === "daily3" ? freshDaily(daily3, "daily3") : freshDaily(daily1, "daily1")));
   const [loaded, setLoaded] = useState(false);
   const [shuffling, setShuffling] = useState(false);
 
@@ -132,9 +143,11 @@ export default function SolitaireGame({ date, daily1, daily3 }: { date: string; 
     if (want === "1" || want === "3") {
       history.replaceState(null, "", location.pathname);
       newPractice(want === "3" ? 3 : 1);
+    } else if (initialMode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
+      openDaily(initialMode);
     } else if (last === "practice") {
       const saved = readJson<Saved | null>(KEY("practice", date), null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
       if (saved && !saved.done) setGame(saved);
       else openDaily("daily1");
     } else {

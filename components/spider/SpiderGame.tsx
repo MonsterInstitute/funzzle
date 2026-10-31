@@ -117,14 +117,18 @@ export default function SpiderGame({
   daily1,
   daily2,
   daily4,
+  initialMode,
 }: {
   date: string;
   daily1: DailySpider;
   daily2: DailySpider | null;
   /** Null until the cron has stored today's 4-suit deal: it is never generated on a request. */
   daily4: DailySpider | null;
+  /** A suit-count page (/play/spider-solitaire/2-suits): open that daily, not the last mode played. */
+  initialMode?: DailyMode;
 }) {
-  const [game, setGame] = useState<Saved>(() => freshDaily(daily1));
+  const start = initialMode === "daily2" ? daily2 : initialMode === "daily4" ? daily4 : null;
+  const [game, setGame] = useState<Saved>(() => freshDaily(start ?? daily1));
   const [loaded, setLoaded] = useState(false);
   const [shuffling, setShuffling] = useState(false);
   const dailies = useMemo(() => ({ daily1, daily2, daily4 }) as Record<DailyMode, DailySpider | null>, [daily1, daily2, daily4]);
@@ -171,9 +175,11 @@ export default function SpiderGame({
     if (want === "1" || want === "2" || want === "4") {
       history.replaceState(null, "", location.pathname);
       newPractice(toSuits(want));
+    } else if (initialMode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
+      openDaily(initialMode);
     } else if (last === "practice") {
       const saved = readJson<Saved | null>(KEY("practice", date), null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
       if (saved && !saved.done) setGame(saved);
       else openDaily("daily1");
     } else {

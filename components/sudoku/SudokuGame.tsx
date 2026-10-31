@@ -28,6 +28,8 @@ interface Saved {
   mode: "daily" | "practice" | "archive";
   /** The archive puzzle's date. */
   date?: string;
+  /** Today's grid at one level (/play/sudoku/hard): a practice game with the fixed seed `sudoku:${date}`. */
+  level?: true;
   /** Opened from a friend's challenge link (lib/games/kit/challenge.ts). */
   challengeId?: string;
   difficulty: Difficulty;
@@ -51,6 +53,7 @@ const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard", "expert"];
 const DAILY_KEY = (date: string) => `fz:sudoku:daily:${date}`;
 const ARCHIVE_KEY = (date: string) => `fz:sudoku:archive:${date}`;
 const PRACTICE_KEY = "fz:sudoku:practice";
+const LEVEL_KEY = (difficulty: Difficulty, date: string) => `fz:sudoku:level:${difficulty}:${date}`;
 const R = (c: number) => Math.floor(c / 9);
 const C = (c: number) => c % 9;
 const B = (c: number) => Math.floor(R(c) / 3) * 3 + Math.floor(C(c) / 3);
@@ -60,19 +63,37 @@ type Coach = { ladder: HintLadder; rung: 1 | 2 | 3; teach?: string | null };
 export default function SudokuGame({
   date,
   daily,
+  level,
 }: {
   date: string;
   daily: { difficulty: Difficulty; puzzle: Grid; solution: Grid };
+  /** A level page on a day the daily is another level: today's grid at that level, unranked. */
+  level?: { difficulty: Difficulty; puzzle: Grid; solution: Grid };
 }) {
   const dailyKey = `${date}:${daily.puzzle.join("")}`;
-  const [game, setGame] = useState<Saved>(() => ({
-    key: dailyKey,
-    mode: "daily",
-    difficulty: daily.difficulty,
-    seed: `sudoku:${date}`,
-    state: initialState(daily.puzzle, daily.solution),
-    elapsed: 0,
-  }));
+  const levelGame = (): Saved | null =>
+    level
+      ? {
+          key: `level:${date}:${level.puzzle.join("")}`,
+          mode: "practice",
+          level: true,
+          difficulty: level.difficulty,
+          seed: `sudoku:${date}`,
+          state: initialState(level.puzzle, level.solution),
+          elapsed: 0,
+        }
+      : null;
+  const [game, setGame] = useState<Saved>(
+    () =>
+      levelGame() ?? {
+        key: dailyKey,
+        mode: "daily",
+        difficulty: daily.difficulty,
+        seed: `sudoku:${date}`,
+        state: initialState(daily.puzzle, daily.solution),
+        elapsed: 0,
+      }
+  );
   const [loaded, setLoaded] = useState(false);
 
   // Restore today's saved progress after hydration (local storage isn't on the server).
@@ -102,10 +123,14 @@ export default function SudokuGame({
     } else if (archiveDate && /^\d{4}-\d{2}-\d{2}$/.test(archiveDate) && archiveDate < date) {
       openArchive(archiveDate).finally(() => setLoaded(true));
       return;
+    } else if (level) {
+      const fresh = levelGame()!;
+      const saved = readJson<Saved | null>(LEVEL_KEY(level.difficulty, date), null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage
+      if (saved && saved.key === fresh.key) setGame(saved);
     } else {
       openDaily();
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from local storage / URL
     setLoaded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per page view
   }, [date, dailyKey]);
@@ -182,7 +207,8 @@ function Board({
   onResumePractice?: () => void;
   onDaily?: () => void;
 }) {
-  const storageKey = game.mode === "daily" ? DAILY_KEY(date) : game.mode === "archive" ? ARCHIVE_KEY(date) : PRACTICE_KEY;
+  const storageKey =
+    game.mode === "daily" ? DAILY_KEY(date) : game.mode === "archive" ? ARCHIVE_KEY(date) : game.level ? LEVEL_KEY(game.difficulty, date) : PRACTICE_KEY;
   const [state, dispatch] = useReducer(reducer, game.state, (s) => ({ ...s, past: [], future: [] }));
   const [selected, setSelected] = useState<number>(() => game.state.puzzle.findIndex((v) => !v));
   const [notesMode, setNotesMode] = useState(false);
@@ -206,7 +232,9 @@ function Board({
   const label = DIFFICULTY_LABEL[game.difficulty];
   const day = new Date(`${date}T00:00:00Z`);
   const subtitle =
-    game.mode === "practice"
+    game.level
+      ? `Today's ${label}`
+      : game.mode === "practice"
       ? `Practice · ${label}`
       : `${game.mode === "archive" ? "Archive · " : ""}${day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} · ${label}`;
 
@@ -409,7 +437,7 @@ function Board({
   return (
     <GameShell
       tint={GAME.tint}
-      title={game.mode === "practice" ? "Sudoku" : "Daily Sudoku"}
+      title={game.level ? `${label} Sudoku` : game.mode === "practice" ? "Sudoku" : "Daily Sudoku"}
       subtitle={subtitle}
       timer={formatClock(timer.elapsed)}
       onTimerClick={() => setPaused(true)}
@@ -734,7 +762,7 @@ function SudokuRecap({
   return (
     <Recap
       game="sudoku"
-      heading={game.mode === "practice" ? `Sudoku practice · ${label}` : `Daily Sudoku · ${short}${game.mode === "archive" ? " · archive" : ""}`}
+      heading={game.level ? `${label} Sudoku · ${short}` : game.mode === "practice" ? `Sudoku practice · ${label}` : `Daily Sudoku · ${short}${game.mode === "archive" ? " · archive" : ""}`}
       title="Solved."
       timeMs={finish.timeMs}
       percentile={game.mode === "daily" ? finish.percentile : undefined}
@@ -751,7 +779,7 @@ function SudokuRecap({
       ]}
       challenge={{
         puzzle: game.mode === "practice" ? { kind: "practice", seed: game.seed, level: game.difficulty } : { kind: "daily", date },
-        label: game.mode === "practice" ? `Sudoku practice · ${label}` : `Daily Sudoku · ${short} · ${label}`,
+        label: game.level ? `${label} Sudoku · ${short}` : game.mode === "practice" ? `Sudoku practice · ${label}` : `Daily Sudoku · ${short} · ${label}`,
         result: { timeMs: finish.timeMs, mistakes: state.mistakes, hints: state.hints },
         activeId: game.challengeId,
       }}

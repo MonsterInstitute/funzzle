@@ -1,7 +1,9 @@
 import JsonLd from "@/components/JsonLd";
 import QandA from "@/components/seo/QandA";
+import VariantLinks from "@/components/seo/VariantLinks";
 import { GAME_GUIDES, type GameGuideSlug } from "@/lib/aeo";
 import { gameJsonLd } from "@/lib/seo";
+import { VARIANTS, type VariantParent } from "@/lib/seo/variants";
 
 /**
  * The text half of a game page, below the board: the direct summary, the
@@ -20,6 +22,7 @@ export default function GameGuide({ slug, path }: { slug: GameGuideSlug; path: s
         </h2>
         <p className="mt-3 text-[17px] leading-relaxed text-muted">{g.summary}</p>
         <QandA items={[...g.qa]} />
+        {slug in VARIANTS && <VariantLinks parent={slug as VariantParent} />}
       </div>
     </section>
   );
