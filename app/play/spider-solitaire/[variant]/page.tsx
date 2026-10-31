@@ -14,7 +14,7 @@ export function generateStaticParams() {
   return VARIANTS["spider-solitaire"].map((v) => ({ variant: v.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/play/spider-solitaire/[variant]">): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ variant: string }> }): Promise<Metadata> {
   const v = variant("spider-solitaire", (await params).variant);
   return pageMetadata({ title: v.title, description: v.description, path: variantPath(v) });
 }
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps<"/play/spider-solit
 // the 6h window is only a fallback.
 export const revalidate = 21600;
 
-export default async function SpiderVariantPage({ params }: PageProps<"/play/spider-solitaire/[variant]">) {
+export default async function SpiderVariantPage({ params }: { params: Promise<{ variant: string }> }) {
   const v = variant("spider-solitaire", (await params).variant);
   const today = todayISO();
   // Same deals as /play/spider-solitaire: 2 and 4 suits are only ever read

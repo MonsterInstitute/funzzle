@@ -13,7 +13,7 @@ export function generateStaticParams() {
   return VARIANTS.sudoku.map((v) => ({ variant: v.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/play/sudoku/[variant]">): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ variant: string }> }): Promise<Metadata> {
   const v = variant("sudoku", (await params).variant);
   return pageMetadata({ title: v.title, description: v.description, path: variantPath(v) });
 }
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps<"/play/sudoku/[vari
 // the 6h window is only a fallback.
 export const revalidate = 21600;
 
-export default async function SudokuLevelPage({ params }: PageProps<"/play/sudoku/[variant]">) {
+export default async function SudokuLevelPage({ params }: { params: Promise<{ variant: string }> }) {
   const v = variant("sudoku", (await params).variant);
   const level = v.slug as Difficulty;
   const today = todayISO();

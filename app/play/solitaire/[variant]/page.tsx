@@ -12,7 +12,7 @@ export function generateStaticParams() {
   return VARIANTS.solitaire.map((v) => ({ variant: v.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/play/solitaire/[variant]">): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ variant: string }> }): Promise<Metadata> {
   const v = variant("solitaire", (await params).variant);
   return pageMetadata({ title: v.title, description: v.description, path: variantPath(v) });
 }
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps<"/play/solitaire/[v
 // the 6h window is only a fallback.
 export const revalidate = 21600;
 
-export default async function SolitaireVariantPage({ params }: PageProps<"/play/solitaire/[variant]">) {
+export default async function SolitaireVariantPage({ params }: { params: Promise<{ variant: string }> }) {
   const v = variant("solitaire", (await params).variant);
   const today = todayISO();
   const [daily1, daily3] = await Promise.all([getDailySolitaire(today, 1), getDailySolitaire(today, 3)]);
